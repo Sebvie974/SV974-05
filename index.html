@@ -258,15 +258,25 @@
         let cataloguePatients = [];
         let planningsParDate = {};
 
+        // SÉCURITÉ DE CHARGEMENT : On vérifie si l'outil est prêt avant de lancer la connexion
         function initialiserSupabase() {
-            if (supabase === null && window.supabase) {
-                supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+            if (supabase === null) {
+                if (typeof window.supabase !== 'undefined') {
+                    supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+                    return true;
+                }
+                return false;
             }
+            return true;
         }
 
         function verifierConnexion() {
             const mdp = document.getElementById('password-input').value;
             if (mdp === MOT_DE_PASSE_CABINET) {
+                if (!initialiserSupabase()) {
+                    alert("La brique réseau Supabase est en cours de téléchargement. Patientez 2 secondes et cliquez à nouveau.");
+                    return;
+                }
                 localStorage.setItem('kine_connecte', 'true');
                 initialiserApplication();
             } else {
@@ -274,17 +284,23 @@
             }
         }
 
+        // Éviter le freeze automatique si la session était déjà active
         window.addEventListener('DOMContentLoaded', () => {
             if (localStorage.getItem('kine_connecte') === 'true') {
-                initialiserApplication();
+                // On laisse un court répit pour laisser la librairie externe s'injecter
+                setTimeout(() => {
+                    if (initialiserSupabase()) {
+                        initialiserApplication();
+                    } else {
+                        // Si pas prête, on nettoie pour forcer la reconnexion manuelle propre
+                        localStorage.removeItem('kine_connecte');
+                        window.location.reload();
+                    }
+                }, 300);
             }
         });
 
         function initialiserApplication() {
-            initialiserSupabase();
-            if (!supabase && window.supabase) {
-                initialiserSupabase();
-            }
             document.getElementById('login-screen').style.display = 'none';
             document.getElementById('main-app').style.display = 'block';
             
@@ -311,8 +327,7 @@
         }
 
         async function chargerDonneesDepuisServeur() {
-            initialiserSupabase();
-            if (!supabase) return;
+            if (!initialiserSupabase()) return;
             try {
                 const { data: patients, error: errP } = await supabase.from('catalogue_patients').select('*');
                 if (errP) throw errP;
@@ -346,8 +361,7 @@
         }
 
         function brancherTempsReel() {
-            initialiserSupabase();
-            if (!supabase) return;
+            if (!initialiserSupabase()) return;
             supabase.channel('custom-all-channel')
             .on('postgres_changes', { event: '*', schema: 'public' }, () => {
                 chargerDonneesDepuisServeur();
@@ -547,7 +561,6 @@
         }
 
         async function sauvegarderFichePatient() {
-            initialiserSupabase();
             const id = document.getElementById('patient-id').value;
             const nom = document.getElementById('patient-nom').value.trim();
             const adresse = document.getElementById('patient-adresse').value.trim();
@@ -555,8 +568,8 @@
             if(!nom || !adresse) { alert("Veuillez remplir le nom et l'adresse."); return; }
             fermerModal('modal-patient');
 
-            if (!supabase) { 
-                alert("La connexion réseau n'est pas encore établie. Patientez quelques secondes."); 
+            if (!initialiserSupabase()) { 
+                alert("La base de données n'est pas connectée. Réessayez dans 2 secondes."); 
                 return; 
             }
 
@@ -582,6 +595,8 @@
 
         function ouvrirModal(id) { document.getElementById(id).style.display = 'flex'; }
         function fermerModal(id) { document.getElementById(id).style.display = 'none'; }
+
+        function abrirModal(id) { ouvrirModal(id); }
 
         function ouvrirPlanificateur() {
             const select = document.getElementById('select-patient');
