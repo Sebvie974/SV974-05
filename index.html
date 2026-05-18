@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Planning Tournées Cabinet</title>
     <link rel="manifest" href="manifest.json">
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root {
             --bg-color: #f4f6f9;
@@ -164,8 +163,6 @@
 <body>
 
     <div id="login-screen">
-        <button class="btn-danger" style="padding: 12px 20px; font-size: 1rem;" onclick="lancerDiagnosticForce()">Vérification Technique 🚨</button>
-        
         <div class="login-box">
             <h2 style="color: var(--primary); margin-top:0;">Accès Cabinet</h2>
             <p style="color: var(--neutral); font-size:0.9rem;">Entrez le mot de passe du cabinet pour vous synchroniser.</p>
@@ -260,16 +257,17 @@
         let cataloguePatients = [];
         let planningsParDate = {};
 
-        function lancerDiagnosticForce() {
-            let info = "--- RAPPORT ---\n";
-            info += "Librairie Supabase détectée : " + (typeof window.supabase !== 'undefined' ? "OUI" : "NON") + "\n";
-            try {
-                if (window.supabase) {
-                    let test = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-                    info += "Connexion Client Supabase : CRÉÉE AVEC SUCCÈS\n";
-                }
-            } catch(e) { info += "Erreur client : " + e.message + "\n"; }
-            alert(info);
+        // Chargement à la demande : on injecte la bibliothèque uniquement si le mot de passe est bon
+        function chargerScriptSupabase(callback) {
+            if (window.supabase) {
+                callback();
+                return;
+            }
+            const script = document.createElement('script');
+            script.src = "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2";
+            script.onload = () => { callback(); };
+            script.onerror = () => { alert("Erreur : Impossible d'atteindre le serveur Supabase. Vérifiez votre connexion internet."); };
+            document.head.appendChild(script);
         }
 
         function initialiserSupabase() {
@@ -282,7 +280,10 @@
             const mdp = document.getElementById('password-input').value;
             if (mdp === MOT_DE_PASSE_CABINET) {
                 localStorage.setItem('kine_connecte', 'true');
-                initialiserApplication();
+                // On charge la brique réseau de façon sécurisée après validation
+                chargerScriptSupabase(() => {
+                    initialiserApplication();
+                });
             } else {
                 alert("Mot de passe incorrect.");
             }
@@ -290,7 +291,9 @@
 
         window.addEventListener('DOMContentLoaded', () => {
             if (localStorage.getItem('kine_connecte') === 'true') {
-                initialiserApplication();
+                chargerScriptSupabase(() => {
+                    initialiserApplication();
+                });
             }
         });
 
@@ -348,7 +351,7 @@
 
                 rafraichirAffichage();
             } catch (e) {
-                console.log("Erreur de connexion, chargement local :", e);
+                console.log("Mode dégradé local actif :", e);
                 cataloguePatients = JSON.parse(localStorage.getItem('cache_patients')) || [];
                 planningsParDate = JSON.parse(localStorage.getItem('cache_plannings')) || {};
                 modifierBadgeReseau(false);
@@ -604,6 +607,7 @@
             abrirModal('modal-planifier');
         }
 
+        function abrirModalPatient(id = '') { ouvrirFormulairePatient(id); }
         function ouvrirFormulairePatient(id = '') {
             if(id) {
                 const p = cataloguePatients.find(item => item.id === id);
