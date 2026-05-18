@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Planning Tournées Cabinet</title>
     <link rel="manifest" href="manifest.json">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root {
             --bg-color: #f4f6f9;
@@ -257,18 +258,6 @@
         let cataloguePatients = [];
         let planningsParDate = {};
 
-        function chargerScriptSupabase(callback) {
-            if (window.supabase) {
-                callback();
-                return;
-            }
-            const script = document.createElement('script');
-            script.src = "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2";
-            script.onload = () => { callback(); };
-            script.onerror = () => { alert("Erreur : Impossible de joindre Supabase."); };
-            document.head.appendChild(script);
-        }
-
         function initialiserSupabase() {
             if (supabase === null && window.supabase) {
                 supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
@@ -279,7 +268,7 @@
             const mdp = document.getElementById('password-input').value;
             if (mdp === MOT_DE_PASSE_CABINET) {
                 localStorage.setItem('kine_connecte', 'true');
-                chargerScriptSupabase(() => { initialiserApplication(); });
+                initialiserApplication();
             } else {
                 alert("Mot de passe incorrect.");
             }
@@ -287,18 +276,21 @@
 
         window.addEventListener('DOMContentLoaded', () => {
             if (localStorage.getItem('kine_connecte') === 'true') {
-                chargerScriptSupabase(() => { initialiserApplication(); });
+                initialiserApplication();
             }
         });
 
         function initialiserApplication() {
             initialiserSupabase();
+            if (!supabase && window.supabase) {
+                initialiserSupabase();
+            }
             document.getElementById('login-screen').style.display = 'none';
             document.getElementById('main-app').style.display = 'block';
             
             calculerSemaine();
             chargerDonneesDepuisServeur();
-            brancherTemenpsReel();
+            brancherTempsReel();
         }
 
         window.addEventListener('online', () => modifierBadgeReseau(true));
@@ -353,7 +345,7 @@
             }
         }
 
-        function brancherTemenpsReel() {
+        function brancherTempsReel() {
             initialiserSupabase();
             if (!supabase) return;
             supabase.channel('custom-all-channel')
@@ -474,17 +466,18 @@
         async function changerStatutRdv(idPlanif, statutBouton) {
             const cleDate = getCleDate(datesSemaineEnCours[indiceJourActuel]);
             const rdv = planningsParDate[cleDate].find(r => r.idPlanif === idPlanif);
-            if (!rdv || !supabase) return;
+            if (!rdv) return;
 
             const nouveauStatut = rdv.statut === statutBouton ? null : statutBouton;
             rdv.statut = nouveauStatut;
             rafraichirAffichage();
 
-            await supabase.from('plannings_dates').update({ statut: nouveauStatut }).eq('id_planif', idPlanif);
+            if (supabase) {
+                await supabase.from('plannings_dates').update({ statut: nouveauStatut }).eq('id_planif', idPlanif);
+            }
         }
 
         async function ajouterAuPlanningMultiJours() {
-            if(!supabase) return;
             const patientId = document.getElementById('select-patient').value;
             const heure = document.getElementById('planif-heure').value || "00:00";
             const checkboxes = document.querySelectorAll('input[name="jours-planif"]:checked');
@@ -504,25 +497,27 @@
             });
 
             fermerModal('modal-planifier');
-            const { error } = await supabase.from('plannings_dates').insert(lignesAInserer);
-            if(error) alert("Erreur planning : " + error.message);
-            chargerDonneesDepuisServeur();
-        }
-
-        async function retirerDuPlanning(idPlanif) {
-            if (!supabase) return;
-            if (confirm("Retirer ce rendez-vous ?")) {
-                await supabase.from('plannings_dates').delete().eq('id_planif', idPlanif);
+            if (supabase) {
+                const { error } = await supabase.from('plannings_dates').insert(lignesAInserer);
+                if(error) alert("Erreur planning : " + error.message);
                 chargerDonneesDepuisServeur();
             }
         }
 
+        async function retirerDuPlanning(idPlanif) {
+            if (confirm("Retirer ce rendez-vous ?")) {
+                if (supabase) {
+                    await supabase.from('plannings_dates').delete().eq('id_planif', idPlanif);
+                    chargerDonneesDepuisServeur();
+                }
+            }
+        }
+
         async function reinitialiserJour() {
-            if (!supabase) return;
             if (confirm("Réinitialiser les statuts du jour ?")) {
                 const cleDate = getCleDate(datesSemaineEnCours[indiceJourActuel]);
                 const ids = (planningsParDate[cleDate] || []).map(r => r.idPlanif);
-                if(ids.length > 0) {
+                if(ids.length > 0 && supabase) {
                     await supabase.from('plannings_dates').update({ statut: null }).in('id_planif', ids);
                     chargerDonneesDepuisServeur();
                 }
@@ -552,7 +547,7 @@
         }
 
         async function sauvegarderFichePatient() {
-            if (!supabase) { alert("Supabase n'est pas prêt."); return; }
+            initialiserSupabase();
             const id = document.getElementById('patient-id').value;
             const nom = document.getElementById('patient-nom').value.trim();
             const adresse = document.getElementById('patient-adresse').value.trim();
@@ -560,12 +555,16 @@
             if(!nom || !adresse) { alert("Veuillez remplir le nom et l'adresse."); return; }
             fermerModal('modal-patient');
 
+            if (!supabase) { 
+                alert("La connexion réseau n'est pas encore établie. Patientez quelques secondes."); 
+                return; 
+            }
+
             if (id) {
                 const { error } = await supabase.from('catalogue_patients').update({ nom, adresse }).eq('id', id);
                 if (error) alert("Erreur lors de la modification : " + error.message);
             } else {
-                // Génération d'un ID numérique pur pour parer à toutes les configurations de tables Supabase (BigInt ou Text)
-                const nouvelId = Math.floor(Math.random() * 1000000000); 
+                const nouvelId = Math.floor(Math.random() * 1000000000).toString(); 
                 const { error } = await supabase.from('catalogue_patients').insert([{ id: nouvelId, nom, adresse }]);
                 if (error) alert("Erreur lors de la création : " + error.message);
             }
@@ -573,9 +572,8 @@
         }
 
         async function supprimerFichePatient() {
-            if (!supabase) return;
             const id = document.getElementById('patient-id').value;
-            if (id && confirm("Supprimer définitivement ce patient ?")) {
+            if (id && confirm("Supprimer définitivement ce patient ?") && supabase) {
                 fermerModal('modal-patient');
                 await supabase.from('catalogue_patients').delete().eq('id', id);
                 chargerDonneesDepuisServeur();
@@ -612,6 +610,7 @@
         function ouvrirFormulairePatient(id = '') {
             if(id) {
                 const p = cataloguePatients.find(item => String(item.id) === String(id));
+                if(!p) return;
                 document.getElementById('patient-modal-title').innerText = "Modifier la fiche";
                 document.getElementById('patient-id').value = p.id;
                 document.getElementById('patient-nom').value = p.nom;
