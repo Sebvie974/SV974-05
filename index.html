@@ -298,7 +298,7 @@
             
             calculerSemaine();
             chargerDonneesDepuisServeur();
-            brancherTempsReel();
+            brancherTemenpsReel();
         }
 
         window.addEventListener('online', () => modifierBadgeReseau(true));
@@ -335,7 +335,7 @@
                     planningsParDate[r.date_cle].push({
                         idPlanif: r.id_planif,
                         patientId: r.patient_id,
-                        heure: r.heure.substring(0, 5),
+                        heure: r.heure ? r.heure.substring(0, 5) : "00:00",
                         statut: r.statut
                     });
                 });
@@ -353,7 +353,7 @@
             }
         }
 
-        function brancherTempsReel() {
+        function brancherTemenpsReel() {
             initialiserSupabase();
             if (!supabase) return;
             supabase.channel('custom-all-channel')
@@ -450,7 +450,7 @@
             }
 
             rdvDuJour.forEach(rdv => {
-                const patient = cataloguePatients.find(p => p.id === rdv.patientId);
+                const patient = cataloguePatients.find(p => String(p.id) === String(rdv.patientId));
                 if(!patient) return;
 
                 const card = document.createElement('div');
@@ -459,7 +459,7 @@
                     <div class="patient-info">
                         <span class="patient-name">${patient.nom}</span>
                         <span style="font-size:0.85rem; font-weight:bold;">🕒 ${rdv.heure}</span>
-                        <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(patient.adresse)}" target="_blank" class="patient-address">📍 ${patient.adresse}</a>
+                        <a href="https://maps.google.com/?q=${encodeURIComponent(patient.adresse)}" target="_blank" class="patient-address">📍 ${patient.adresse}</a>
                     </div>
                     <div class="btn-group">
                         <button class="btn-status btn-vu ${rdv.statut === 'vu' ? 'active' : ''}" onclick="changerStatutRdv('${rdv.idPlanif}', 'vu')">✅</button>
@@ -495,7 +495,7 @@
             checkboxes.forEach(cb => {
                 const dateCible = datesSemaineEnCours[parseInt(cb.value)];
                 lignesAInserer.push({
-                    id_planif: (Date.now() + Math.random()).toString(),
+                    id_planif: Math.floor(Math.random() * 1000000000).toString(),
                     patient_id: patientId,
                     date_cle: getCleDate(dateCible),
                     heure: heure,
@@ -504,7 +504,8 @@
             });
 
             fermerModal('modal-planifier');
-            await supabase.from('plannings_dates').insert(lignesAInserer);
+            const { error } = await supabase.from('plannings_dates').insert(lignesAInserer);
+            if(error) alert("Erreur planning : " + error.message);
             chargerDonneesDepuisServeur();
         }
 
@@ -551,18 +552,22 @@
         }
 
         async function sauvegarderFichePatient() {
-            if (!supabase) return;
+            if (!supabase) { alert("Supabase n'est pas prêt."); return; }
             const id = document.getElementById('patient-id').value;
             const nom = document.getElementById('patient-nom').value.trim();
             const adresse = document.getElementById('patient-adresse').value.trim();
 
-            if(!nom || !adresse) return;
+            if(!nom || !adresse) { alert("Veuillez remplir le nom et l'adresse."); return; }
             fermerModal('modal-patient');
 
             if (id) {
-                await supabase.from('catalogue_patients').update({ nom, adresse }).eq('id', id);
+                const { error } = await supabase.from('catalogue_patients').update({ nom, adresse }).eq('id', id);
+                if (error) alert("Erreur lors de la modification : " + error.message);
             } else {
-                await supabase.from('catalogue_patients').insert([{ id: Date.now().toString(), nom, adresse }]);
+                // Génération d'un ID numérique pur pour parer à toutes les configurations de tables Supabase (BigInt ou Text)
+                const nouvelId = Math.floor(Math.random() * 1000000000); 
+                const { error } = await supabase.from('catalogue_patients').insert([{ id: nouvelId, nom, adresse }]);
+                if (error) alert("Erreur lors de la création : " + error.message);
             }
             chargerDonneesDepuisServeur();
         }
@@ -606,7 +611,7 @@
 
         function ouvrirFormulairePatient(id = '') {
             if(id) {
-                const p = cataloguePatients.find(item => item.id === id);
+                const p = cataloguePatients.find(item => String(item.id) === String(id));
                 document.getElementById('patient-modal-title').innerText = "Modifier la fiche";
                 document.getElementById('patient-id').value = p.id;
                 document.getElementById('patient-nom').value = p.nom;
@@ -625,7 +630,7 @@
         function genererBlocRapport(rdvs) {
             let vus = [], absents = [], nonTraites = [];
             rdvs.forEach(r => {
-                const p = cataloguePatients.find(item => item.id === r.patientId);
+                const p = cataloguePatients.find(item => String(item.id) === String(r.patientId));
                 if (!p) return;
                 if (r.statut === 'vu') vus.push("  - " + p.nom);
                 else if (r.statut === 'non-vu') absents.push("  - " + p.nom);
