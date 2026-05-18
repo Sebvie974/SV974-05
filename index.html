@@ -164,7 +164,7 @@
 <body>
 
     <div id="login-screen">
-        <button class="btn-danger" style="padding: 12px 20px; font-size: 1rem;" onclick="lancerDiagnosticForce()">Vérification Manuelle 🚨</button>
+        <button class="btn-danger" style="padding: 12px 20px; font-size: 1rem;" onclick="lancerDiagnosticForce()">Vérification Technique 🚨</button>
         
         <div class="login-box">
             <h2 style="color: var(--primary); margin-top:0;">Accès Cabinet</h2>
@@ -262,11 +262,11 @@
 
         function lancerDiagnosticForce() {
             let info = "--- RAPPORT ---\n";
-            info += "Supabase disposponible globalement : " + (typeof window.supabase !== 'undefined' ? "OUI" : "NON") + "\n";
+            info += "Librairie Supabase détectée : " + (typeof window.supabase !== 'undefined' ? "OUI" : "NON") + "\n";
             try {
                 if (window.supabase) {
                     let test = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-                    info += "Client Supabase : OK\n";
+                    info += "Connexion Client Supabase : CRÉÉE AVEC SUCCÈS\n";
                 }
             } catch(e) { info += "Erreur client : " + e.message + "\n"; }
             alert(info);
@@ -348,7 +348,7 @@
 
                 rafraichirAffichage();
             } catch (e) {
-                console.log("Erreur Cloud, bascule mémoire locale :", e);
+                console.log("Erreur de connexion, chargement local :", e);
                 cataloguePatients = JSON.parse(localStorage.getItem('cache_patients')) || [];
                 planningsParDate = JSON.parse(localStorage.getItem('cache_plannings')) || {};
                 modifierBadgeReseau(false);
