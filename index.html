@@ -257,7 +257,6 @@
         let cataloguePatients = [];
         let planningsParDate = {};
 
-        // Chargement à la demande : on injecte la bibliothèque uniquement si le mot de passe est bon
         function chargerScriptSupabase(callback) {
             if (window.supabase) {
                 callback();
@@ -266,7 +265,7 @@
             const script = document.createElement('script');
             script.src = "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2";
             script.onload = () => { callback(); };
-            script.onerror = () => { alert("Erreur : Impossible d'atteindre le serveur Supabase. Vérifiez votre connexion internet."); };
+            script.onerror = () => { alert("Erreur : Impossible de joindre Supabase."); };
             document.head.appendChild(script);
         }
 
@@ -280,10 +279,7 @@
             const mdp = document.getElementById('password-input').value;
             if (mdp === MOT_DE_PASSE_CABINET) {
                 localStorage.setItem('kine_connecte', 'true');
-                // On charge la brique réseau de façon sécurisée après validation
-                chargerScriptSupabase(() => {
-                    initialiserApplication();
-                });
+                chargerScriptSupabase(() => { initialiserApplication(); });
             } else {
                 alert("Mot de passe incorrect.");
             }
@@ -291,9 +287,7 @@
 
         window.addEventListener('DOMContentLoaded', () => {
             if (localStorage.getItem('kine_connecte') === 'true') {
-                chargerScriptSupabase(() => {
-                    initialiserApplication();
-                });
+                chargerScriptSupabase(() => { initialiserApplication(); });
             }
         });
 
@@ -351,7 +345,7 @@
 
                 rafraichirAffichage();
             } catch (e) {
-                console.log("Mode dégradé local actif :", e);
+                console.log("Mode local temporaire actif :", e);
                 cataloguePatients = JSON.parse(localStorage.getItem('cache_patients')) || [];
                 planningsParDate = JSON.parse(localStorage.getItem('cache_plannings')) || {};
                 modifierBadgeReseau(false);
@@ -583,6 +577,9 @@
             }
         }
 
+        function ouvrirModal(id) { document.getElementById(id).style.display = 'flex'; }
+        function fermerModal(id) { document.getElementById(id).style.display = 'none'; }
+
         function ouvrirPlanificateur() {
             const select = document.getElementById('select-patient');
             if (!select) return;
@@ -604,10 +601,9 @@
                     </label>
                 `;
             });
-            abrirModal('modal-planifier');
+            ouvrirModal('modal-planifier');
         }
 
-        function abrirModalPatient(id = '') { ouvrirFormulairePatient(id); }
         function ouvrirFormulairePatient(id = '') {
             if(id) {
                 const p = cataloguePatients.find(item => item.id === id);
@@ -623,7 +619,7 @@
                 document.getElementById('patient-adresse').value = '';
                 document.getElementById('btn-supprimer-fiche').style.display = 'none';
             }
-            abrirModal('modal-patient');
+            ouvrirModal('modal-patient');
         }
 
         function genererBlocRapport(rdvs) {
