@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Planning Tournées Cabinet</title>
     <link rel="manifest" href="manifest.json">
-    <!-- Chargement de la bibliothèque officielle Supabase -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root {
@@ -162,7 +161,6 @@
 </head>
 <body>
 
-    <!-- ================= ÉCRAN DE CONNEXION SÉCURISÉ ================= -->
     <div id="login-screen">
         <div class="login-box">
             <h2 style="color: var(--primary); margin-top:0;">Accès Cabinet</h2>
@@ -172,7 +170,6 @@
         </div>
     </div>
 
-    <!-- ================= INTERFACE DE L'APPLICATION ================= -->
     <div id="main-app">
         <header>
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
@@ -211,7 +208,6 @@
         </main>
     </div>
 
-    <!-- ================= MODALES ================= -->
     <div class="modal" id="modal-planifier">
         <div class="modal-content">
             <h3>Planifier un patient</h3>
@@ -244,14 +240,13 @@
         </div>
     </div>
 
-    <!-- ================= LOGIQUE APPLICATIVE ET TEMPS RÉEL ================= -->
     <script>
         // CONFIGURATION SUPABASE (ZÉRO CLIC)
         const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
         const SUPABASE_KEY = "sb_publishable_472y-YwY-VyEsRz7nqaMJg_LC3W6gDJ";
-        const supabase = BigInt(typeof supabase !== 'undefined') ? null : window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        const MOT_DE_PASSE_CABINET = "kine2026"; // Code d'accès unique pour le cabinet
+        const MOT_DE_PASSE_CABINET = "kine2026"; 
         const nomsJours = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi'];
         
         let vueActuelle = 'planning';
@@ -304,15 +299,13 @@
             }
         }
 
-        // CHARGEMENT DIRECT DEPUIS LE CLOUD (ZÉRO CLIC)
+        // CHARGEMENT DEPUIS LE CLOUD
         async function chargerDonneesDepuisServeur() {
             try {
-                // 1. Charger le catalogue des patients
                 const { data: patients, error: errP } = await supabase.from('catalogue_patients').select('*');
                 if (errP) throw errP;
                 cataloguePatients = patients || [];
 
-                // 2. Charger tous les rendez-vous
                 const { data: rdv, error: errR } = await supabase.from('plannings_dates').select('*');
                 if (errR) throw errR;
 
@@ -327,13 +320,12 @@
                     });
                 });
 
-                // Sauvegarde de secours en local (pour le mode hors-ligne)
                 localStorage.setItem('cache_patients', JSON.stringify(cataloguePatients));
                 localStorage.setItem('cache_plannings', JSON.stringify(planningsParDate));
 
                 rafraichirAffichage();
             } catch (e) {
-                console.log("Erreur serveur, passage sur le stockage local :", e);
+                console.log("Erreur de connexion, chargement de la mémoire locale :", e);
                 cataloguePatients = JSON.parse(localStorage.getItem('cache_patients')) || [];
                 planningsParDate = JSON.parse(localStorage.getItem('cache_plannings')) || {};
                 modifierBadgeReseau(false);
@@ -341,10 +333,10 @@
             }
         }
 
-        // ÉCOUTE DU TEMPS RÉEL (METS A JOUR LES SMARTPHONES DÈS QUE LE SECRÉTARIAT MODIFIE)
+        // ÉCOUTE DU TEMPS RÉEL
         function brancherTempsReel() {
             supabase.channel('custom-all-channel')
-            .on('postgres_changes', { event: '*', pattern: 'public', schema: 'public' }, () => {
+            .on('postgres_changes', { event: '*', schema: 'public' }, () => {
                 chargerDonneesDepuisServeur();
             })
             .subscribe();
@@ -456,15 +448,13 @@
             });
         }
 
-        // ACTIONS SYNCHRONISÉES (ENVOI IMMÉDIAT AU CLOUD)
+        // ACTIONS CLOUD
         async function changerStatutRdv(idPlanif, statutBouton) {
             const cleDate = getCleDate(datesSemaineEnCours[indiceJourActuel]);
             const rdv = planningsParDate[cleDate].find(r => r.idPlanif === idPlanif);
             if (!rdv) return;
 
             const nouveauStatut = rdv.statut === statutBouton ? null : statutBouton;
-            
-            // Mise à jour visuelle immédiate (optimiste)
             rdv.statut = nouveauStatut;
             rafraichirAffichage();
 
@@ -492,12 +482,13 @@
 
             fermerModal('modal-planifier');
             await supabase.from('plannings_dates').insert(lignesAInserer);
-            chargerDonneesPermanentes();
+            chargerDonneesDepuisServeur();
         }
 
         async function retirerDuPlanning(idPlanif) {
             if (confirm("Retirer ce rendez-vous ?")) {
                 await supabase.from('plannings_dates').delete().eq('id_planif', idPlanif);
+                chargerDonneesDepuisServeur();
             }
         }
 
@@ -507,11 +498,12 @@
                 const ids = (planningsParDate[cleDate] || []).map(r => r.idPlanif);
                 if(ids.length > 0) {
                     await supabase.from('plannings_dates').update({ statut: null }).in('id_planif', ids);
+                    chargerDonneesDepuisServeur();
                 }
             }
         }
 
-        // GESTION CATALOGUE PATIENTS
+        // GESTION CATALOGUE
         function afficherCatalogue() {
             const conteneur = document.getElementById('view-fichier');
             conteneur.innerHTML = '';
@@ -546,6 +538,7 @@
             } else {
                 await supabase.from('catalogue_patients').insert([{ id: Date.now().toString(), nom, adresse }]);
             }
+            chargerDonneesDepuisServeur();
         }
 
         async function supprimerFichePatient() {
@@ -553,10 +546,11 @@
             if (id && confirm("Supprimer définitivement ce patient ?")) {
                 fermerModal('modal-patient');
                 await supabase.from('catalogue_patients').delete().eq('id', id);
+                chargerDonneesDepuisServeur();
             }
         }
 
-        // MODALES ET INTERFACES OUTILS
+        // MODALES Outils
         function abrirModal(id) { document.getElementById(id).style.display = 'flex'; }
         function fermerModal(id) { document.getElementById(id).style.display = 'none'; }
 
@@ -632,7 +626,7 @@
             navigator.clipboard.writeText(texte).then(() => alert("Rapport de la semaine copié !"));
         }
 
-        // Enregistrement Service Worker PWA
+        // Enregistrement PWA
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => { navigator.serviceWorker.register('sw.js'); });
         }
