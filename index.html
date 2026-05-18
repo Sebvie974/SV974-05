@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Planning Tournées Cabinet</title>
+    <link rel="manifest" href="manifest.json">
+    <!-- Chargement de la bibliothèque officielle Supabase -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        :root {
+            --bg-color: #f4f6f9;
+            --card-bg: #ffffff;
+            --text-color: #333333;
+            --primary: #007aff;
+            --success: #34c759;
+            --danger: #ff3b30;
+            --neutral: #8e8e93;
+            --purple: #5856d6;
+            --orange: #ff9500;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 15px;
+        }
+
+        /* Écran de Connexion */
+        #login-screen {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: var(--bg-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+        }
+        .login-box {
+            background: white;
+            padding: 30px;
+            border-radius: 16px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            text-align: center;
+            width: 90%;
+            max-width: 350px;
+        }
+
+        /* Interface Principale */
+        #main-app { display: none; }
+
+        header {
+            background: var(--card-bg);
+            padding: 15px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            margin-bottom: 15px;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        h1 { margin: 0; font-size: 1.4rem; color: var(--primary); }
+
+        .sync-indicator {
+            font-size: 0.8rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 4px 8px;
+            border-radius: 12px;
+            background: #e5e5ea;
+            font-weight: bold;
+        }
+        .sync-online { background: #d4edda; color: #155724; }
+        .sync-offline { background: #f8d7da; color: #721c24; }
+
+        .week-selector {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: #e5e5ea;
+            padding: 5px 10px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            font-weight: bold;
+            font-size: 0.9rem;
+        }
+
+        .week-btn { background: transparent; color: var(--primary); padding: 5px 10px; font-size: 1rem; border: none; cursor: pointer; }
+        .days-nav { display: flex; gap: 5px; overflow-x: auto; padding-bottom: 5px; margin-bottom: 10px; }
+        
+        .day-btn {
+            background: #e5e5ea;
+            color: var(--text-color);
+            padding: 8px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            white-space: nowrap;
+            border: none;
+            cursor: pointer;
+        }
+        .day-btn.active { background: var(--primary); color: white; }
+        .stats { font-size: 0.9rem; color: var(--neutral); font-weight: bold; margin-bottom: 10px; }
+        .actions-bar { display: flex; gap: 8px; flex-wrap: wrap; }
+
+        button {
+            border: none;
+            padding: 10px 14px;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 0.85rem;
+        }
+        .btn-primary { background-color: var(--primary); color: white; flex: 1; }
+        .btn-secondary { background-color: var(--neutral); color: white; }
+        .btn-success { background-color: var(--success); color: white; }
+        .btn-danger { background-color: var(--danger); color: white; }
+        .btn-purple { background-color: var(--purple); color: white; }
+
+        /* Vues */
+        .app-view { display: none; }
+        .app-view.active { display: flex; flex-direction: column; gap: 10px; }
+        
+        /* Cartes Patients */
+        .patient-card {
+            background: var(--card-bg);
+            padding: 15px;
+            border-radius: 12px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.03);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-left: 5px solid var(--neutral);
+        }
+        .patient-card.vu { border-left-color: var(--success); }
+        .patient-card.non-vu { border-left-color: var(--danger); }
+        .patient-info { display: flex; flex-direction: column; gap: 4px; max-width: 60%; }
+        .patient-name { font-weight: 600; font-size: 1.05rem; }
+        .patient-address { font-size: 0.85rem; color: var(--neutral); text-decoration: none; }
+
+        .btn-group { display: flex; gap: 6px; align-items: center; }
+        .btn-status { width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; background: #f0f0f5; }
+        .btn-vu.active { background-color: var(--success); color: white; }
+        .btn-nonvu.active { background-color: var(--danger); color: white; }
+        .btn-icon { background: transparent; font-size: 1rem; border: none; cursor: pointer; }
+
+        /* Modales */
+        .modal {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5); z-index: 20; justify-content: center; align-items: center;
+        }
+        .modal-content {
+            background: white; padding: 20px; border-radius: 16px; width: 90%; max-width: 400px;
+            display: flex; flex-direction: column; gap: 12px; max-height: 90vh; overflow-y: auto;
+        }
+        .modal-content input, .modal-content select { width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #ccc; box-sizing: border-box; }
+        .days-checkbox-grid { display: flex; flex-direction: column; gap: 8px; background: #f4f6f9; padding: 10px; border-radius: 8px; }
+    </style>
+</head>
+<body>
+
+    <!-- ================= ÉCRAN DE CONNEXION SÉCURISÉ ================= -->
+    <div id="login-screen">
+        <div class="login-box">
+            <h2 style="color: var(--primary); margin-top:0;">Accès Cabinet</h2>
+            <p style="color: var(--neutral); font-size:0.9rem;">Entrez le mot de passe du cabinet pour vous synchroniser.</p>
+            <input type="password" id="password-input" placeholder="Mot de passe" style="width:100%; padding:12px; border-radius:8px; border:1px solid #ccc; box-sizing:border-box; margin-bottom:15px; text-align:center; font-size:1.1rem;">
+            <button class="btn-primary" style="width:100%; padding:12px;" onclick="verifierConnexion()">Se connecter 🔐</button>
+        </div>
+    </div>
+
+    <!-- ================= INTERFACE DE L'APPLICATION ================= -->
+    <div id="main-app">
+        <header>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                <h1 id="app-title">Planning Tournées</h1>
+                <div id="sync-badge" class="sync-indicator sync-online">Prêt 🟢</div>
+            </div>
+
+            <div style="margin-bottom: 12px;">
+                <button class="btn-purple" style="width: 100%;" id="btn-toggle-view" onclick="basculerVue()">Voir le Fichier Patients 🗂️</button>
+            </div>
+            
+            <div id="header-planning">
+                <div class="week-selector">
+                    <button class="week-btn" onclick="changerSemaine(-1)">◀ Préc.</button>
+                    <span id="label-semaine">Semaine du ...</span>
+                    <button class="week-btn" onclick="changerSemaine(1)">Suiv. ▶</button>
+                </div>
+                <div class="days-nav" id="days-tabs"></div>
+                <div class="stats" id="tournee-stats">Chargement...</div>
+                <div class="actions-bar">
+                    <button class="btn-primary" onclick="exporterRapportJour()">Rapport Jour 📋</button>
+                    <button class="btn-purple" onclick="exporterRapportSemaine()">Rapport Hebdo 📅</button>
+                    <button class="btn-success" onclick="ouvrirPlanificateur()">Planifier ➕</button>
+                    <button class="btn-secondary" onclick="reinitialiserJour()">Reset 🔄</button>
+                </div>
+            </div>
+
+            <div id="header-fichier" style="display: none;">
+                <button class="btn-success" style="width: 100%;" onclick="ouvrirFormulairePatient()">Créer un nouveau patient 👤➕</button>
+            </div>
+        </header>
+
+        <main>
+            <div class="app-view active" id="view-planning"></div>
+            <div class="app-view" id="view-fichier"></div>
+        </main>
+    </div>
+
+    <!-- ================= MODALES ================= -->
+    <div class="modal" id="modal-planifier">
+        <div class="modal-content">
+            <h3>Planifier un patient</h3>
+            <label>Choisir un patient</label>
+            <select id="select-patient" required></select>
+            <label>Heure de passage</label>
+            <input type="time" id="planif-heure" required>
+            <label>Jours de passage :</label>
+            <div class="days-checkbox-grid" id="conteneur-jours-checkbox"></div>
+            <div style="display: flex; gap: 10px; margin-top: 10px;">
+                <button class="btn-primary" onclick="ajouterAuPlanningMultiJours()">Planifier</button>
+                <button class="btn-secondary" onclick="fermerModal('modal-planifier')">Annuler</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="modal-patient">
+        <div class="modal-content">
+            <h3 id="patient-modal-title">Fiche Patient</h3>
+            <input type="hidden" id="patient-id">
+            <label>Nom complet</label>
+            <input type="text" id="patient-nom" placeholder="Mme Martine Dupont" required>
+            <label>Adresse</label>
+            <input type="text" id="patient-adresse" placeholder="12 rue des Fleurs, Saint-Pierre" required>
+            <div style="display: flex; gap: 10px; margin-top: 10px;">
+                <button class="btn-purple" onclick="sauvegarderFichePatient()">Enregistrer</button>
+                <button class="btn-danger" id="btn-supprimer-fiche" onclick="supprimerFichePatient()">Supprimer</button>
+                <button class="btn-secondary" onclick="fermerModal('modal-patient')">Annuler</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= LOGIQUE APPLICATIVE ET TEMPS RÉEL ================= -->
+    <script>
+        // CONFIGURATION SUPABASE (ZÉRO CLIC)
+        const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
+        const SUPABASE_KEY = "sb_publishable_472y-YwY-VyEsRz7nqaMJg_LC3W6gDJ";
+        const supabase = BigInt(typeof supabase !== 'undefined') ? null : window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        const MOT_DE_PASSE_CABINET = "kine2026"; // Code d'accès unique pour le cabinet
+        const nomsJours = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi'];
+        
+        let vueActuelle = 'planning';
+        let dateAncre = new Date();
+        let datesSemaineEnCours = []; 
+        let indiceJourActuel = 0;
+
+        let cataloguePatients = [];
+        let planningsParDate = {};
+
+        // SÉCURITÉ ET ACCÈS
+        function verifierConnexion() {
+            const mdp = document.getElementById('password-input').value;
+            if (mdp === MOT_DE_PASSE_CABINET) {
+                localStorage.setItem('kine_connecte', 'true');
+                initialiserApplication();
+            } else {
+                alert("Mot de passe incorrect.");
+            }
+        }
+
+        window.addEventListener('load', () => {
+            if (localStorage.getItem('kine_connecte') === 'true') {
+                initialiserApplication();
+            }
+        });
+
+        function initialiserApplication() {
+            document.getElementById('login-screen').style.display = 'none';
+            document.getElementById('main-app').style.display = 'block';
+            
+            calculerSemaine();
+            chargerDonneesDepuisServeur();
+            brancherTempsReel();
+        }
+
+        // GESTION DU RESEAU ET DU HORS-LIGNE
+        window.addEventListener('online', () => modifierBadgeReseau(true));
+        window.addEventListener('offline', () => modifierBadgeReseau(false));
+
+        function modifierBadgeReseau(estEnLigne) {
+            const badge = document.getElementById('sync-badge');
+            if (estEnLigne) {
+                badge.innerText = "Connecté 🟢";
+                badge.className = "sync-indicator sync-online";
+                chargerDonneesDepuisServeur();
+            } else {
+                badge.innerText = "Hors-ligne 🔴";
+                badge.className = "sync-indicator sync-offline";
+            }
+        }
+
+        // CHARGEMENT DIRECT DEPUIS LE CLOUD (ZÉRO CLIC)
+        async function chargerDonneesDepuisServeur() {
+            try {
+                // 1. Charger le catalogue des patients
+                const { data: patients, error: errP } = await supabase.from('catalogue_patients').select('*');
+                if (errP) throw errP;
+                cataloguePatients = patients || [];
+
+                // 2. Charger tous les rendez-vous
+                const { data: rdv, error: errR } = await supabase.from('plannings_dates').select('*');
+                if (errR) throw errR;
+
+                planningsParDate = {};
+                (rdv || []).forEach(r => {
+                    if (!planningsParDate[r.date_cle]) planningsParDate[r.date_cle] = [];
+                    planningsParDate[r.date_cle].push({
+                        idPlanif: r.id_planif,
+                        patientId: r.patient_id,
+                        heure: r.heure.substring(0, 5),
+                        statut: r.statut
+                    });
+                });
+
+                // Sauvegarde de secours en local (pour le mode hors-ligne)
+                localStorage.setItem('cache_patients', JSON.stringify(cataloguePatients));
+                localStorage.setItem('cache_plannings', JSON.stringify(planningsParDate));
+
+                rafraichirAffichage();
+            } catch (e) {
+                console.log("Erreur serveur, passage sur le stockage local :", e);
+                cataloguePatients = JSON.parse(localStorage.getItem('cache_patients')) || [];
+                planningsParDate = JSON.parse(localStorage.getItem('cache_plannings')) || {};
+                modifierBadgeReseau(false);
+                rafraichirAffichage();
+            }
+        }
+
+        // ÉCOUTE DU TEMPS RÉEL (METS A JOUR LES SMARTPHONES DÈS QUE LE SECRÉTARIAT MODIFIE)
+        function brancherTempsReel() {
+            supabase.channel('custom-all-channel')
+            .on('postgres_changes', { event: '*', pattern: 'public', schema: 'public' }, () => {
+                chargerDonneesDepuisServeur();
+            })
+            .subscribe();
+        }
+
+        // LOGIQUE CALENDRIER
+        function calculerSemaine() {
+            datesSemaineEnCours = [];
+            let jourCourant = dateAncre.getDay();
+            let distanceAuLundi = jourCourant === 0 ? -6 : 1 - jourCourant;
+            let lundiSemaine = new Date(dateAncre);
+            lundiSemaine.setDate(dateAncre.getDate() + distanceAuLundi);
+
+            for (let i = 0; i < 5; i++) {
+                let j = new Date(lundiSemaine);
+                j.setDate(lundiSemaine.getDate() + i);
+                datesSemaineEnCours.push(j);
+            }
+            const opt = { day: '2-digit', month: '2-digit' };
+            document.getElementById('label-semaine').innerText = `Sem. du ${datesSemaineEnCours[0].toLocaleDateString('fr-FR', opt)} au ${datesSemaineEnCours[4].toLocaleDateString('fr-FR', opt)}`;
+        }
+
+        function changerSemaine(direction) {
+            dateAncre.setDate(dateAncre.getDate() + (direction * 7));
+            calculerSemaine();
+            chargerDonneesDepuisServeur();
+        }
+
+        function getCleDate(dateObj) { return dateObj.toISOString().split('T')[0]; }
+        function getLabelDate(dateObj) {
+            const nom = nomsJours[dateObj.getDay() - 1] || 'Lundi';
+            return `${nom} ${String(dateObj.getDate()).padStart(2, '0')}/${String(dateObj.getMonth() + 1).padStart(2, '0')}`;
+        }
+
+        function basculerVue() {
+            const btn = document.getElementById('btn-toggle-view');
+            if (vueActuelle === 'planning') {
+                vueActuelle = 'fichier';
+                document.getElementById('app-title').innerText = "Fichier Patients";
+                btn.innerText = "Voir le Planning 🗓️";
+                document.getElementById('header-planning').style.display = 'none';
+                document.getElementById('header-fichier').style.display = 'block';
+                document.getElementById('view-planning').classList.remove('active');
+                document.getElementById('view-fichier').classList.add('active');
+            } else {
+                vueActuelle = 'planning';
+                document.getElementById('app-title').innerText = "Planning Tournées";
+                btn.innerText = "Voir le Fichier Patients 🗂️";
+                document.getElementById('header-planning').style.display = 'block';
+                document.getElementById('header-fichier').style.display = 'none';
+                document.getElementById('view-fichier').classList.remove('active');
+                document.getElementById('view-planning').classList.add('active');
+            }
+            rafraichirAffichage();
+        }
+
+        function rafraichirAffichage() {
+            if (vueActuelle === 'planning') afficherPlanning();
+            else afficherCatalogue();
+        }
+
+        // AFFICHAGE : PLANNING TOURNEE
+        function afficherPlanning() {
+            const tabsConteneur = document.getElementById('days-tabs');
+            tabsConteneur.innerHTML = '';
+            
+            datesSemaineEnCours.forEach((dateObj, index) => {
+                const btn = document.createElement('button');
+                btn.className = `day-btn ${index === indiceJourActuel ? 'active' : ''}`;
+                btn.innerText = getLabelDate(dateObj);
+                btn.onclick = () => { indiceJourActuel = index; afficherPlanning(); };
+                tabsConteneur.appendChild(btn);
+            });
+
+            const dateSelectionnee = datesSemaineEnCours[indiceJourActuel];
+            const cleDate = getCleDate(dateSelectionnee);
+            const rdvDuJour = planningsParDate[cleDate] || [];
+            rdvDuJour.sort((a, b) => a.heure.localeCompare(b.heure));
+
+            document.getElementById('tournee-stats').innerText = `${getLabelDate(dateSelectionnee)} : ${rdvDuJour.filter(r => r.statut !== null).length} / ${rdvDuJour.length} traités`;
+
+            const conteneur = document.getElementById('view-planning');
+            conteneur.innerHTML = '';
+
+            if (rdvDuJour.length === 0) {
+                conteneur.innerHTML = '<p style="text-align:center; color:var(--neutral); margin-top:20px;">Aucun patient planifié.</p>';
+                return;
+            }
+
+            rdvDuJour.forEach(rdv => {
+                const patient = cataloguePatients.find(p => p.id === rdv.patientId);
+                if(!patient) return;
+
+                const card = document.createElement('div');
+                card.className = `patient-card ${rdv.statut || ''}`;
+                card.innerHTML = `
+                    <div class="patient-info">
+                        <span class="patient-name">${patient.nom}</span>
+                        <span style="font-size:0.85rem; font-weight:bold;">🕒 ${rdv.heure}</span>
+                        <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(patient.adresse)}" target="_blank" class="patient-address">📍 ${patient.adresse}</a>
+                    </div>
+                    <div class="btn-group">
+                        <button class="btn-status btn-vu ${rdv.statut === 'vu' ? 'active' : ''}" onclick="changerStatutRdv('${rdv.idPlanif}', 'vu')">✅</button>
+                        <button class="btn-status btn-nonvu ${rdv.statut === 'non-vu' ? 'active' : ''}" onclick="changerStatutRdv('${rdv.idPlanif}', 'non-vu')">❌</button>
+                        <button class="btn-icon" onclick="retirerDuPlanning('${rdv.idPlanif}')">🗑️</button>
+                    </div>
+                `;
+                conteneur.appendChild(card);
+            });
+        }
+
+        // ACTIONS SYNCHRONISÉES (ENVOI IMMÉDIAT AU CLOUD)
+        async function changerStatutRdv(idPlanif, statutBouton) {
+            const cleDate = getCleDate(datesSemaineEnCours[indiceJourActuel]);
+            const rdv = planningsParDate[cleDate].find(r => r.idPlanif === idPlanif);
+            if (!rdv) return;
+
+            const nouveauStatut = rdv.statut === statutBouton ? null : statutBouton;
+            
+            // Mise à jour visuelle immédiate (optimiste)
+            rdv.statut = nouveauStatut;
+            rafraichirAffichage();
+
+            await supabase.from('plannings_dates').update({ statut: nouveauStatut }).eq('id_planif', idPlanif);
+        }
+
+        async function ajouterAuPlanningMultiJours() {
+            const patientId = document.getElementById('select-patient').value;
+            const heure = document.getElementById('planif-heure').value || "00:00";
+            const checkboxes = document.querySelectorAll('input[name="jours-planif"]:checked');
+
+            if(!patientId || checkboxes.length === 0) return;
+
+            const lignesAInserer = [];
+            checkboxes.forEach(cb => {
+                const dateCible = datesSemaineEnCours[parseInt(cb.value)];
+                lignesAInserer.push({
+                    id_planif: (Date.now() + Math.random()).toString(),
+                    patient_id: patientId,
+                    date_cle: getCleDate(dateCible),
+                    heure: heure,
+                    statut: null
+                });
+            });
+
+            fermerModal('modal-planifier');
+            await supabase.from('plannings_dates').insert(lignesAInserer);
+            chargerDonneesPermanentes();
+        }
+
+        async function retirerDuPlanning(idPlanif) {
+            if (confirm("Retirer ce rendez-vous ?")) {
+                await supabase.from('plannings_dates').delete().eq('id_planif', idPlanif);
+            }
+        }
+
+        async function reinitialiserJour() {
+            if (confirm("Réinitialiser les statuts du jour ?")) {
+                const cleDate = getCleDate(datesSemaineEnCours[indiceJourActuel]);
+                const ids = (planningsParDate[cleDate] || []).map(r => r.idPlanif);
+                if(ids.length > 0) {
+                    await supabase.from('plannings_dates').update({ statut: null }).in('id_planif', ids);
+                }
+            }
+        }
+
+        // GESTION CATALOGUE PATIENTS
+        function afficherCatalogue() {
+            const conteneur = document.getElementById('view-fichier');
+            conteneur.innerHTML = '';
+
+            cataloguePatients.sort((a,b) => a.nom.localeCompare(b.nom)).forEach(p => {
+                const card = document.createElement('div');
+                card.className = 'patient-card';
+                card.style.borderLeftColor = 'var(--purple)';
+                card.innerHTML = `
+                    <div class="patient-info">
+                        <span class="patient-name">${p.nom}</span>
+                        <span style="font-size:0.85rem; color:var(--neutral);">📍 ${p.adresse}</span>
+                    </div>
+                    <div class="btn-group">
+                        <button class="btn-primary" style="background-color: var(--purple);" onclick="ouvrirFormulairePatient('${p.id}')">✏️ Modifier</button>
+                    </div>
+                `;
+                conteneur.appendChild(card);
+            });
+        }
+
+        async function sauvegarderFichePatient() {
+            const id = document.getElementById('patient-id').value;
+            const nom = document.getElementById('patient-nom').value.trim();
+            const adresse = document.getElementById('patient-adresse').value.trim();
+
+            if(!nom || !adresse) return;
+            fermerModal('modal-patient');
+
+            if (id) {
+                await supabase.from('catalogue_patients').update({ nom, adresse }).eq('id', id);
+            } else {
+                await supabase.from('catalogue_patients').insert([{ id: Date.now().toString(), nom, adresse }]);
+            }
+        }
+
+        async function supprimerFichePatient() {
+            const id = document.getElementById('patient-id').value;
+            if (id && confirm("Supprimer définitivement ce patient ?")) {
+                fermerModal('modal-patient');
+                await supabase.from('catalogue_patients').delete().eq('id', id);
+            }
+        }
+
+        // MODALES ET INTERFACES OUTILS
+        function abrirModal(id) { document.getElementById(id).style.display = 'flex'; }
+        function fermerModal(id) { document.getElementById(id).style.display = 'none'; }
+
+        function ouvrirPlanificateur() {
+            const select = document.getElementById('select-patient');
+            select.innerHTML = '';
+            if(cataloguePatients.length === 0) { alert("Le catalogue est vide."); return; }
+
+            cataloguePatients.sort((a,b) => a.nom.localeCompare(b.nom)).forEach(p => {
+                select.innerHTML += `<option value="${p.id}">${p.nom}</option>`;
+            });
+
+            const conteneurJours = document.getElementById('conteneur-jours-checkbox');
+            conteneurJours.innerHTML = '';
+            datesSemaineEnCours.forEach((dateObj, index) => {
+                conteneurJours.innerHTML += `
+                    <label style="display:flex; gap:10px; align-items:center;">
+                        <input type="checkbox" name="jours-planif" value="${index}" ${index === indiceJourActuel ? 'checked' : ''}>
+                        ${getLabelDate(dateObj)}
+                    </label>
+                `;
+            });
+            abrirModal('modal-planifier');
+        }
+
+        function ouvrirFormulairePatient(id = '') {
+            if(id) {
+                const p = cataloguePatients.find(item => item.id === id);
+                document.getElementById('patient-modal-title').innerText = "Modifier la fiche";
+                document.getElementById('patient-id').value = p.id;
+                document.getElementById('patient-nom').value = p.nom;
+                document.getElementById('patient-adresse').value = p.adresse;
+                document.getElementById('btn-supprimer-fiche').style.display = 'block';
+            } else {
+                document.getElementById('patient-modal-title').innerText = "Nouveau patient";
+                document.getElementById('patient-id').value = '';
+                document.getElementById('patient-nom').value = '';
+                document.getElementById('patient-adresse').value = '';
+                document.getElementById('btn-supprimer-fiche').style.display = 'none';
+            }
+            abrirModal('modal-patient');
+        }
+
+        // RAPPORTS TEXTE
+        function genererBlocRapport(rdvs) {
+            let vus = [], absents = [], nonTraites = [];
+            rdvs.forEach(r => {
+                const p = cataloguePatients.find(item => item.id === r.patientId);
+                if (!p) return;
+                if (r.statut === 'vu') vus.push(`  - ${p.nom}`);
+                else if (r.statut === 'non-vu') absents.push(`  - ${p.nom}`);
+                else nonTraites.push(`  - ${p.nom}`);
+            });
+            let texte = "";
+            if(vus.length) texte += `🟢 *Patients vus :*\n${vus.join('\n')}\n`;
+            if(absents.length) texte += `🔴 *Absents :*\n${absents.join('\n')}\n`;
+            if(nonTraites.length) texte += `⚪ *Non traités :*\n${nonTraites.join('\n')}\n`;
+            return texte || " Aucun patient programmé.\n";
+        }
+
+        function exporterRapportJour() {
+            const dateObj = datesSemaineEnCours[indiceJourActuel];
+            const rdvs = planningsParDate[getCleDate(dateObj)] || [];
+            let texte = `*Rapport du ${getLabelDate(dateObj)}*\n\n${genererBlocRapport(rdvs)}`;
+            navigator.clipboard.writeText(texte).then(() => alert("Rapport jour copié !"));
+        }
+
+        function exporterRapportSemaine() {
+            let texte = `📅 *BILAN HEBDOMADAIRE*\n\n`;
+            datesSemaineEnCours.forEach(d => {
+                texte += `▶️ *${getLabelDate(d).toUpperCase()}*\n${genererBlocRapport(planningsParDate[getCleDate(d)] || [])}\n`;
+            });
+            navigator.clipboard.writeText(texte).then(() => alert("Rapport de la semaine copié !"));
+        }
+
+        // Enregistrement Service Worker PWA
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => { navigator.serviceWorker.register('sw.js'); });
+        }
+    </script>
+</body>
+</html>
