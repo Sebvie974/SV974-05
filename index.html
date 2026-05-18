@@ -241,10 +241,9 @@
     </div>
 
     <script>
-        // CONFIGURATION SUPABASE (ZÉRO CLIC)
         const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
         const SUPABASE_KEY = "sb_publishable_472y-YwY-VyEsRz7nqaMJg_LC3W6gDJ";
-        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        let supabase = null;
 
         const MOT_DE_PASSE_CABINET = "kine2026"; 
         const nomsJours = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi'];
@@ -268,6 +267,13 @@
             }
         }
 
+        // Sécurité de chargement pour s'assurer que la librairie externe Supabase est bien lue par le navigateur
+        function initialiserSupabase() {
+            if (supabase === null && window.supabase) {
+                supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+            }
+        }
+
         window.addEventListener('load', () => {
             if (localStorage.getItem('kine_connecte') === 'true') {
                 initialiserApplication();
@@ -275,6 +281,7 @@
         });
 
         function initialiserApplication() {
+            initialiserSupabase();
             document.getElementById('login-screen').style.display = 'none';
             document.getElementById('main-app').style.display = 'block';
             
@@ -301,6 +308,8 @@
 
         // CHARGEMENT DEPUIS LE CLOUD
         async function chargerDonneesDepuisServeur() {
+            initialiserSupabase();
+            if (!supabase) return;
             try {
                 const { data: patients, error: errP } = await supabase.from('catalogue_patients').select('*');
                 if (errP) throw errP;
@@ -335,6 +344,8 @@
 
         // ÉCOUTE DU TEMPS RÉEL
         function brancherTempsReel() {
+            initialiserSupabase();
+            if (!supabase) return;
             supabase.channel('custom-all-channel')
             .on('postgres_changes', { event: '*', schema: 'public' }, () => {
                 chargerDonneesDepuisServeur();
@@ -346,9 +357,9 @@
         function calculerSemaine() {
             datesSemaineEnCours = [];
             let jourCourant = dateAncre.getDay();
-            let distanceAuLundi = jourCourant === 0 ? -6 : 1 - jourCourant;
+            let distanceAu Lundi = jourCourant === 0 ? -6 : 1 - jourCourant;
             let lundiSemaine = new Date(dateAncre);
-            lundiSemaine.setDate(dateAncre.getDate() + distanceAuLundi);
+            lundiSemaine.setDate(dateAncre.getDate() + distanceAu Lundi);
 
             for (let i = 0; i < 5; i++) {
                 let j = new Date(lundiSemaine);
@@ -452,7 +463,7 @@
         async function changerStatutRdv(idPlanif, statutBouton) {
             const cleDate = getCleDate(datesSemaineEnCours[indiceJourActuel]);
             const rdv = planningsParDate[cleDate].find(r => r.idPlanif === idPlanif);
-            if (!rdv) return;
+            if (!rdv || !supabase) return;
 
             const nouveauStatut = rdv.statut === statutBouton ? null : statutBouton;
             rdv.statut = nouveauStatut;
@@ -462,6 +473,7 @@
         }
 
         async function ajouterAuPlanningMultiJours() {
+            if(!supabase) return;
             const patientId = document.getElementById('select-patient').value;
             const heure = document.getElementById('planif-heure').value || "00:00";
             const checkboxes = document.querySelectorAll('input[name="jours-planif"]:checked');
@@ -486,6 +498,7 @@
         }
 
         async function retirerDuPlanning(idPlanif) {
+            if (!supabase) return;
             if (confirm("Retirer ce rendez-vous ?")) {
                 await supabase.from('plannings_dates').delete().eq('id_planif', idPlanif);
                 chargerDonneesDepuisServeur();
@@ -493,6 +506,7 @@
         }
 
         async function reinitialiserJour() {
+            if (!supabase) return;
             if (confirm("Réinitialiser les statuts du jour ?")) {
                 const cleDate = getCleDate(datesSemaineEnCours[indiceJourActuel]);
                 const ids = (planningsParDate[cleDate] || []).map(r => r.idPlanif);
@@ -526,6 +540,7 @@
         }
 
         async function sauvegarderFichePatient() {
+            if (!supabase) return;
             const id = document.getElementById('patient-id').value;
             const nom = document.getElementById('patient-nom').value.trim();
             const adresse = document.getElementById('patient-adresse').value.trim();
@@ -542,6 +557,7 @@
         }
 
         async function supprimerFichePatient() {
+            if (!supabase) return;
             const id = document.getElementById('patient-id').value;
             if (id && confirm("Supprimer définitivement ce patient ?")) {
                 fermerModal('modal-patient');
