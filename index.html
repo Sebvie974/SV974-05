@@ -164,6 +164,8 @@
 <body>
 
     <div id="login-screen">
+        <button class="btn-danger" style="padding: 12px 20px; font-size: 1rem;" onclick="lancerDiagnostic()">Lancer le Diagnostic Manuel 🚨</button>
+        
         <div class="login-box">
             <h2 style="color: var(--primary); margin-top:0;">Accès Cabinet</h2>
             <p style="color: var(--neutral); font-size:0.9rem;">Entrez le mot de passe du cabinet pour vous synchroniser.</p>
@@ -257,6 +259,36 @@
 
         let cataloguePatients = [];
         let planningsParDate = {};
+
+        // Diagnostic automatique au bout de 2 secondes au cas ou les boutons freezent
+        setTimeout(() => {
+            console.log("Lancement diagnostic automatique...");
+            if (typeof window.supabase === 'undefined') {
+                alert("🚨 ALERTE : La bibliothèque Supabase n'arrive pas à se charger depuis Internet. Vérifie ta connexion ou le lien de script.");
+            }
+        }, 2000);
+
+        function lancerDiagnostic() {
+            let rapport = "--- DIAGNOSTIC CABINET ---\n";
+            rapport += "1. État du navigateur : " + (navigator.onLine ? "En ligne" : "Hors ligne") + "\n";
+            rapport += "2. Librairie Supabase chargée : " + (typeof window.supabase !== 'undefined' ? "OUI" : "NON") + "\n";
+            
+            try {
+                if (window.supabase) {
+                    let testClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+                    rapport += "3. Création client Supabase : REUSSITE\n";
+                } else {
+                    rapport += "3. Création client Supabase : IMPOSSIBLE\n";
+                }
+            } catch(err) {
+                rapport += "3. Échec création client : " + err.message + "\n";
+            }
+
+            rapport += "4. Stockage local accessible : ";
+            try { localStorage.setItem('test', '1'); rapport += "OUI\n"; } catch(e) { rapport += "NON\n"; }
+            
+            alert(rapport);
+        }
 
         function initialiserSupabase() {
             if (supabase === null && window.supabase) {
@@ -354,8 +386,8 @@
 
         function calculerSemaine() {
             datesSemaineEnCours = [];
-            let jourCourant = dateAncre.getDay();
-            let distanceAuLundi = jourCourant === 0 ? -6 : 1 - jourCourant;
+            let AlignmentDay = dateAncre.getDay();
+            let distanceAuLundi = AlignmentDay === 0 ? -6 : 1 - AlignmentDay;
             let lundiSemaine = new Date(dateAncre);
             lundiSemaine.setDate(dateAncre.getDate() + distanceAuLundi);
 
@@ -566,9 +598,6 @@
             }
         }
 
-        function abrirModal(id) { document.getElementById(id).style.display = 'flex'; }
-        function fermerModal(id) { document.getElementById(id).style.display = 'none'; }
-
         function ouvrirPlanificateur() {
             const select = document.getElementById('select-patient');
             if (!select) return;
@@ -593,7 +622,6 @@
             abrirModal('modal-planifier');
         }
 
-        function abrirModalPatient(id = '') { ouvrirFormulairePatient(id); }
         function ouvrirFormulairePatient(id = '') {
             if(id) {
                 const p = cataloguePatients.find(item => item.id === id);
@@ -617,9 +645,9 @@
             rdvs.forEach(r => {
                 const p = cataloguePatients.find(item => item.id === r.patientId);
                 if (!p) return;
-                if (r.statut === 'vu') vus.push(`  - ${p.nom}`);
-                else if (r.statut === 'non-vu') absents.push(`  - ${p.nom}`);
-                else nonTraites.push(`  - ${p.nom}`);
+                if (r.statut === 'vu') vus.push("  - " + p.nom);
+                else if (r.statut === 'non-vu') absents.push("  - " + p.nom);
+                else nonTraites.push("  - " + p.nom);
             });
             let texte = "";
             if(vus.length) texte += `🟢 *Patients vus :*\n${vus.join('\n')}\n`;
