@@ -27,6 +27,7 @@
             padding: 15px;
         }
 
+        /* Écran de Connexion */
         #login-screen {
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
@@ -48,6 +49,7 @@
             max-width: 350px;
         }
 
+        /* Interface Principale */
         #main-app { display: none; }
 
         header {
@@ -119,9 +121,11 @@
         .btn-danger { background-color: var(--danger); color: white; }
         .btn-purple { background-color: var(--purple); color: white; }
 
+        /* Vues */
         .app-view { display: none; }
         .app-view.active { display: flex; flex-direction: column; gap: 10px; }
         
+        /* Cartes Patients */
         .patient-card {
             background: var(--card-bg);
             padding: 15px;
@@ -144,6 +148,7 @@
         .btn-nonvu.active { background-color: var(--danger); color: white; }
         .btn-icon { background: transparent; font-size: 1rem; border: none; cursor: pointer; }
 
+        /* Modales */
         .modal {
             display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0,0,0,0.5); z-index: 20; justify-content: center; align-items: center;
@@ -159,8 +164,6 @@
 <body>
 
     <div id="login-screen">
-        <button class="btn-danger" style="padding: 12px 20px; font-size: 1rem; box-shadow: 0 4px 10px rgba(255,59,48,0.3);" onclick="lancerDiagnostic()">Lancer le Diagnostic d'Urgence 🚨</button>
-        
         <div class="login-box">
             <h2 style="color: var(--primary); margin-top:0;">Accès Cabinet</h2>
             <p style="color: var(--neutral); font-size:0.9rem;">Entrez le mot de passe du cabinet pour vous synchroniser.</p>
@@ -255,36 +258,9 @@
         let cataloguePatients = [];
         let planningsParDate = {};
 
-        // BOUTON DE SÉCURITÉ : DIS-MOI CE QU'IL COUPE !
-        function lancerDiagnostic() {
-            let rapport = "--- DIAGNOSTIC CABINET ---\n";
-            rapport += "1. État du navigateur : " + (navigator.onLine ? "En ligne" : "Hors ligne") + "\n";
-            rapport += "2. Librairie Supabase chargée : " + (typeof window.supabase !== 'undefined' ? "OUI" : "NON") + "\n";
-            
-            try {
-                if (window.supabase) {
-                    let testClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-                    rapport += "3. Création client Supabase : REUSSITE\n";
-                } else {
-                    rapport += "3. Création client Supabase : IMPOSSIBLE (Librairie absente)\n";
-                }
-            } catch(err) {
-                rapport += "3. Échec création client : " + err.message + "\n";
-            }
-
-            rapport += "4. Stockage local accessible : ";
-            try { localStorage.setItem('test', '1'); rapport += "OUI\n"; } catch(e) { rapport += "NON\n"; }
-            
-            alert(rapport);
-        }
-
         function initialiserSupabase() {
-            try {
-                if (supabase === null && window.supabase) {
-                    supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-                }
-            } catch(e) {
-                alert("Erreur critique initialisation Supabase : " + e.message);
+            if (supabase === null && window.supabase) {
+                supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
             }
         }
 
@@ -358,7 +334,7 @@
 
                 rafraichirAffichage();
             } catch (e) {
-                console.log("Erreur Cloud, bascule mémoire locale :", e);
+                console.log("Erreur de connexion, chargement local :", e);
                 cataloguePatients = JSON.parse(localStorage.getItem('cache_patients')) || [];
                 planningsParDate = JSON.parse(localStorage.getItem('cache_plannings')) || {};
                 modifierBadgeReseau(false);
@@ -590,6 +566,9 @@
             }
         }
 
+        function abrirModal(id) { document.getElementById(id).style.display = 'flex'; }
+        function fermerModal(id) { document.getElementById(id).style.display = 'none'; }
+
         function ouvrirPlanificateur() {
             const select = document.getElementById('select-patient');
             if (!select) return;
@@ -614,6 +593,7 @@
             abrirModal('modal-planifier');
         }
 
+        function abrirModalPatient(id = '') { ouvrirFormulairePatient(id); }
         function ouvrirFormulairePatient(id = '') {
             if(id) {
                 const p = cataloguePatients.find(item => item.id === id);
@@ -643,7 +623,7 @@
             });
             let texte = "";
             if(vus.length) texte += `🟢 *Patients vus :*\n${vus.join('\n')}\n`;
-            if(absents.length) text += `🔴 *Absents :*\n${absents.join('\n')}\n`;
+            if(absents.length) texte += `🔴 *Absents :*\n${absents.join('\n')}\n`;
             if(nonTraites.length) texte += `⚪ *Non traités :*\n${nonTraites.join('\n')}\n`;
             return texte || " Aucun patient programmé.\n";
         }
