@@ -30,7 +30,6 @@
             padding: 15px;
         }
 
-        /* Écran de Connexion */
         #login-screen {
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
@@ -67,7 +66,6 @@
             cursor: pointer;
         }
 
-        /* Panneau admin de config des utilisateurs */
         #config-panel {
             display: none;
             border-top: 2px dashed #e5e5ea;
@@ -87,10 +85,8 @@
             font-size: 0.85rem;
         }
 
-        /* Interface Principale */
         #main-app { display: none; }
 
-        /* Bandeau d'alerte Patients à prévoir */
         #bandeau-a-prevoir {
             display: none;
             background-color: var(--danger);
@@ -129,7 +125,6 @@
             color: var(--purple);
         }
 
-        /* Nouveau badge de localisation globale du boitier TLA */
         .tla-location-badge {
             font-size: 0.85rem;
             background: #eefdfb;
@@ -206,11 +201,9 @@
         .btn-purple { background-color: var(--purple); color: white; }
         .btn-orange { background-color: var(--orange); color: white; }
 
-        /* Vues */
         .app-view { display: none; }
         .app-view.active { display: flex; flex-direction: column; gap: 10px; }
         
-        /* Cartes Patients */
         .patient-card {
             background: var(--card-bg);
             padding: 12px 15px;
@@ -225,10 +218,8 @@
         .patient-card.vu { border-left-color: var(--success); }
         .patient-card.non-vu { border-left-color: var(--danger); }
         
-        /* Layout interne de la carte */
         .patient-card-left { display: flex; align-items: center; gap: 10px; max-width: 65%; }
         
-        /* Boutons de réorganisation */
         .reorder-actions { display: flex; flex-direction: column; gap: 4px; }
         .btn-reorder {
             background: #e5e5ea;
@@ -249,7 +240,6 @@
         .kine-tag { font-size: 0.75rem; background: #e5e5ea; color: #555; padding: 2px 6px; border-radius: 4px; font-weight: bold; width: fit-content; margin-top: 2px;}
         .badge-card-prevoir { font-size: 0.7rem; background: var(--danger); color: white; padding: 2px 6px; border-radius: 4px; font-weight: bold; width: fit-content; }
         
-        /* Badges Spécifiques TLA */
         .badge-tla-kine {
             font-size: 0.75rem;
             background-color: var(--tla-color);
@@ -295,7 +285,6 @@
             font-weight: bold;
         }
 
-        /* Style pour le bouton filtre TLA rapide */
         .btn-filter-tla {
             background-color: #e5e5ea;
             color: #555;
@@ -306,7 +295,6 @@
             color: white;
         }
 
-        /* Bouton d'accès aux notes */
         .btn-note-declencheur {
             font-size: 0.75rem;
             background: #fff3cd;
@@ -326,7 +314,6 @@
         .btn-nonvu.active { background-color: var(--danger); color: white; }
         .btn-icon { background: transparent; font-size: 1rem; border: none; cursor: pointer; }
 
-        /* Modales */
         .modal {
             display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0,0,0,0.5); z-index: 120; justify-content: center; align-items: center;
@@ -338,7 +325,6 @@
         .modal-content input, .modal-content select, .modal-content textarea { width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #ccc; box-sizing: border-box; }
         .days-checkbox-grid { display: flex; flex-direction: column; gap: 8px; background: #f4f6f9; padding: 10px; border-radius: 8px; }
         
-        /* Liste interne modale à prévoir */
         .item-prevoir-modal {
             background: #f4f6f9;
             padding: 10px;
@@ -350,7 +336,6 @@
             border-left: 4px solid var(--danger);
         }
 
-        /* Styles Zone de recherche */
         .search-container {
             background: var(--card-bg);
             padding: 12px;
@@ -387,14 +372,11 @@
     <div id="login-screen">
         <div class="login-box">
             <button class="btn-config-corner" onclick="basculerAffichageConfig('login')" title="Gérer le personnel">⚙️</button>
-
             <h2 style="color: var(--primary); margin:0;">Accès Cabinet</h2>
             <p style="color: var(--neutral); font-size:0.9rem; margin:0;">Sélectionnez votre profil pour vous connecter.</p>
-            
             <select id="kine-select-login" style="padding:12px; font-size:1rem; border:1px solid #ccc; font-weight: bold;">
                 <option value="">Chargement des utilisateurs...</option>
             </select>
-
             <input type="password" id="password-input" placeholder="Votre mot de passe personnel" style="padding:12px; border:1px solid #ccc; text-align:center; font-size:1.1rem;">
             <button class="btn-primary" style="padding:12px; font-size:1rem;" onclick="verifierConnexion()">Se connecter 🔐</button>
             
@@ -404,17 +386,14 @@
                     <input type="hidden" id="kine-id-edite">
                     <input type="text" id="nouveau-kine-input" placeholder="Nom de l'utilisateur" style="padding:6px; border:1px solid #ccc; background: white;">
                     <input type="password" id="nouveau-mdp-input" placeholder="Mot de passe dédié" style="padding:6px; border:1px solid #ccc; background: white;">
-                    
                     <select id="nouveau-role-input" style="padding:6px; border:1px solid #ccc; background: white; font-weight: bold;">
                         <option value="kine">Rôle : Kiné</option>
                         <option value="remplacant">Rôle : Remplaçant</option>
                         <option value="secretariat">Rôle : Secrétariat</option>
                     </select>
-
                     <select id="nouveau-kine-remplace-input" style="padding:6px; border:1px solid #ccc; background: white; font-weight: bold; display: none;">
                         <option value="">-- Quel Kiné remplace-t-il ? --</option>
                     </select>
-                    
                     <div style="display: flex; gap: 5px; width: 100%;">
                         <button id="btn-soumettre-kine" class="btn-success" style="padding:8px; flex: 1;" onclick="sauvegarderKine()">Créer l'utilisateur</button>
                         <button id="btn-annuler-kine" class="btn-secondary" style="padding:8px; display: none;" onclick="reinitialiserFormulaireKine()">Annuler</button>
@@ -435,24 +414,16 @@
                 <div>
                     <h1 id="app-title" style="margin-bottom: 4px;">Planning Tournées</h1>
                     <div style="display: flex; flex-direction: column; gap: 4px;">
-                        <div>
-                            <span class="user-badge" id="nom-kine-badge">Session : ...</span>
-                        </div>
-                        <div class="tla-location-badge" id="affichage-tla-detenteur">
-                            📱 Chargement du TLA...
-                        </div>
+                        <div><span class="user-badge" id="nom-kine-badge">Session : ...</span></div>
+                        <div class="tla-location-badge" id="affichage-tla-detenteur">📱 Chargement du TLA...</div>
                     </div>
                 </div>
                 <div style="display:flex; flex-direction:column; gap:8px; align-items:flex-end;">
                     <div id="sync-badge" class="sync-indicator sync-online">Prêt 🟢</div>
-                    
                     <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 2px;">
                         <span style="font-size: 0.75rem; font-weight: bold; color: var(--neutral);">Le boîtier TLA est avec :</span>
-                        <select id="select-declaration-tla" style="padding: 4px 8px; font-size: 0.8rem; border: 1px solid #ccc; background: #fff;" onchange="declarerDetenteurTla(this.value)">
-                            <option value="Cabinet">🏢 Au Cabinet</option>
-                        </select>
+                        <select id="select-declaration-tla" style="padding: 4px 8px; font-size: 0.8rem; border: 1px solid #ccc; background: #fff;" onchange="declarerDetenteurTla(this.value)"></select>
                     </div>
-
                     <button class="btn-icon" style="font-size:0.8rem; color:var(--danger); padding:0;" onclick="deconnexion()">Déconnexion 🚪</button>
                 </div>
             </div>
@@ -478,7 +449,6 @@
                 </div>
                 <div class="days-nav" id="days-tabs"></div>
                 <div class="stats" id="tournee-stats">Chargement...</div>
-                
                 <div class="actions-bar">
                     <button class="btn-primary" id="btn-rapport-jour" onclick="exporterRapportJour()">Rapport Jour 📋</button>
                     <button class="btn-purple" id="btn-rapport-semaine" onclick="exporterRapportSemaine()">Rapport Hebdo 📅</button>
@@ -491,7 +461,6 @@
 
             <div id="header-fichier" style="display: none;">
                 <button class="btn-success" style="width: 100%; margin-bottom: 12px;" onclick="ouvrirFormulairePatient()">Créer un nouveau patient 👤➕</button>
-                
                 <div class="search-container">
                     <input type="text" id="recherche-patient-input" class="search-input" placeholder="🔍 Rechercher un patient (Nom, adresse...)" oninput="filtrerFichierPatientsIntuitivement()">
                     <span id="compteur-recherche" class="search-counter">0 patient enregistré</span>
@@ -505,86 +474,15 @@
         </main>
     </div>
 
-    <div class="modal" id="modal-liste-prevoir">
-        <div class="modal-content" style="max-width: 500px;">
-            <h3 style="color: var(--danger);">🚨 Patients à prévoir en attente</h3>
-            <div id="conteneur-liste-prevoir" style="display: flex; flex-direction: column; gap: 10px; max-height: 50vh; overflow-y: auto;"></div>
-            <div style="margin-top: 10px; text-align: right;">
-                <button class="btn-secondary" onclick="fermerModal('modal-liste-prevoir')">Fermer</button>
-            </div>
-        </div>
-    </div>
-
-    <div class="modal" id="modal-note-volante" onclick="fermerModal('modal-note-volante')">
-        <div class="modal-content" style="max-width: 350px;" onclick="event.stopPropagation()">
-            <h3 style="margin: 0 0 5px 0; color: var(--purple); display: flex; align-items: center; gap: 6px;">📝 Notes & Infos</h3>
-            <p id="note-volante-nom-patient" style="font-weight: bold; font-size: 0.95rem; margin: 0 0 10px 0; border-bottom: 1px solid #e5e5ea; padding-bottom: 5px;"></p>
-            <div id="note-volante-corps" style="font-size: 0.95rem; line-height: 1.4; color: #444; background: #fffcf3; padding: 12px; border-radius: 8px; border-left: 4px solid var(--orange); word-break: break-word; white-space: pre-wrap;"></div>
-            <div style="margin-top: 5px; text-align: right;">
-                <button class="btn-primary" style="padding: 8px 16px;" onclick="fermerModal('modal-note-volante')">Fermer</button>
-            </div>
-        </div>
-    </div>
-
-    <div class="modal" id="modal-planifier">
-        <div class="modal-content">
-            <h3>Planifier un patient</h3>
-            <label>Praticien affecté</label>
-            <select id="planif-kine-affecte" required></select>
-            <label>Choisir un patient</label>
-            <select id="select-patient" required></select>
-            <label>Heure de passage (Optionnel)</label>
-            <input type="time" id="planif-heure">
-            <label>Jours de passage :</label>
-            <div class="days-checkbox-grid" id="conteneur-jours-checkbox"></div>
-            <div style="display: flex; gap: 10px; margin-top: 10px;">
-                <button class="btn-primary" onclick="ajouterAuPlanningMultiJours()">Planifier</button>
-                <button class="btn-secondary" onclick="fermerModal('modal-planifier')">Annuler</button>
-            </div>
-        </div>
-    </div>
-
-    <div class="modal" id="modal-patient">
-        <div class="modal-content">
-            <h3 id="patient-modal-title">Fiche Patient</h3>
-            <input type="hidden" id="patient-id">
-            
-            <label>Nom complet</label>
-            <input type="text" id="patient-nom" placeholder="Mme Martine Dupont" required>
-            
-            <label>Adresse</label>
-            <input type="text" id="patient-adresse" placeholder="12 rue des Fleurs, Saint-Pierre" required>
-            
-            <label>Téléphone principal</label>
-            <input type="tel" id="patient-telephone" placeholder="0692 00 00 00">
-            
-            <div id="zone-tel-secondaire" style="display:none; flex-direction:column; gap:4px;">
-                <label>Téléphone secondaire</label>
-                <input type="tel" id="patient-telephone2" placeholder="0262 00 00 00">
-            </div>
-            <button type="button" id="btn-add-tel2" class="btn-secondary" style="padding:5px; font-size:0.8rem; width:fit-content;" onclick="document.getElementById('zone-tel-secondaire').style.display='flex'; this.style.display='none';">➕ Ajouter un autre numéro</button>
-
-            <label>Informations diverses (Codes, pathologie, consignes...)</label>
-            <textarea id="patient-notes" rows="3" placeholder="Digicode, chien dans la cour, oxygène, etc..." style="resize: vertical; font-family: inherit; font-size: 0.9rem;"></textarea>
-
-            <label style="display: flex; align-items: center; gap: 10px; background: #ffe5e5; padding: 10px; border-radius: 8px; margin-top: 5px; font-weight: bold; color: #b30000; cursor: pointer;">
-                <input type="checkbox" id="patient-aprevoir" style="width: auto;"> 🚨 Patient à prévoir (Urgent/Attente)
-            </label>
-
-            <div style="display: flex; gap: 10px; margin-top: 10px;">
-                <button class="btn-purple" onclick="sauvegarderFichePatient()">Enregistrer</button>
-                <button class="btn-danger" id="btn-supprimer-fiche" onclick="supprimerFichePatient()">Supprimer</button>
-                <button class="btn-secondary" onclick="fermerModal('modal-patient')">Annuler</button>
-            </div>
-        </div>
-    </div>
+    <div class="modal" id="modal-liste-prevoir"><div class="modal-content" style="max-width: 500px;"><h3 style="color: var(--danger);">🚨 Patients à prévoir</h3><div id="conteneur-liste-prevoir" style="display: flex; flex-direction: column; gap: 10px; max-height: 50vh; overflow-y: auto;"></div><div style="margin-top: 10px; text-align: right;"><button class="btn-secondary" onclick="fermerModal('modal-liste-prevoir')">Fermer</button></div></div></div>
+    <div class="modal" id="modal-note-volante" onclick="fermerModal('modal-note-volante')"><div class="modal-content" style="max-width: 350px;" onclick="event.stopPropagation()"><h3 style="margin: 0 0 5px 0; color: var(--purple);">📝 Notes & Infos</h3><p id="note-volante-nom-patient" style="font-weight: bold;"></p><div id="note-volante-corps" style="background: #fffcf3; padding: 12px; border-radius: 8px; border-left: 4px solid var(--orange); word-break: break-word; white-space: pre-wrap;"></div><button class="btn-primary" style="margin-top:10px;" onclick="fermerModal('modal-note-volante')">Fermer</button></div></div>
+    <div class="modal" id="modal-planifier"><div class="modal-content"><h3>Planifier un patient</h3><label>Praticien affecté</label><select id="planif-kine-affecte"></select><label>Choisir un patient</label><select id="select-patient"></select><label>Heure</label><input type="time" id="planif-heure"><label>Jours :</label><div class="days-checkbox-grid" id="conteneur-jours-checkbox"></div><div style="display: flex; gap: 10px; margin-top: 10px;"><button class="btn-primary" onclick="ajouterAuPlanningMultiJours()">Planifier</button><button class="btn-secondary" onclick="fermerModal('modal-planifier')">Annuler</button></div></div></div>
+    <div class="modal" id="modal-patient"><div class="modal-content"><h3 id="patient-modal-title">Fiche Patient</h3><input type="hidden" id="patient-id"><label>Nom</label><input type="text" id="patient-nom" required><label>Adresse</label><input type="text" id="patient-adresse" required><label>Tél 1</label><input type="tel" id="patient-telephone"><div id="zone-tel-secondaire" style="display:none; flex-direction:column; gap:4px;"><label>Tél 2</label><input type="tel" id="patient-telephone2"></div><button type="button" id="btn-add-tel2" class="btn-secondary" style="padding:5px; font-size:0.8rem; width:fit-content;" onclick="document.getElementById('zone-tel-secondaire').style.display='flex'; this.style.display='none';">➕ Ajouter un autre numéro</button><label>Informations</label><textarea id="patient-notes" rows="3"></textarea><label style="display: flex; align-items: center; gap: 10px; background: #ffe5e5; padding: 10px; border-radius: 8px; margin-top: 5px; font-weight: bold; color: #b30000; cursor: pointer;"><input type="checkbox" id="patient-aprevoir" style="width: auto;"> 🚨 Patient à prévoir</label><div style="display: flex; gap: 10px; margin-top: 10px;"><button class="btn-purple" onclick="sauvegarderFichePatient()">Enregistrer</button><button class="btn-danger" id="btn-supprimer-fiche" onclick="supprimerFichePatient()">Supprimer</button><button class="btn-secondary" onclick="fermerModal('modal-patient')">Annuler</button></div></div></div>
 
     <script>
         const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
         const SUPABASE_KEY = "sb_publishable_472y-YwY-VyEsRz7nqaMJg_LC3W6gDJ";
-        
         let supabaseClient = null;
-
         const MOT_DE_PASSE_CABINET = "kine2026"; 
         const nomsJours = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi'];
         
@@ -592,17 +490,14 @@
         let dateAncre = new Date();
         let datesSemaineEnCours = []; 
         let indiceJourActuel = 0;
-
         let cataloguePatients = [];
         let planningsParDate = {};
         let journeeEstVerrouillee = false; 
-        
         let kineConnecte = ""; 
         let kineRole = "kine"; 
-        let kineRemplace = ""; // NOUVEAU : Sauvegarde du titulaire remplacé
+        let kineRemplace = "";
         let kineVisionne = ""; 
         let listeUtilisateursComplets = []; 
-
         let filtreTlaUniquementActif = false;
 
         function initialiserSupabase() {
@@ -621,13 +516,11 @@
             try {
                 const { data, error } = await supabaseClient.from('practiciens').select('*').order('nom', { ascending: true });
                 if (error) throw error;
-                
                 listeUtilisateursComplets = data || [];
                 localStorage.setItem('cache_utilisateurs', JSON.stringify(listeUtilisateursComplets));
                 majSelecteursKine();
                 gererAffichageGlobalTla(); 
             } catch (e) {
-                console.log("Le personnel n'a pas pu être lu en direct, chargement depuis le cache local offline.");
                 listeUtilisateursComplets = JSON.parse(localStorage.getItem('cache_utilisateurs')) || [];
                 majSelecteursKine();
                 gererAffichageGlobalTla();
@@ -637,46 +530,31 @@
         function gererAffichageGlobalTla() {
             const badgeGlobal = document.getElementById('affichage-tla-detenteur');
             const selectDeclaration = document.getElementById('select-declaration-tla');
-            
             const detenteurActuel = listeUtilisateursComplets.find(u => u.detient_tla === true);
             const nomDetenteur = detenteurActuel ? detenteurActuel.nom : "Cabinet";
-
             if (badgeGlobal) {
                 if (nomDetenteur === "Cabinet") {
-                    badgeGlobal.innerHTML = `🏢 TLA actuellement : <b>Au Cabinet</b>`;
-                    badgeGlobal.style.borderColor = "var(--neutral)";
-                    badgeGlobal.style.color = "#555";
-                    badgeGlobal.style.background = "#e5e5ea";
+                    badgeGlobal.innerHTML = `🏢 TLA : <b>Au Cabinet</b>`;
+                    badgeGlobal.style.borderColor = "var(--neutral)"; badgeGlobal.style.color = "#555"; badgeGlobal.style.background = "#e5e5ea";
                 } else {
-                    badgeGlobal.innerHTML = `📍 TLA actuellement avec : <b>${nomDetenteur}</b>`;
-                    badgeGlobal.style.borderColor = "#00c7b1";
-                    badgeGlobal.style.color = "#008777";
-                    badgeGlobal.style.background = "#eefdfb";
+                    badgeGlobal.innerHTML = `📍 TLA avec : <b>${nomDetenteur}</b>`;
+                    badgeGlobal.style.borderColor = "#00c7b1"; badgeGlobal.style.color = "#008777"; badgeGlobal.style.background = "#eefdfb";
                 }
             }
-
-            if (selectDeclaration) {
-                selectDeclaration.value = nomDetenteur;
-            }
+            if (selectDeclaration) selectDeclaration.value = nomDetenteur;
         }
 
         async function declarerDetenteurTla(valeurSelectionnee) {
             if (!initialiserSupabase()) return;
-            
             try {
                 await supabaseClient.from('practiciens').update({ detient_tla: false }).neq('id', '0');
-                
                 if (valeurSelectionnee !== "Cabinet") {
                     await supabaseClient.from('practiciens').update({ detient_tla: true }).eq('nom', valeurSelectionnee);
                 }
-                
                 await chargerListeKines();
-            } catch (err) {
-                console.error("Erreur lors du transfert du boîtier TLA :", err);
-            }
+            } catch (err) { console.error(err); }
         }
 
-        // NOUVEAU : Affichage conditionnel du menu du kiné remplacé lors de la création d'un compte
         document.getElementById('nouveau-role-input').addEventListener('change', function() {
             const remplaceInput = document.getElementById('nouveau-kine-remplace-input');
             if (this.value === 'remplacant') {
@@ -685,1061 +563,231 @@
                 remplaceInput.innerHTML = '<option value="">-- Sélectionnez le Kiné remplacé --</option>' + kinesTitulaires.map(k => `<option value="${k.nom}">${k.nom}</option>`).join('');
             } else {
                 remplaceInput.style.display = 'none';
-                remplaceInput.value = '';
             }
         });
 
         function majSelecteursKine() {
-            const selectLogin = document.getElementById('kine-select-login');
-            const conteneurAdmin = document.getElementById('liste-kines-admin');
+            const getRoleLabel = (role) => (role === 'secretariat' ? 'Secrétariat' : (role === 'remplacant' ? 'Remplaçant' : 'Kiné'));
+            document.getElementById('kine-select-login').innerHTML = listeUtilisateursComplets.map(u => `<option value="${u.nom}">${u.nom} (${getRoleLabel(u.role)})</option>`).join('');
+            document.getElementById('liste-kines-admin').innerHTML = listeUtilisateursComplets.map(u => `<div class="kine-list-item"><span>👤 <b>${u.nom}</b> [${getRoleLabel(u.role)}${(u.role === 'remplacant' && u.kine_remplace) ? ' de '+u.kine_remplace : ''}]</span><div style="display: flex; gap: 8px;"><button class="btn-icon" style="color:var(--primary);" onclick="abrirEditionKine('${u.id}')">✏️</button><button class="btn-icon" style="color:var(--danger);" onclick="supprimerKine('${u.nom}')">🗑️</button></div></div>`).join('');
             const filtreSec = document.getElementById('filtre-view-kine');
-            const selectDeclaration = document.getElementById('select-declaration-tla');
-            
-            const getRoleLabel = (role) => {
-                if (role === 'secretariat') return 'Secrétariat';
-                if (role === 'remplacant') return 'Remplaçant';
-                return 'Kiné';
-            };
-
-            if (selectLogin) {
-                selectLogin.innerHTML = listeUtilisateursComplets.map(u => `<option value="${u.nom}">${u.nom} (${getRoleLabel(u.role)})</option>`).join('');
-            }
-            if (conteneurAdmin) {
-                conteneurAdmin.innerHTML = listeUtilisateursComplets.map(u => {
-                    const infoRemplace = (u.role === 'remplacant' && u.kine_remplace) ? ` de ${u.kine_remplace}` : '';
-                    return `
-                    <div class="kine-list-item">
-                        <span>👤 <b>${u.nom}</b> [${getRoleLabel(u.role)}${infoRemplace}]</span>
-                        <div style="display: flex; gap: 8px;">
-                            <button class="btn-icon" style="color:var(--primary); font-size:0.85rem;" onclick="abrirEditionKine('${u.id}')" title="Modifier">✏️</button>
-                            <button class="btn-icon" style="color:var(--danger); font-size:0.85rem;" onclick="supprimerKine('${u.nom}')" title="Supprimer">🗑️</button>
-                        </div>
-                    </div>
-                `}).join('');
-            }
-            if (filtreSec) {
-                const praticiensUniquement = listeUtilisateursComplets.filter(u => u.role === 'kine' || u.role === 'remplacant').map(u => u.nom);
-                let optionsHTML = `<option value="TOUS">👥 Tous les praticiens</option>`;
-                optionsHTML += praticiensUniquement.map(k => `<option value="${k}">👤 ${k}</option>`).join('');
-                filtreSec.innerHTML = optionsHTML;
-                if(!kineVisionne) kineVisionne = "TOUS";
-                filtreSec.value = kineVisionne;
-            }
-            
-            if (selectDeclaration) {
-                let optionsTla = `<option value="Cabinet">🏢 Au Cabinet</option>`;
-                optionsTla += listeUtilisateursComplets.map(u => `<option value="${u.nom}">👤 ${u.nom}</option>`).join('');
-                selectDeclaration.innerHTML = optionsTla;
-            }
+            const praticiens = listeUtilisateursComplets.filter(u => u.role === 'kine' || u.role === 'remplacant').map(u => u.nom);
+            filtreSec.innerHTML = `<option value="TOUS">👥 Tous</option>` + praticiens.map(k => `<option value="${k}">👤 ${k}</option>`).join('');
+            filtreSec.value = kineVisionne || "TOUS";
+            document.getElementById('select-declaration-tla').innerHTML = `<option value="Cabinet">🏢 Au Cabinet</option>` + listeUtilisateursComplets.map(u => `<option value="${u.nom}">👤 ${u.nom}</option>`).join('');
         }
 
         function basculerAffichageConfig(provenance) {
             const panel = document.getElementById('config-panel');
-            
-            if (provenance === 'login') {
-                document.querySelector('.login-box').appendChild(panel);
-            } else if (provenance === 'interface') {
-                document.getElementById('integration-config-secretariat').appendChild(panel);
-            }
-
-            if (panel.style.display === 'flex') {
-                panel.style.display = 'none';
-                reinitialiserFormulaireKine();
-            } else {
-                const mdp = prompt("Entrez le mot de passe maître du cabinet pour administrer les accès :");
-                if (mdp === MOT_DE_PASSE_CABINET) {
-                    panel.style.display = 'flex';
-                } else if (mdp !== null) {
-                    alert("Mot de passe incorrect.");
-                }
-            }
+            (provenance === 'login' ? document.querySelector('.login-box') : document.getElementById('integration-config-secretariat')).appendChild(panel);
+            if (panel.style.display === 'flex') { panel.style.display = 'none'; reinitialiserFormulaireKine(); }
+            else { const mdp = prompt("Mot de passe admin :"); if (mdp === MOT_DE_PASSE_CABINET) panel.style.display = 'flex'; else if(mdp !== null) alert("Erreur"); }
         }
 
         function abrirEditionKine(id) {
             const u = listeUtilisateursComplets.find(item => String(item.id) === String(id));
             if (!u) return;
-
-            document.getElementById('titre-form-kine').innerText = `⚙️ Modifier l'utilisateur : ${u.nom}`;
+            document.getElementById('titre-form-kine').innerText = `⚙️ Modifier : ${u.nom}`;
             document.getElementById('kine-id-edite').value = u.id;
             document.getElementById('nouveau-kine-input').value = u.nom;
             document.getElementById('nouveau-mdp-input').value = u.mot_de_passe;
             document.getElementById('nouveau-role-input').value = u.role;
-
             const remplaceInput = document.getElementById('nouveau-kine-remplace-input');
             if(u.role === 'remplacant') {
                 remplaceInput.style.display = 'block';
-                const kinesTitulaires = listeUtilisateursComplets.filter(u => u.role === 'kine');
-                remplaceInput.innerHTML = '<option value="">-- Sélectionnez le Kiné remplacé --</option>' + kinesTitulaires.map(k => `<option value="${k.nom}">${k.nom}</option>`).join('');
-                remplaceInput.value = u.kine_remplace || '';
-            } else {
-                remplaceInput.style.display = 'none';
-                remplaceInput.value = '';
+                remplaceInput.innerHTML = '<option value="">-- Sélectionnez --</option>' + listeUtilisateursComplets.filter(k => k.role === 'kine').map(k => `<option value="${k.nom}" ${k.nom === u.kine_remplace ? 'selected' : ''}>${k.nom}</option>`).join('');
             }
-
-            document.getElementById('btn-soumettre-kine').innerText = "Enregistrer les modifications 💾";
+            document.getElementById('btn-soumettre-kine').innerText = "Enregistrer 💾";
             document.getElementById('btn-annuler-kine').style.display = 'block';
         }
 
         function reinitialiserFormulaireKine() {
-            document.getElementById('titre-form-kine').innerText = "⚙️ Gestion des Comptes Personnel";
+            document.getElementById('titre-form-kine').innerText = "⚙️ Gestion des Comptes";
             document.getElementById('kine-id-edite').value = '';
             document.getElementById('nouveau-kine-input').value = '';
             document.getElementById('nouveau-mdp-input').value = '';
             document.getElementById('nouveau-role-input').value = 'kine';
             document.getElementById('nouveau-kine-remplace-input').style.display = 'none';
-            document.getElementById('nouveau-kine-remplace-input').value = '';
-
             document.getElementById('btn-soumettre-kine').innerText = "Créer l'utilisateur";
             document.getElementById('btn-annuler-kine').style.display = 'none';
         }
 
         async function sauvegarderKine() {
             const id = document.getElementById('kine-id-edite').value;
-            const inputNom = document.getElementById('nouveau-kine-input');
-            const inputMdp = document.getElementById('nouveau-mdp-input');
-            const inputRole = document.getElementById('nouveau-role-input');
-            const inputRemplace = document.getElementById('nouveau-kine-remplace-input');
-            
-            const nom = inputNom.value.trim();
-            const mdp = inputMdp.value.trim();
-            const role = inputRole.value;
-            const kine_remplace = role === 'remplacant' ? inputRemplace.value : null;
-
-            if (!nom || !mdp) {
-                alert("Veuillez renseigner un nom et un mot de passe.");
-                return;
-            }
-
-            if (role === 'remplacant' && !kine_remplace) {
-                alert("Pour un remplaçant, veuillez sélectionner le kiné qu'il remplace.");
-                return;
-            }
-
+            const nom = document.getElementById('nouveau-kine-input').value.trim();
+            const mdp = document.getElementById('nouveau-mdp-input').value.trim();
+            const role = document.getElementById('nouveau-role-input').value;
+            const kine_remplace = role === 'remplacant' ? document.getElementById('nouveau-kine-remplace-input').value : null;
+            if (!nom || !mdp) { alert("Nom et mdp obligatoires."); return; }
             if (!initialiserSupabase()) return;
-
-            const payload = { nom: nom, mot_de_passe: mdp, role: role, kine_remplace: kine_remplace };
-
-            if (id) {
-                const { error } = await supabaseClient.from('practiciens').update(payload).eq('id', id);
-                if (error) {
-                    alert("Erreur lors de la modification : " + error.message);
-                } else {
-                    reinitialiserFormulaireKine();
-                    await chargerListeKines();
-                }
-            } else {
-                if (listeUtilisateursComplets.some(u => u.nom.toLowerCase() === nom.toLowerCase())) {
-                    alert("Cet utilisateur existe déjà.");
-                    return;
-                }
-                const nouvelId = Math.floor(Math.random() * 1000000000).toString();
-                payload.id = nouvelId;
-                payload.detient_tla = false;
-
-                const { error } = await supabaseClient.from('practiciens').insert([payload]);
-                if (error) {
-                    alert("Erreur lors de la création : " + error.message);
-                } else {
-                    reinitialiserFormulaireKine();
-                    await chargerListeKines();
-                }
-            }
+            const payload = { nom, mot_de_passe: mdp, role, kine_remplace };
+            if (id) await supabaseClient.from('practiciens').update(payload).eq('id', id);
+            else await supabaseClient.from('practiciens').insert([{...payload, id: Math.floor(Math.random() * 1000000000).toString(), detient_tla: false}]);
+            reinitialiserFormulaireKine();
+            await chargerListeKines();
         }
 
         async function supprimerKine(nom) {
-            if (confirm(`Supprimer définitivement le compte de ${nom} ?`)) {
-                if (initialiserSupabase()) {
-                    const { error } = await supabaseClient.from('practiciens').delete().eq('nom', nom);
-                    if (error) {
-                        alert("Erreur suppression : " + error.message);
-                    } else {
-                        reinitialiserFormulaireKine();
-                        await chargerListeKines();
-                    }
-                }
+            if (confirm(`Supprimer ${nom} ?`)) {
+                await supabaseClient.from('practiciens').delete().eq('nom', nom);
+                await chargerListeKines();
             }
         }
 
-        function changerFiltreVisionPraticien() {
-            kineVisionne = document.getElementById('filtre-view-kine').value;
-            rafraichirAffichage();
-        }
+        function changerFiltreVisionPraticien() { kineVisionne = document.getElementById('filtre-view-kine').value; rafraichirAffichage(); }
 
         function verifierConnexion() {
             const mdpSaisi = document.getElementById('password-input').value;
             const utilisateurSelectionne = document.getElementById('kine-select-login').value;
-            
-            if (!utilisateurSelectionne) {
-                alert("Veuillez sélectionner un profil.");
-                return;
-            }
-
             const cible = listeUtilisateursComplets.find(u => u.nom === utilisateurSelectionne);
             if (cible && cible.mot_de_passe === mdpSaisi) {
-                if (!initialiserSupabase()) {
-                    alert("Base de données inaccessible.");
-                    return;
-                }
                 localStorage.setItem('kine_connecte', 'true');
                 localStorage.setItem('kine_nom_actif', cible.nom);
                 localStorage.setItem('kine_role_actif', cible.role);
                 localStorage.setItem('kine_remplace_actif', cible.kine_remplace || '');
-                
-                kineConnecte = cible.nom;
-                kineRole = cible.role;
-                kineRemplace = cible.kine_remplace || '';
-                
-                // NOUVEAU LOGIQUE : Si c'est un remplaçant, il visionne le titulaire. Sinon comportement normal.
-                if (cible.role === 'remplacant' && cible.kine_remplace) {
-                    kineVisionne = cible.kine_remplace;
-                } else {
-                    kineVisionne = cible.role === 'secretariat' ? 'TOUS' : cible.nom;
-                }
-                
+                kineConnecte = cible.nom; kineRole = cible.role; kineRemplace = cible.kine_remplace || '';
+                kineVisionne = (cible.role === 'remplacant' && cible.kine_remplace) ? cible.kine_remplace : (cible.role === 'secretariat' ? 'TOUS' : cible.nom);
                 initialiserApplication();
-            } else {
-                alert("Mot de passe incorrect pour cet utilisateur.");
-            }
+            } else alert("Erreur.");
         }
 
-        function deconnexion() {
-            localStorage.removeItem('kine_connecte');
-            localStorage.removeItem('kine_nom_actif');
-            localStorage.removeItem('kine_role_actif');
-            localStorage.removeItem('kine_remplace_actif');
-            window.location.reload();
-        }
+        function deconnexion() { localStorage.clear(); window.location.reload(); }
 
         window.addEventListener('DOMContentLoaded', async () => {
-            initialiserSupabase();
-            await chargerListeKines();
-            
+            initialiserSupabase(); await chargerListeKines();
             if (localStorage.getItem('kine_connecte') === 'true') {
                 kineConnecte = localStorage.getItem('kine_nom_actif');
-                kineRole = localStorage.getItem('kine_role_actif') || 'kine';
-                kineRemplace = localStorage.getItem('kine_remplace_actif') || '';
-                
-                if (kineRole === 'remplacant' && kineRemplace) {
-                    kineVisionne = kineRemplace;
-                } else {
-                    kineVisionne = kineRole === 'secretariat' ? 'TOUS' : kineConnecte;
-                }
-                
-                setTimeout(() => {
-                    if (initialiserSupabase()) {
-                        initialiserApplication();
-                    } else {
-                        deconnexion();
-                    }
-                }, 300);
+                kineRole = localStorage.getItem('kine_role_actif');
+                kineRemplace = localStorage.getItem('kine_remplace_actif');
+                kineVisionne = (kineRole === 'remplacant' && kineRemplace) ? kineRemplace : (kineRole === 'secretariat' ? 'TOUS' : kineConnecte);
+                initialiserApplication();
             }
         });
 
         function initialiserApplication() {
             document.getElementById('login-screen').style.display = 'none';
             document.getElementById('main-app').style.display = 'block';
-            
-            let labelBadgeRole = "Kiné";
-            if(kineRole === 'secretariat') labelBadgeRole = "Secrétaire";
-            if(kineRole === 'remplacant') labelBadgeRole = `Remplaçant de ${kineRemplace}`;
-            
+            let labelBadgeRole = (kineRole === 'secretariat') ? "Secrétaire" : (kineRole === 'remplacant') ? `Remplaçant de ${kineRemplace}` : "Kiné";
             document.getElementById('nom-kine-badge').innerText = `Session : ${kineConnecte} (${labelBadgeRole})`;
-            
-            if (kineRole === 'secretariat') {
-                document.getElementById('zone-filtre-secretariat').style.display = 'flex';
-            } else {
-                document.getElementById('zone-filtre-secretariat').style.display = 'none';
-            }
-
-            calculerSemaine();
-            chargerDonneesDepuisServeur();
-            brancherTempsReel();
-        }
-
-        window.addEventListener('online', () => modifierBadgeReseau(true));
-        window.addEventListener('offline', () => modifierBadgeReseau(false));
-
-        function modifierBadgeReseau(estEnLigne) {
-            const badge = document.getElementById('sync-badge');
-            if (badge) {
-                if (estEnLigne) {
-                    badge.innerText = "Connecté 🟢";
-                    badge.className = "sync-indicator sync-online";
-                    chargerListeKines();
-                    chargerDonneesDepuisServeur();
-                } else {
-                    badge.innerText = "Hors-ligne 🔴";
-                    badge.className = "sync-indicator sync-offline";
-                }
-            }
+            document.getElementById('zone-filtre-secretariat').style.display = (kineRole === 'secretariat') ? 'flex' : 'none';
+            calculerSemaine(); chargerDonneesDepuisServeur(); brancherTempsReel();
         }
 
         async function chargerDonneesDepuisServeur() {
             if (!initialiserSupabase()) return;
             try {
-                const { data: patients, error: errP } = await supabaseClient.from('catalogue_patients').select('*');
-                if (errP) throw errP;
-                cataloguePatients = patients || [];
-
-                const { data: rdv, error: errR } = await supabaseClient.from('plannings_dates').select('*');
-                if (errR) throw errR;
-
+                const [p, r] = await Promise.all([supabaseClient.from('catalogue_patients').select('*'), supabaseClient.from('plannings_dates').select('*')]);
+                cataloguePatients = p.data || [];
                 planningsParDate = {};
-                (rdv || []).forEach(r => {
-                    if (!planningsParDate[r.date_cle]) planningsParDate[r.date_cle] = [];
-                    planningsParDate[r.date_cle].push({
-                        idPlanif: r.id_planif,
-                        patientId: r.patient_id,
-                        heure: r.heure ? r.heure.substring(0, 5) : "00:00",
-                        statut: r.statut,
-                        verrouille: r.journee_verrouillee || false,
-                        kineNom: r.kine_nom || "Kiné A",
-                        ordre: r.ordre || 0,
-                        tlaStatut: r.tla_statut || null
-                    });
+                (r.data || []).forEach(x => {
+                    if (!planningsParDate[x.date_cle]) planningsParDate[x.date_cle] = [];
+                    planningsParDate[x.date_cle].push({ idPlanif: x.id_planif, patientId: x.patient_id, heure: x.heure ? x.heure.substring(0, 5) : "00:00", statut: x.statut, verrouille: x.journee_verrouillee, kineNom: x.kine_nom, ordre: x.ordre, tlaStatut: x.tla_statut });
                 });
-
-                localStorage.setItem('cache_patients', JSON.stringify(cataloguePatients));
-                localStorage.setItem('cache_plannings', JSON.stringify(planningsParDate));
-
                 rafraichirAffichage();
-                majBandeauAPrevoir();
-            } catch (e) {
-                console.log("Mode déconnecté, chargement du cache local.");
-                cataloguePatients = JSON.parse(localStorage.getItem('cache_patients')) || [];
-                planningsParDate = JSON.parse(localStorage.getItem('cache_plannings')) || {};
-                modifierBadgeReseau(false);
-                rafraichirAffichage();
-                majBandeauAPrevoir();
-            }
-        }
-
-        function majBandeauAPrevoir() {
-            const bandeau = document.getElementById('bandeau-a-prevoir');
-            const text = document.getElementById('texte-bandeau-prevoir');
-            const patientsAttente = cataloguePatients.filter(p => p.a_prevoir === true);
-            
-            if (patientsAttente.length > 0) {
-                bandeau.style.display = 'block';
-                text.innerText = `${patientsAttente.length} patient${patientsAttente.length > 1 ? 's' : ''} à prévoir (Action requise)`;
-            } else {
-                bandeau.style.display = 'none';
-            }
-        }
-
-        function ouvrirModalAPrevoir() {
-            const conteneur = document.getElementById('conteneur-liste-prevoir');
-            const patientsAttente = cataloguePatients.filter(p => p.a_prevoir === true);
-            conteneur.innerHTML = '';
-
-            if(patientsAttente.length === 0) {
-                conteneur.innerHTML = '<p>Aucun patient à prévoir.</p>';
-                return;
-            }
-
-            patientsAttente.forEach(p => {
-                const item = document.createElement('div');
-                item.className = 'item-prevoir-modal';
-                
-                let numTels = p.telephone ? `📞 ${p.telephone}` : '';
-                if(p.telephone_2) numTels += ` / ${p.telephone_2}`;
-
-                item.innerHTML = `
-                    <div style="display:flex; flex-direction:column; gap:2px;">
-                        <strong style="font-size:1rem; color:var(--text-color);">${p.nom}</strong>
-                        <span style="font-size:0.8rem; color:var(--neutral);">📍 ${p.adresse}</span>
-                        ${numTels ? `<span style="font-size:0.85rem; color:var(--primary); font-weight:bold;">${numTels}</span>` : ''}
-                        ${p.notes ? `<span class="btn-note-declencheur" onclick="event.stopPropagation(); ouvrirNoteVolante('${p.id}')">📝 Note</span>` : ''}
-                    </div>
-                    <div style="display:flex; gap:5px;">
-                        <button class="btn-success" style="padding:6px 10px; font-size:0.8rem;" onclick="fermerModal('modal-liste-prevoir'); ouvrirPlanificateurSpecifique('${p.id}')">Planifier ➕</button>
-                        <button class="btn-primary" style="padding:6px 10px; font-size:0.8rem; background-color:var(--purple);" onclick="fermerModal('modal-liste-prevoir'); ouvrirFormulairePatient('${p.id}')">✏️</button>
-                    </div>
-                `;
-                conteneur.appendChild(item);
-            });
-            ouvrirModal('modal-liste-prevoir');
-        }
-
-        function ouvrirNoteVolante(patientId) {
-            const p = cataloguePatients.find(item => String(item.id) === String(patientId));
-            if (!p || !p.notes) return;
-            
-            document.getElementById('note-volante-nom-patient').innerText = p.nom;
-            document.getElementById('note-volante-corps').innerText = p.notes;
-            ouvrirModal('modal-note-volante');
-        }
-
-        function ouvrirPlanificateurSpecifique(patientId) {
-            ouvrirPlanificateur();
-            document.getElementById('select-patient').value = patientId;
+            } catch (e) { modifierBadgeReseau(false); }
         }
 
         function brancherTempsReel() {
-            if (!initialiserSupabase()) return;
-            supabaseClient.channel('custom-all-channel')
-            .on('postgres_changes', { event: '*', schema: 'public' }, () => {
-                chargerListeKines();
-                chargerDonneesDepuisServeur();
-            })
-            .subscribe();
+            supabaseClient.channel('custom-all-channel').on('postgres_changes', { event: '*', schema: 'public' }, () => { chargerListeKines(); chargerDonneesDepuisServeur(); }).subscribe();
+        }
+
+        function modifierBadgeReseau(estEnLigne) {
+            const b = document.getElementById('sync-badge');
+            b.innerText = estEnLigne ? "Connecté 🟢" : "Hors-ligne 🔴";
+            b.className = estEnLigne ? "sync-indicator sync-online" : "sync-indicator sync-offline";
         }
 
         function calculerSemaine() {
             datesSemaineEnCours = [];
-            let checkDay = dateAncre.getDay();
-            let distanceAuLundi = checkDay === 0 ? -6 : 1 - checkDay;
-            let lundiSemaine = new Date(dateAncre);
-            lundiSemaine.setDate(dateAncre.getDate() + distanceAuLundi);
-
-            for (let i = 0; i < 5; i++) {
-                let j = new Date(lundiSemaine);
-                j.setDate(lundiSemaine.getDate() + i);
-                datesSemaineEnCours.push(j);
-            }
-            const opt = { day: '2-digit', month: '2-digit' };
-            const el = document.getElementById('label-semaine');
-            if (el) el.innerText = `Sem. du ${datesSemaineEnCours[0].toLocaleDateString('fr-FR', opt)} au ${datesSemaineEnCours[4].toLocaleDateString('fr-FR', opt)}`;
+            let lundi = new Date(dateAncre);
+            lundi.setDate(dateAncre.getDate() - (dateAncre.getDay() === 0 ? 6 : dateAncre.getDay() - 1));
+            for (let i = 0; i < 5; i++) { let j = new Date(lundi); j.setDate(lundi.getDate() + i); datesSemaineEnCours.push(j); }
+            document.getElementById('label-semaine').innerText = `Sem. du ${datesSemaineEnCours[0].toLocaleDateString('fr-FR')} au ${datesSemaineEnCours[4].toLocaleDateString('fr-FR')}`;
         }
 
-        function changerSemaine(direction) {
-            dateAncre.setDate(dateAncre.getDate() + (direction * 7));
-            calculerSemaine();
-            chargerDonneesDepuisServeur();
-        }
-
-        function getCleDate(dateObj) { return dateObj.toISOString().split('T')[0]; }
-        function getLabelDate(dateObj) {
-            const nom = nomsJours[dateObj.getDay() - 1] || 'Lundi';
-            return `${nom} ${String(dateObj.getDate()).padStart(2, '0')}/${String(dateObj.getMonth() + 1).padStart(2, '0')}`;
-        }
+        function changerSemaine(d) { dateAncre.setDate(dateAncre.getDate() + (d * 7)); calculerSemaine(); chargerDonneesDepuisServeur(); }
 
         function basculerVue() {
-            const btn = document.getElementById('btn-toggle-view');
-            if (vueActuelle === 'planning') {
-                vueActuelle = 'fichier';
-                document.getElementById('app-title').innerText = "Fichier Patients";
-                btn.innerText = "Voir le Planning 🗓️";
-                document.getElementById('header-planning').style.display = 'none';
-                document.getElementById('header-fichier').style.display = 'block';
-                document.getElementById('view-planning').classList.remove('active');
-                document.getElementById('view-fichier').classList.add('active');
-                document.getElementById('recherche-patient-input').value = '';
-            } else {
-                vueActuelle = 'planning';
-                document.getElementById('app-title').innerText = "Planning Tournées";
-                btn.innerText = "Voir le Fichier Patients 🗂️";
-                document.getElementById('header-planning').style.display = 'block';
-                document.getElementById('header-fichier').style.display = 'none';
-                document.getElementById('view-fichier').classList.remove('active');
-                document.getElementById('view-planning').classList.add('active');
-            }
+            vueActuelle = (vueActuelle === 'planning') ? 'fichier' : 'planning';
+            document.getElementById('app-title').innerText = (vueActuelle === 'planning') ? "Planning Tournées" : "Fichier Patients";
+            document.getElementById('btn-toggle-view').innerText = (vueActuelle === 'planning') ? "Voir le Fichier Patients 🗂️" : "Voir le Planning 🗓️";
+            document.getElementById('header-planning').style.display = (vueActuelle === 'planning') ? 'block' : 'none';
+            document.getElementById('header-fichier').style.display = (vueActuelle === 'planning') ? 'none' : 'block';
+            document.getElementById('view-planning').className = (vueActuelle === 'planning') ? 'app-view active' : 'app-view';
+            document.getElementById('view-fichier').className = (vueActuelle === 'planning') ? 'app-view' : 'app-view active';
             rafraichirAffichage();
         }
 
-        function trierPlannings(a, b) {
-            if (a.ordre !== b.ordre) {
-                return a.ordre - b.ordre;
-            }
-            
-            const aHeureRenseignee = a.heure && a.heure !== "00:00";
-            const bHeureRenseignee = b.heure && b.heure !== "00:00";
-
-            if (aHeureRenseignee && !bHeureRenseignee) return -1;
-            if (!aHeureRenseignee && bHeureRenseignee) return 1;
-            if (aHeureRenseignee && bHeureRenseignee) {
-                return a.heure.localeCompare(b.heure);
-            }
-            return 0;
-        }
-
-        function basculerFiltreTlaUniquement() {
-            filtreTlaUniquementActif = !filtreTlaUniquementActif;
-            const btn = document.getElementById('btn-filtre-tla-uniquement');
-            if(btn) {
-                if(filtreTlaUniquementActif) {
-                    btn.classList.add('active');
-                    btn.innerText = "Filtre : TLA Uniquement 📱";
-                } else {
-                    btn.classList.remove('active');
-                    btn.innerText = "Filtre TLA 📱";
-                }
-            }
-            afficherPlanning();
-        }
-
-        async function basculerTlaStatut(idPlanif, actionUtilisateur) {
-            let rdvTrouve = null;
-
-            Object.keys(planningsParDate).forEach(cle => {
-                const cible = planningsParDate[cle].find(r => r.idPlanif === idPlanif);
-                if(cible) { rdvTrouve = cible; }
-            });
-            if (!rdvTrouve) return;
-
-            let nouveauStatut = rdvTrouve.tlaStatut;
-
-            if (actionUtilisateur === 'secretariat_click') {
-                if (rdvTrouve.tlaStatut === null) {
-                    nouveauStatut = 'dans_tla';
-                } else {
-                    nouveauStatut = null; 
-                }
-            } else if (actionUtilisateur === 'kine_click') {
-                if (rdvTrouve.tlaStatut === 'dans_tla') {
-                    nouveauStatut = 'facture';
-                } else if (rdvTrouve.tlaStatut === 'facture') {
-                    nouveauStatut = 'dans_tla'; 
-                }
-            }
-
-            rdvTrouve.tlaStatut = nouveauStatut;
-            rafraichirAffichage();
-
-            if (supabaseClient) {
-                try {
-                    await supabaseClient.from('plannings_dates').update({ tla_statut: nouveauStatut }).eq('id_planif', idPlanif);
-                } catch (err) {
-                    console.error("Erreur de sauvegarde Supabase TLA :", err);
-                }
-            }
-        }
+        function rafraichirAffichage() { if(vueActuelle === 'planning') afficherPlanning(); else afficherCatalogue(); }
 
         function afficherPlanning() {
-            const tabsConteneur = document.getElementById('days-tabs');
-            if (!tabsConteneur) return;
-            tabsConteneur.innerHTML = '';
-            
-            datesSemaineEnCours.forEach((dateObj, index) => {
-                const btn = document.createElement('button');
-                btn.className = `day-btn ${index === indiceJourActuel ? 'active' : ''}`;
-                btn.innerText = getLabelDate(dateObj);
-                btn.onclick = () => { indiceJourActuel = index; afficherPlanning(); };
-                tabsConteneur.appendChild(btn);
-            });
-
-            const dateSelectionnee = datesSemaineEnCours[indiceJourActuel];
-            const cleDate = getCleDate(dateSelectionnee);
-            
-            const tousRdvDuJour = planningsParDate[cleDate] || [];
-            
-            let rdvAAfficher = [];
-            if (kineVisionne === "TOUS") {
-                rdvAAfficher = [...tousRdvDuJour]; 
-            } else {
-                rdvAAfficher = tousRdvDuJour.filter(r => r.kineNom === kineVisionne);
-            }
-            
-            if (filtreTlaUniquementActif) {
-                rdvAAfficher = rdvAAfficher.filter(r => r.tlaStatut === 'dans_tla' || r.tlaStatut === 'facture');
-            }
-
-            rdvAAfficher.sort(trierPlannings);
-
-            const estSecretariat = (kineRole === 'secretariat');
-            
-            if(rdvAAfficher.length > 0) {
-                journeeEstVerrouillee = rdvAAfficher.every(r => r.verrouille === true);
-            } else {
-                journeeEstVerrouillee = false;
-            }
-
-            const btnVerrou = document.getElementById('btn-verrouiller-jour');
-            if (btnVerrou) {
-                if (kineVisionne === "TOUS") {
-                    btnVerrou.style.display = 'none'; 
-                } else {
-                    btnVerrou.style.display = 'block';
-                    const kineVerrouille = tousRdvDuJour.filter(r => r.kineNom === kineVisionne).some(r => r.verrouille === true);
-                    if (kineVerrouille) {
-                        btnVerrou.innerText = `Tournée de ${kineVisionne} Validée 🔒 (Déverrouiller)`;
-                        btnVerrou.className = "btn-secondary";
-                    } else {
-                        btnVerrou.innerText = `Valider la journée de ${kineVisionne} 🔐`;
-                        btnVerrou.className = "btn-orange";
-                    }
-                }
-            }
-
-            document.getElementById('btn-global-planifier').disabled = !estSecretariat && journeeEstVerrouillee;
-            document.getElementById('btn-global-reset').disabled = kineVisionne === "TOUS" || (!estSecretariat && journeeEstVerrouillee);
-
-            const statsEl = document.getElementById('tournee-stats');
-            if (statsEl) {
-                let cibleTexte = kineVisionne === "TOUS" ? "Général cabinet" : kineVisionne;
-                let addFiltreTexte = filtreTlaUniquementActif ? " [Filtre TLA Actif]" : "";
-                let texteStats = `${cibleTexte} (${String(dateSelectionnee.getDate()).padStart(2,'0')}/${String(dateSelectionnee.getMonth()+1).padStart(2,'0')})${addFiltreTexte} : ${rdvAAfficher.filter(r => r.statut !== null).length} / ${rdvAAfficher.length} traités`;
-                statsEl.innerText = texteStats;
-            }
-
+            const tabs = document.getElementById('days-tabs');
+            tabs.innerHTML = datesSemaineEnCours.map((d, i) => `<button class="day-btn ${i === indiceJourActuel ? 'active' : ''}" onclick="indiceJourActuel=${i}; afficherPlanning();">${getLabelDate(d)}</button>`).join('');
+            const rdvJour = (planningsParDate[getCleDate(datesSemaineEnCours[indiceJourActuel])] || []).filter(r => (kineVisionne === "TOUS" || r.kineNom === kineVisionne) && (!filtreTlaUniquementActif || r.tlaStatut === 'dans_tla' || r.tlaStatut === 'facture')).sort(trierPlannings);
             const conteneur = document.getElementById('view-planning');
-            if (!conteneur) return;
-            conteneur.innerHTML = '';
-
-            if (rdvAAfficher.length === 0) {
-                conteneur.innerHTML = `<p style="text-align:center; color:var(--neutral); margin-top:20px;">Aucun patient planifié ici.</p>`;
-                return;
-            }
-
-            rdvAAfficher.forEach((rdv, idx) => {
-                const patient = cataloguePatients.find(p => String(p.id) === String(rdv.patientId));
-                if(!patient) return;
-
+            conteneur.innerHTML = rdvJour.length ? '' : `<p style="text-align:center;">Aucun patient.</p>`;
+            
+            rdvJour.forEach((r, idx) => {
+                const p = cataloguePatients.find(x => String(x.id) === String(r.patientId));
+                if (!p) return;
                 const card = document.createElement('div');
-                card.className = `patient-card ${rdv.statut || ''}`;
-                
-                const desactiveBouton = (rdv.verrouille && !estSecretariat) ? 'disabled' : '';
-
-                let chaineTels = patient.telephone ? `📞 ${patient.telephone}` : '';
-                if(patient.telephone_2) chaineTels += ` / ${patient.telephone_2}`;
-
-                const masquerFleches = kineVisionne === "TOUS" || (rdv.verrouille && !estSecretariat);
-                const affichageHeure = rdv.heure !== "00:00" ? `🕒 ${rdv.heure}` : "⏰ Non spécifié";
-
-                let htmlModuleTla = '';
-                if (estSecretariat) {
-                    if (rdv.tlaStatut === 'facture') {
-                        htmlModuleTla = `
-                            <div style="display:flex; flex-direction:column; gap:2px;">
-                                <span class="badge-tla-sec-facture">✅ Facturé (TLA traité)</span>
-                                <button class="btn-icon" style="font-size:0.75rem; color:var(--danger); text-align:left; padding:0; font-weight:bold;" onclick="basculerTlaStatut('${rdv.idPlanif}', 'secretariat_click')">🔄 Annuler la demande</button>
-                            </div>`;
-                    } else {
-                        const isCoché = rdv.tlaStatut === 'dans_tla' ? 'checked' : '';
-                        htmlModuleTla = `
-                            <label class="sec-tla-checkbox-container" onclick="event.stopPropagation();">
-                                <input type="checkbox" ${isCoché} onchange="basculerTlaStatut('${rdv.idPlanif}', 'secretariat_click')"> Facture au TLA
-                            </label>`;
-                    }
-                } else {
-                    if (rdv.tlaStatut === 'dans_tla') {
-                        htmlModuleTla = `<button class="badge-tla-kine" onclick="basculerTlaStatut('${rdv.idPlanif}', 'kine_click')">📱 TLA</button>`;
-                    } else if (rdv.tlaStatut === 'facture') {
-                        htmlModuleTla = `<button class="badge-tla-kine facture" onclick="basculerTlaStatut('${rdv.idPlanif}', 'kine_click')">✓ TLA</button>`;
-                    }
-                }
-
-                card.innerHTML = `
-                    <div class="patient-card-left">
-                        ${!masquerFleches ? `
-                        <div class="reorder-actions">
-                            <button class="btn-reorder" onclick="deplacerRdv(${idx}, -1)" ${idx === 0 ? 'disabled' : ''} title="Monter">🔼</button>
-                            <button class="btn-reorder" onclick="deplacerRdv(${idx}, 1)" ${idx === rdvAAfficher.length - 1 ? 'disabled' : ''} title="Descendre">🔽</button>
-                        </div>
-                        ` : ''}
-                        <div class="patient-info">
-                            <span class="patient-name">${patient.nom}</span>
-                            <span style="font-size:0.85rem; font-weight:bold; color: ${rdv.heure !== '00:00' ? 'var(--purple)' : 'var(--neutral)'};">${affichageHeure}</span>
-                            <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(patient.adresse)}" target="_blank" class="patient-address">📍 ${patient.adresse}</a>
-                            ${chaineTels ? `<a href="tel:${patient.telephone}" class="patient-phone">${chaineTels}</a>` : ''}
-                            ${patient.a_prevoir ? `<span class="badge-card-prevoir">🚨 À prévoir</span>` : ''}
-                            ${patient.notes ? `<span class="btn-note-declencheur" onclick="ouvrirNoteVolante('${patient.id}')">📝 Note</span>` : ''}
-                            ${kineVisionne === "TOUS" ? `<span class="kine-tag">Praticien : ${rdv.kineNom} ${rdv.verrouille ? '🔒' : ''}</span>` : ''}
-                            ${htmlModuleTla}
-                        </div>
-                    </div>
-                    <div class="btn-group">
-                        <button class="btn-status btn-vu ${rdv.statut === 'vu' ? 'active' : ''}" ${desactiveBouton} onclick="changerStatutRdv('${rdv.idPlanif}', 'vu')">✅</button>
-                        <button class="btn-status btn-nonvu ${rdv.statut === 'non-vu' ? 'active' : ''}" ${desactiveBouton} onclick="changerStatutRdv('${rdv.idPlanif}', 'non-vu')">❌</button>
-                        <button class="btn-icon" ${desactiveBouton} onclick="retirerDuPlanning('${rdv.idPlanif}')">🗑️</button>
-                    </div>
-                `;
+                card.className = `patient-card ${r.statut || ''}`;
+                card.innerHTML = `<div class="patient-card-left"><div class="patient-info">
+                    <span class="patient-name" style="cursor:pointer; color:var(--primary); text-decoration:underline;" onclick="ouvrirFormulairePatient('${p.id}')">${p.nom} ✏️</span>
+                    <span style="font-size:0.85rem; font-weight:bold; color:${r.heure !== '00:00' ? 'var(--purple)' : 'var(--neutral)'};">🕒 ${r.heure}</span>
+                    <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(p.adresse)}" target="_blank">📍 ${p.adresse}</a>
+                    <a href="tel:${p.telephone}">${p.telephone || ''}</a>
+                    </div></div>
+                    <div class="btn-group"><button class="btn-status btn-vu ${r.statut==='vu'?'active':''}" onclick="changerStatutRdv('${r.idPlanif}', 'vu')">✅</button><button class="btn-status btn-nonvu ${r.statut==='non-vu'?'active':''}" onclick="changerStatutRdv('${r.idPlanif}', 'non-vu')">❌</button><button class="btn-icon" onclick="retirerDuPlanning('${r.idPlanif}')">🗑️</button></div>`;
                 conteneur.appendChild(card);
             });
-        }
-
-        async function deplacerRdv(indexActuel, direction) {
-            const dateSelectionnee = datesSemaineEnCours[indiceJourActuel];
-            const cleDate = getCleDate(dateSelectionnee);
-            const tousRdvDuJour = planningsParDate[cleDate] || [];
-            
-            let rdvFiltrés = tousRdvDuJour.filter(r => r.kineNom === kineVisionne);
-            rdvFiltrés.sort(trierPlannings);
-
-            const cibleIndex = indexActuel + direction;
-            if (cibleIndex < 0 || cibleIndex >= rdvFiltrés.length) return;
-
-            const rdvA = rdvFiltrés[indexActuel];
-            const rdvB = rdvFiltrés[cibleIndex];
-
-            let tempOrdre = rdvA.ordre;
-            rdvA.ordre = rdvB.ordre;
-            rdvB.ordre = tempOrdre;
-
-            if (rdvA.ordre === rdvB.ordre) {
-                if (direction > 0) {
-                    rdvA.ordre = rdvB.ordre + 1;
-                } else {
-                    rdvA.ordre = rdvB.ordre - 1;
-                }
-            }
-
-            planningsParDate[cleDate] = tousRdvDuJour.map(r => {
-                if (r.idPlanif === rdvA.idPlanif) return rdvA;
-                if (r.idPlanif === rdvB.idPlanif) return rdvB;
-                return r;
-            });
-
-            rafraichirAffichage();
-
-            if (supabaseClient) {
-                try {
-                    await Promise.all([
-                        supabaseClient.from('plannings_dates').update({ ordre: rdvA.ordre }).eq('id_planif', rdvA.idPlanif),
-                        supabaseClient.from('plannings_dates').update({ ordre: rdvB.ordre }).eq('id_planif', rdvB.idPlanif)
-                    ]);
-                } catch (error) {
-                    console.error("Erreur de synchronisation Supabase sur le tri :", error);
-                }
-            }
-        }
-
-        async function gererVerrouillageJour() {
-            if (kineVisionne === "TOUS") return;
-            const cleDate = getCleDate(datesSemaineEnCours[indiceJourActuel]);
-            const tousRdvDuJour = planningsParDate[cleDate] || [];
-            const rdvDuKine = tousRdvDuJour.filter(r => r.kineNom === kineVisionne);
-
-            if (rdvDuKine.length === 0) {
-                alert("Aucune donnée à verrouiller pour ce praticien.");
-                return;
-            }
-
-            const kineVerrouille = rdvDuKine.some(r => r.verrouille === true);
-
-            if (!kineVerrouille) {
-                if (confirm(`Voulez-vous valider définitivement la tournée de ${kineVisionne} ?`)) {
-                    if (supabaseClient) {
-                        const ids = rdvDuKine.map(r => r.idPlanif);
-                        await supabaseClient.from('plannings_dates').update({ journee_verrouillee: true }).in('id_planif', ids);
-                        chargerDonneesDepuisServeur();
-                    }
-                }
-            } else {
-                const mdp = prompt("Entrez le mot de passe maître du cabinet pour forcer le déverrouillage :");
-                if (mdp === MOT_DE_PASSE_CABINET) {
-                    if (supabaseClient) {
-                        const ids = rdvDuKine.map(r => r.idPlanif);
-                        await supabaseClient.from('plannings_dates').update({ journee_verrouillee: false }).in('id_planif', ids);
-                        chargerDonneesDepuisServeur();
-                    }
-                } else if (mdp !== null) {
-                    alert("Mot de passe incorrect.");
-                }
-            }
-        }
-
-        async function changerStatutRdv(idPlanif, statutBouton) {
-            let rdvTrouve = null;
-            Object.keys(planningsParDate).forEach(cle => {
-                const cible = planningsParDate[cle].find(r => r.idPlanif === idPlanif);
-                if(cible) rdvTrouve = cible;
-            });
-            if (!rdvTrouve) return;
-
-            const nouveauStatut = rdvTrouve.statut === statutBouton ? null : statutBouton;
-            rdvTrouve.statut = nouveauStatut;
-            rafraichirAffichage();
-
-            if (supabaseClient) {
-                await supabaseClient.from('plannings_dates').update({ statut: nouveauStatut }).eq('id_planif', idPlanif);
-            }
-        }
-
-        async function ajouterAuPlanningMultiJours() {
-            const praticienCible = document.getElementById('planif-kine-affecte').value;
-            const patientId = document.getElementById('select-patient').value;
-            const heureSaisie = document.getElementById('planif-heure').value;
-            const heure = heureSaisie ? heureSaisie : "00:00"; 
-            const checkboxes = document.querySelectorAll('input[name="jours-planif"]:checked');
-
-            if(!praticienCible || !patientId || checkboxes.length === 0) {
-                alert("Veuillez sélectionner un praticien, un patient et au moins un jour.");
-                return;
-            }
-
-            const lignesAInserer = [];
-            const cleDateAujourdhui = getCleDate(datesSemaineEnCours[indiceJourActuel]);
-            const rdvExistants = planningsParDate[cleDateAujourdhui] || [];
-            const maxOrdreActuel = rdvExistants.reduce((max, r) => r.ordre > max ? r.ordre : max, 0);
-
-            checkboxes.forEach((cb, i) => {
-                const dateCible = datesSemaineEnCours[parseInt(cb.value)];
-                lignesAInserer.push({
-                    id_planif: Math.floor(Math.random() * 1000000000).toString(),
-                    patient_id: patientId,
-                    date_cle: getCleDate(dateCible),
-                    heure: heure,
-                    statut: null,
-                    journee_verrouillee: false,
-                    kine_nom: praticienCible,
-                    ordre: maxOrdreActuel + i + 1,
-                    tla_statut: null
-                });
-            });
-
-            fermerModal('modal-planifier');
-            if (supabaseClient) {
-                const { error } = await supabaseClient.from('plannings_dates').insert(lignesAInserer);
-                if(error) alert("Erreur lors de la planification : " + error.message);
-                
-                await supabaseClient.from('catalogue_patients').update({ a_prevoir: false }).eq('id', patientId);
-                
-                document.getElementById('planif-heure').value = '';
-                chargerDonneesDepuisServeur();
-            }
-        }
-
-        async function retirerDuPlanning(idPlanif) {
-            if (confirm("Retirer ce rendez-vous ?")) {
-                if (supabaseClient) {
-                    await supabaseClient.from('plannings_dates').delete().eq('id_planif', idPlanif);
-                    chargerDonneesDepuisServeur();
-                }
-            }
-        }
-
-        async function reinitialiserJour() {
-            if (kineVisionne === "TOUS") return;
-            if (confirm(`Réinitialiser les statuts de la tournée de ${kineVisionne} ?`)) {
-                const cleDate = getCleDate(datesSemaineEnCours[indiceJourActuel]);
-                const tousRdv = planningsParDate[cleDate] || [];
-                const ids = tousRdv.filter(r => r.kineNom === kineVisionne).map(r => r.idPlanif);
-                
-                if(ids.length > 0 && supabaseClient) {
-                    await supabaseClient.from('plannings_dates').update({ statut: null }).in('id_planif', ids);
-                    chargerDonneesDepuisServeur();
-                }
-            }
-        }
-
-        function filtrerFichierPatientsIntuitivement() {
-            afficherCatalogue();
         }
 
         function afficherCatalogue() {
             const conteneur = document.getElementById('view-fichier');
-            if (!conteneur) return;
-            conteneur.innerHTML = '';
-
-            const rechercheTerme = document.getElementById('recherche-patient-input').value.toLowerCase().trim();
-
-            const patientsFiltres = cataloguePatients.filter(p => {
-                if (!rechercheTerme) return true; 
-                const nomMatch = p.nom && p.nom.toLowerCase().includes(rechercheTerme);
-                const adresseMatch = p.adresse && p.adresse.toLowerCase().includes(rechercheTerme);
-                return nomMatch || adresseMatch;
-            });
-
-            const compteurEl = document.getElementById('compteur-recherche');
-            if (compteurEl) {
-                if (!rechercheTerme) {
-                    compteurEl.innerText = `${cataloguePatients.length} patient${cataloguePatients.length > 1 ? 's' : ''} enregistré${cataloguePatients.length > 1 ? 's' : ''}`;
-                } else {
-                    compteurEl.innerText = `${patientsFiltres.length} résultat${patientsFiltres.length > 1 ? 's' : ''} trouvé${patientsFiltres.length > 1 ? 's' : ''}`;
-                }
-            }
-
-            if (patientsFiltres.length === 0) {
-                conteneur.innerHTML = `<p style="text-align:center; color:var(--neutral); margin-top:20px;">Aucun patient ne correspond à votre recherche.</p>`;
-                return;
-            }
-
-            patientsFiltres.sort((a,b) => a.nom.localeCompare(b.nom)).forEach(p => {
-                const card = document.createElement('div');
-                card.className = 'patient-card';
-                card.style.borderLeftColor = p.a_prevoir ? 'var(--danger)' : 'var(--purple)';
-                
-                let chaineTels = p.telephone ? `📞 ${p.telephone}` : '';
-                if(p.telephone_2) chaineTels += ` / ${p.telephone_2}`;
-
-                card.innerHTML = `
+            const term = document.getElementById('recherche-patient-input').value.toLowerCase();
+            conteneur.innerHTML = cataloguePatients.filter(p => p.nom.toLowerCase().includes(term) || p.adresse.toLowerCase().includes(term)).sort((a,b) => a.nom.localeCompare(b.nom)).map(p => `
+                <div class="patient-card" style="border-left-color:${p.a_prevoir ? 'var(--danger)' : 'var(--purple)'};">
                     <div class="patient-info">
                         <span class="patient-name">${p.nom} ${p.a_prevoir ? '<span class="badge-card-prevoir">🚨 À prévoir</span>' : ''}</span>
-                        <span style="font-size:0.85rem; color:var(--neutral);">📍 ${p.adresse}</span>
-                        ${chaineTels ? `<span style="font-size:0.85rem; color:var(--primary); font-weight:bold;">${chaineTels}</span>` : ''}
-                        ${p.notes ? `<span class="btn-note-declencheur" onclick="ouvrirNoteVolante('${p.id}')">📝 Note</span>` : ''}
+                        <span>📍 ${p.adresse}</span>
                     </div>
-                    <div class="btn-group">
-                        <button class="btn-primary" style="background-color: var(--purple);" onclick="ouvrirFormulairePatient('${p.id}')">✏️ Modifier</button>
-                    </div>
-                `;
-                conteneur.appendChild(card);
-            });
+                    <button class="btn-primary" style="background-color: var(--purple);" onclick="ouvrirFormulairePatient('${p.id}')">✏️ Modifier</button>
+                </div>`).join('');
         }
 
-        function rafraichirAffichage() {
-            if (vueActuelle === 'planning') {
-                afficherPlanning();
-            } else {
-                afficherCatalogue();
-            }
+        function ouvrirFormulairePatient(id = '') {
+            const p = id ? cataloguePatients.find(x => String(x.id) === String(id)) : null;
+            document.getElementById('patient-modal-title').innerText = id ? "Modifier la fiche" : "Nouveau patient";
+            document.getElementById('patient-id').value = id ? p.id : '';
+            document.getElementById('patient-nom').value = id ? p.nom : '';
+            document.getElementById('patient-adresse').value = id ? p.adresse : '';
+            document.getElementById('patient-telephone').value = id ? (p.telephone || '') : '';
+            document.getElementById('patient-telephone2').value = id ? (p.telephone_2 || '') : '';
+            document.getElementById('patient-notes').value = id ? (p.notes || '') : '';
+            document.getElementById('patient-aprevoir').checked = id ? (p.a_prevoir || false) : false;
+            document.getElementById('btn-supprimer-fiche').style.display = id ? 'block' : 'none';
+            ouvrirModal('modal-patient');
         }
 
         async function sauvegarderFichePatient() {
             const id = document.getElementById('patient-id').value;
-            const nom = document.getElementById('patient-nom').value.trim();
-            const adresse = document.getElementById('patient-adresse').value.trim();
-            const telephone = document.getElementById('patient-telephone').value.trim();
-            const telephone_2 = document.getElementById('patient-telephone2').value.trim();
-            const notes = document.getElementById('patient-notes').value.trim();
-            const a_prevoir = document.getElementById('patient-aprevoir').checked;
-
-            if(!nom || !adresse) { alert("Veuillez remplir le nom et l'adresse."); return; }
+            const p = { nom: document.getElementById('patient-nom').value, adresse: document.getElementById('patient-adresse').value, telephone: document.getElementById('patient-telephone').value, telephone_2: document.getElementById('patient-telephone2').value, notes: document.getElementById('patient-notes').value, a_prevoir: document.getElementById('patient-aprevoir').checked };
+            if (id) await supabaseClient.from('catalogue_patients').update(p).eq('id', id);
+            else await supabaseClient.from('catalogue_patients').insert([{...p, id: Math.floor(Math.random()*1000000000).toString()}]);
             fermerModal('modal-patient');
-
-            if (!initialiserSupabase()) return;
-
-            const payload = { nom, adresse, telephone, telephone_2, notes, a_prevoir };
-
-            if (id) {
-                const { error } = await supabaseClient.from('catalogue_patients').update(payload).eq('id', id);
-                if (error) alert("Erreur modification : " + error.message);
-            } else {
-                const nouvelId = Math.floor(Math.random() * 1000000000).toString(); 
-                payload.id = nouvelId;
-                const { error } = await supabaseClient.from('catalogue_patients').insert([payload]);
-                if (error) alert("Erreur création : " + error.message);
-            }
             chargerDonneesDepuisServeur();
         }
 
         async function supprimerFichePatient() {
             const id = document.getElementById('patient-id').value;
-            if (id && confirm("Supprimer définitivement ce patient ?") && supabaseClient) {
-                fermerModal('modal-patient');
-                await supabaseClient.from('catalogue_patients').delete().eq('id', id);
-                chargerDonneesDepuisServeur();
-            }
+            if(confirm("Supprimer ?")) { await supabaseClient.from('catalogue_patients').delete().eq('id', id); fermerModal('modal-patient'); chargerDonneesDepuisServeur(); }
         }
 
         function ouvrirModal(id) { document.getElementById(id).style.display = 'flex'; }
         function fermerModal(id) { document.getElementById(id).style.display = 'none'; }
-
-        function ouvrirPlanificateur() {
-            const selectPatient = document.getElementById('select-patient');
-            const selectKineAffecte = document.getElementById('planif-kine-affecte');
-            if (!selectPatient || !selectKineAffecte) return;
-            
-            selectPatient.innerHTML = '';
-            if(cataloguePatients.length === 0) { alert("Le catalogue patient est vide."); return; }
-
-            cataloguePatients.sort((a,b) => a.nom.localeCompare(b.nom)).forEach(p => {
-                selectPatient.innerHTML += `<option value="${p.id}">${p.nom} ${p.a_prevoir ? '(🚨 À prévoir)' : ''}</option>`;
-            });
-
-            // On affiche tous les praticiens
-            const praticiensDispos = listeUtilisateursComplets.filter(u => u.role === 'kine' || u.role === 'remplacant');
-            selectKineAffecte.innerHTML = praticiensDispos.map(u => `<option value="${u.nom}">${u.nom}</option>`).join('');
-            
-            if (kineVisionne !== "TOUS") {
-                selectKineAffecte.value = kineVisionne;
-            }
-
-            const conteneurJours = document.getElementById('conteneur-jours-checkbox');
-            if (!conteneurJours) return;
-            conteneurJours.innerHTML = '';
-            datesSemaineEnCours.forEach((dateObj, index) => {
-                conteneurJours.innerHTML += `
-                    <label style="display:flex; gap:10px; align-items:center;">
-                        <input type="checkbox" name="jours-planif" value="${index}" ${index === indiceJourActuel ? 'checked' : ''}>
-                        ${getLabelDate(dateObj)}
-                    </label>
-                `;
-            });
-            ouvrirModal('modal-planifier');
-        }
-
-        function ouvrirFormulairePatient(id = '') {
-            document.getElementById('zone-tel-secondaire').style.display = 'none';
-            document.getElementById('btn-add-tel2').style.display = 'block';
-
-            if(id) {
-                const p = cataloguePatients.find(item => String(item.id) === String(id));
-                if(!p) return;
-                document.getElementById('patient-modal-title').innerText = "Modifier la fiche";
-                document.getElementById('patient-id').value = p.id;
-                document.getElementById('patient-nom').value = p.nom;
-                document.getElementById('patient-adresse').value = p.adresse;
-                document.getElementById('patient-telephone').value = p.telephone || '';
-                document.getElementById('patient-telephone2').value = p.telephone_2 || '';
-                document.getElementById('patient-notes').value = p.notes || '';
-                document.getElementById('patient-aprevoir').checked = p.a_prevoir || false;
-                
-                if(p.telephone_2) {
-                    document.getElementById('zone-tel-secondaire').style.display = 'flex';
-                    document.getElementById('btn-add-tel2').style.display = 'none';
-                }
-                document.getElementById('btn-supprimer-fiche').style.display = 'block';
-            } else {
-                document.getElementById('patient-modal-title').innerText = "Nouveau patient";
-                document.getElementById('patient-id').value = '';
-                document.getElementById('patient-nom').value = '';
-                document.getElementById('patient-adresse').value = '';
-                document.getElementById('patient-telephone').value = '';
-                document.getElementById('patient-telephone2').value = '';
-                document.getElementById('patient-notes').value = '';
-                document.getElementById('patient-aprevoir').checked = false;
-                document.getElementById('btn-supprimer-fiche').style.display = 'none';
-            }
-            ouvrirModal('modal-patient');
-        }
-
-        function genererBlocRapport(rdvs) {
-            let vus = [], absents = [], nonTraites = [];
-            rdvs.forEach(r => {
-                const p = cataloguePatients.find(item => String(item.id) === String(r.patientId));
-                if (!p) return;
-                let ligne = `  - [${r.heure !== '00:00' ? r.heure : 'Sans heure'}] ${p.nom}`;
-                if (p.telephone) ligne += ` (${p.telephone})`;
-                if (p.notes) ligne += ` [Note: ${p.notes}]`;
-                if (kineVisionne === "TOUS") ligne += ` (Par: ${r.kineNom})`;
-                
-                if (r.statut === 'vu') vus.push(ligne);
-                else if (r.statut === 'non-vu') absents.push(ligne);
-                else nonTraites.push(ligne);
-            });
-            let texte = "";
-            if(vus.length) texte += `🟢 *Patients vus :*\n${vus.join('\n')}\n`;
-            if(absents.length) texte += `🔴 *Absents :*\n${absents.join('\n')}\n`;
-            if(nonTraites.length) texte += `⚪ *Non traités / Prévus :*\n${nonTraites.join('\n')}\n`;
-            return texte || " Aucun patient programmé.\n";
-        }
-
-        function exporterRapportJour() {
-            const dateObj = datesSemaineEnCours[indiceJourActuel];
-            const tousRdvs = planningsParDate[getCleDate(dateObj)] || [];
-            
-            let rdvsCibles = kineVisionne === "TOUS" ? tousRdvs : tousRdvs.filter(r => r.kineNom === kineVisionne);
-            if (filtreTlaUniquementActif) {
-                rdvsCibles = rdvsCibles.filter(r => r.tlaStatut === 'dans_tla' || r.tlaStatut === 'facture');
-            }
-            rdvsCibles.sort(trierPlannings);
-            let cibleTexte = kineVisionne === "TOUS" ? "GLOBAL CABINET" : kineVisionne;
-
-            let texte = `*Rapport du ${getLabelDate(dateObj)} - ${cibleTexte}*\n\n${genererBlocRapport(rdvsCibles)}`;
-            navigator.clipboard.writeText(texte).then(() => alert("Rapport journalier copié !"));
-        }
-
-        function exporterRapportSemaine() {
-            let cibleTexte = kineVisionne === "TOUS" ? "GLOBAL CABINET" : kineVisionne;
-            let texte = `📅 *BILAN HEBDOMADAIRE - ${cibleTexte}*\n\n`;
-            
-            datesSemaineEnCours.forEach(d => {
-                const tousRdvs = planningsParDate[getCleDate(d)] || [];
-                let rdvsCibles = kineVisionne === "TOUS" ? tousRdvs : tousRdvs.filter(r => r.kineNom === kineVisionne);
-                if (filtreTlaUniquementActif) {
-                    rdvsCibles = rdvsCibles.filter(r => r.tlaStatut === 'dans_tla' || r.tlaStatut === 'facture');
-                }
-                rdvsCibles.sort(trierPlannings);
-                texte += `▶️ *${getLabelDate(d).toUpperCase()}*\n${genererBlocRapport(rdvsCibles)}\n`;
-            });
-            navigator.clipboard.writeText(texte).then(() => alert("Bilan hebdomadaire copié !"));
-        }
-
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => { navigator.serviceWorker.register('sw.js'); });
-        }
+        function getCleDate(d) { return d.toISOString().split('T')[0]; }
+        function getLabelDate(d) { return `${nomsJours[d.getDay() === 0 ? 4 : d.getDay()-1]} ${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}`; }
     </script>
 </body>
 </html>
