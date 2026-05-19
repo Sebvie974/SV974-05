@@ -13,7 +13,7 @@
             --text-color: #333333;
             --primary: #007aff;
             --success: #34c759;
-            --danger: #ff3b30; /* Rouge vif pour les alertes */
+            --danger: #ff3b30; 
             --neutral: #8e8e93;
             --purple: #5856d6;
             --orange: #ff9500;
@@ -196,17 +196,36 @@
         /* Cartes Patients */
         .patient-card {
             background: var(--card-bg);
-            padding: 15px;
+            padding: 12px 15px;
             border-radius: 12px;
             box-shadow: 0 2px 5px rgba(0,0,0,0.03);
             display: flex;
             justify-content: space-between;
             align-items: center;
             border-left: 5px solid var(--neutral);
+            gap: 10px;
         }
         .patient-card.vu { border-left-color: var(--success); }
         .patient-card.non-vu { border-left-color: var(--danger); }
-        .patient-info { display: flex; flex-direction: column; gap: 4px; max-width: 60%; }
+        
+        /* Layout interne de la carte */
+        .patient-card-left { display: flex; align-items: center; gap: 10px; max-width: 65%; }
+        
+        /* Boutons de réorganisation */
+        .reorder-actions { display: flex; flex-direction: column; gap: 4px; }
+        .btn-reorder {
+            background: #e5e5ea;
+            padding: 5px 8px;
+            font-size: 0.75rem;
+            border-radius: 4px;
+            color: #555;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .btn-reorder:active { background: #ccc; }
+
+        .patient-info { display: flex; flex-direction: column; gap: 4px; }
         .patient-name { font-weight: 600; font-size: 1.05rem; }
         .patient-address { font-size: 0.85rem; color: var(--neutral); text-decoration: none; }
         .patient-phone { font-size: 0.85rem; color: var(--primary); text-decoration: none; font-weight: bold; }
@@ -419,8 +438,8 @@
             <select id="planif-kine-affecte" required></select>
             <label>Choisir un patient</label>
             <select id="select-patient" required></select>
-            <label>Heure de passage</label>
-            <input type="time" id="planif-heure" required>
+            <label>Heure de passage (Optionnel)</label>
+            <input type="time" id="planif-heure">
             <label>Jours de passage :</label>
             <div class="days-checkbox-grid" id="conteneur-jours-checkbox"></div>
             <div style="display: flex; gap: 10px; margin-top: 10px;">
@@ -476,7 +495,7 @@
         
         let vueActuelle = 'planning';
         let dateAncre = new Date();
-        let datesSemaineEnCours = []; 
+        let datesSemaine EnCours = []; 
         let indiceJourActuel = 0;
 
         let cataloguePatients = [];
@@ -763,7 +782,8 @@
                         heure: r.heure ? r.heure.substring(0, 5) : "00:00",
                         statut: r.statut,
                         verrouille: r.journee_verrouillee || false,
-                        kineNom: r.kine_nom || "Kiné A"
+                        kineNom: r.kine_nom || "Kiné A",
+                        ordre: r.ordre || 0 // Récupération de la nouvelle colonne ordre
                     });
                 });
 
@@ -910,6 +930,26 @@
             else afficherCatalogue();
         }
 
+        function trierPlannings(a, b) {
+            const aHeureRenseignee = a.heure !== "00:00";
+            const bHeureRenseignee = b.heure !== "00:00";
+
+            // Règle 1 : Les patients avec une vraie heure s'affichent en priorité absolue
+            if (aHeureRenseignee && !bHeureRenseignee) return -1;
+            if (!aHeureRenseignee && bHeureRenseignee) return 1;
+
+            // Règle 2 : Si les deux ont une heure renseignée, on trie par heure d'abord, puis par ordre
+            if (aHeureRenseignee && bHeureRenseignee) {
+                if (a.heure !== b.heure) {
+                    return a.heure.localeCompare(b.heure);
+                }
+                return a.ordre - b.ordre;
+            }
+
+            // Règle 3 : Si aucun n'a d'heure (les deux sont à "00:00"), on trie par ordre uniquement
+            return a.ordre - b.ordre;
+        }
+
         function afficherPlanning() {
             const tabsConteneur = document.getElementById('days-tabs');
             if (!tabsConteneur) return;
@@ -930,12 +970,13 @@
             
             let rdvAAfficher = [];
             if (kineVisionne === "TOUS") {
-                rdvAAfficher = tousRdvDuJour; 
+                rdvAAfficher = [...tousRdvDuJour]; 
             } else {
                 rdvAAfficher = tousRdvDuJour.filter(r => r.kineNom === kineVisionne);
             }
             
-            rdvAAfficher.sort((a, b) => a.heure.localeCompare(b.heure));
+            // Application du nouveau tri intelligent
+            rdvAAfficher.sort(trierPlannings);
 
             const estSecretariat = (kineRole === 'secretariat');
             
@@ -981,7 +1022,7 @@
                 return;
             }
 
-            rdvAAfficher.forEach(rdv => {
+            rdvAAfficher.forEach((rdv, idx) => {
                 const patient = cataloguePatients.find(p => String(p.id) === String(rdv.patientId));
                 if(!patient) return;
 
@@ -993,15 +1034,28 @@
                 let chaineTels = patient.telephone ? `📞 ${patient.telephone}` : '';
                 if(patient.telephone_2) chaineTels += ` / ${patient.telephone_2}`;
 
+                const masquerFleches = kineVisionne === "TOUS" || (rdv.verrouille && !estSecretariat);
+
+                // Affichage propre de l'heure si elle existe
+                const affichageHeure = rdv.heure !== "00:00" ? `🕒 ${rdv.heure}` : "⏰ Non spécifié";
+
                 card.innerHTML = `
-                    <div class="patient-info">
-                        <span class="patient-name">${patient.nom}</span>
-                        <span style="font-size:0.85rem; font-weight:bold;">🕒 ${rdv.heure}</span>
-                        <a href="http://googleusercontent.com/maps.google.com/3${encodeURIComponent(patient.adresse)}" target="_blank" class="patient-address">📍 ${patient.adresse}</a>
-                        ${chaineTels ? `<a href="tel:${patient.telephone}" class="patient-phone">${chaineTels}</a>` : ''}
-                        ${patient.a_prevoir ? `<span class="badge-card-prevoir">🚨 À prévoir</span>` : ''}
-                        ${patient.notes ? `<span class="btn-note-declencheur" onclick="ouvrirNoteVolante('${patient.id}')">📝 Note</span>` : ''}
-                        ${kineVisionne === "TOUS" ? `<span class="kine-tag">Praticien : ${rdv.kineNom} ${rdv.verrouille ? '🔒' : ''}</span>` : ''}
+                    <div class="patient-card-left">
+                        ${!masquerFleches ? `
+                        <div class="reorder-actions">
+                            <button class="btn-reorder" onclick="deplacerRdv(${idx}, -1)" ${idx === 0 ? 'disabled' : ''} title="Monter">🔼</button>
+                            <button class="btn-reorder" onclick="deplacerRdv(${idx}, 1)" ${idx === rdvAAfficher.length - 1 ? 'disabled' : ''} title="Descendre">🔽</button>
+                        </div>
+                        ` : ''}
+                        <div class="patient-info">
+                            <span class="patient-name">${patient.nom}</span>
+                            <span style="font-size:0.85rem; font-weight:bold; color: ${rdv.heure !== '00:00' ? 'var(--purple)' : 'var(--neutral)'};">${affichageHeure}</span>
+                            <a href="http://maps.google.com/?q=${encodeURIComponent(patient.adresse)}" target="_blank" class="patient-address">📍 ${patient.adresse}</a>
+                            ${chaineTels ? `<a href="tel:${patient.telephone}" class="patient-phone">${chaineTels}</a>` : ''}
+                            ${patient.a_prevoir ? `<span class="badge-card-prevoir">🚨 À prévoir</span>` : ''}
+                            ${patient.notes ? `<span class="btn-note-declencheur" onclick="ouvrirNoteVolante('${patient.id}')">📝 Note</span>` : ''}
+                            ${kineVisionne === "TOUS" ? `<span class="kine-tag">Praticien : ${rdv.kineNom} ${rdv.verrouille ? '🔒' : ''}</span>` : ''}
+                        </div>
                     </div>
                     <div class="btn-group">
                         <button class="btn-status btn-vu ${rdv.statut === 'vu' ? 'active' : ''}" ${desactiveBouton} onclick="changerStatutRdv('${rdv.idPlanif}', 'vu')">✅</button>
@@ -1011,6 +1065,48 @@
                 `;
                 conteneur.appendChild(card);
             });
+        }
+
+        // Réorganisation manuelle basée uniquement sur la colonne ordre
+        async function deplacerRdv(indexActuel, direction) {
+            const dateSelectionnee = datesSemaineEnCours[indiceJourActuel];
+            const cleDate = getCleDate(dateSelectionnee);
+            const tousRdvDuJour = planningsParDate[cleDate] || [];
+            
+            let rdvFiltrés = tousRdvDuJour.filter(r => r.kineNom === kineVisionne);
+            rdvFiltrés.sort(trierPlannings);
+
+            const cibleIndex = indexActuel + direction;
+            if (cibleIndex < 0 || cibleIndex >= rdvFiltrés.length) return;
+
+            const rdvA = rdvFiltrés[indexActuel];
+            const rdvB = rdvFiltrés[cibleIndex];
+
+            // Permutation simple des poids d'ordre
+            let tempOrdre = rdvA.ordre;
+            rdvA.ordre = rdvB.ordre;
+            rdvB.ordre = tempOrdre;
+
+            // Si par hasard ils avaient le même ordre (ex: 0 par défaut), on force un écartement net
+            if (rdvA.ordre === rdvB.ordre) {
+                if (direction > 0) {
+                    rdvA.ordre = rdvB.ordre + 1;
+                } else {
+                    rdvA.ordre = rdvB.ordre - 1;
+                }
+            }
+
+            // Tri optimiste instantané à l'écran
+            rdvFiltrés.sort(trierPlannings);
+            rafraichirAffichage();
+
+            // Sauvegarde définitive de la colonne ordre dans Supabase
+            if (supabaseClient) {
+                await Promise.all([
+                    supabaseClient.from('plannings_dates').update({ ordre: rdvA.ordre }).eq('id_planif', rdvA.idPlanif),
+                    supabaseClient.from('plannings_dates').update({ ordre: rdvB.ordre }).eq('id_planif', rdvB.idPlanif)
+                ]);
+            }
         }
 
         async function gererVerrouillageJour() {
@@ -1068,7 +1164,8 @@
         async function ajouterAuPlanningMultiJours() {
             const praticienCible = document.getElementById('planif-kine-affecte').value;
             const patientId = document.getElementById('select-patient').value;
-            const heure = document.getElementById('planif-heure').value || "00:00";
+            const heureSaisie = document.getElementById('planif-heure').value;
+            const heure = heureSaisie ? heureSaisie : "00:00"; // Si pas d'heure, 00:00 par défaut
             const checkboxes = document.querySelectorAll('input[name="jours-planif"]:checked');
 
             if(!praticienCible || !patientId || checkboxes.length === 0) {
@@ -1077,7 +1174,13 @@
             }
 
             const lignesAInserer = [];
-            checkboxes.forEach(cb => {
+            
+            // Calcul automatique d'un index d'ordre incrémental pour éviter les doublons au départ
+            const cleDateAujourdhui = getCleDate(datesSemaineEnCours[indiceJourActuel]);
+            const rdvExistants = planningsParDate[cleDateAujourdhui] || [];
+            const maxOrdreActuel = rdvExistants.reduce((max, r) => r.ordre > max ? r.ordre : max, 0);
+
+            checkboxes.forEach((cb, i) => {
                 const dateCible = datesSemaineEnCours[parseInt(cb.value)];
                 lignesAInserer.push({
                     id_planif: Math.floor(Math.random() * 1000000000).toString(),
@@ -1086,7 +1189,8 @@
                     heure: heure,
                     statut: null,
                     journee_verrouillee: false,
-                    kine_nom: praticienCible
+                    kine_nom: praticienCible,
+                    ordre: maxOrdreActuel + i + 1 // S'ajoute automatiquement à la suite
                 });
             });
 
@@ -1097,6 +1201,8 @@
                 
                 await supabaseClient.from('catalogue_patients').update({ a_prevoir: false }).eq('id', patientId);
                 
+                // Vider l'input d'heure pour la prochaine fois
+                document.getElementById('planif-heure').value = '';
                 chargerDonneesDepuisServeur();
             }
         }
@@ -1292,7 +1398,7 @@
             rdvs.forEach(r => {
                 const p = cataloguePatients.find(item => String(item.id) === String(r.patientId));
                 if (!p) return;
-                let ligne = `  - [${r.heure}] ${p.nom}`;
+                let ligne = `  - [${r.heure !== '00:00' ? r.heure : 'Sans heure'}] ${p.nom}`;
                 if (p.telephone) ligne += ` (${p.telephone})`;
                 if (p.notes) ligne += ` [Note: ${p.notes}]`;
                 if (kineVisionne === "TOUS") ligne += ` (Par: ${r.kineNom})`;
@@ -1313,6 +1419,7 @@
             const tousRdvs = planningsParDate[getCleDate(dateObj)] || [];
             
             let rdvsCibles = kineVisionne === "TOUS" ? tousRdvs : tousRdvs.filter(r => r.kineNom === kineVisionne);
+            rdvsCibles.sort(trierPlannings);
             let cibleTexte = kineVisionne === "TOUS" ? "GLOBAL CABINET" : kineVisionne;
 
             let texte = `*Rapport du ${getLabelDate(dateObj)} - ${cibleTexte}*\n\n${genererBlocRapport(rdvsCibles)}`;
@@ -1326,6 +1433,7 @@
             datesSemaineEnCours.forEach(d => {
                 const tousRdvs = planningsParDate[getCleDate(d)] || [];
                 let rdvsCibles = kineVisionne === "TOUS" ? tousRdvs : tousRdvs.filter(r => r.kineNom === kineVisionne);
+                rdvsCibles.sort(trierPlannings);
                 texte += `▶️ *${getLabelDate(d).toUpperCase()}*\n${genererBlocRapport(rdvsCibles)}\n`;
             });
             navigator.clipboard.writeText(texte).then(() => alert("Bilan hebdomadaire copié !"));
