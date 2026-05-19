@@ -19,6 +19,7 @@
             --orange: #ff9500;
             --alert-bg: #ffe5e5;
             --alert-text: #b30000;
+            --tla-color: #00c7b1;
         }
 
         body {
@@ -232,6 +233,52 @@
         .kine-tag { font-size: 0.75rem; background: #e5e5ea; color: #555; padding: 2px 6px; border-radius: 4px; font-weight: bold; width: fit-content; margin-top: 2px;}
         .badge-card-prevoir { font-size: 0.7rem; background: var(--danger); color: white; padding: 2px 6px; border-radius: 4px; font-weight: bold; width: fit-content; }
         
+        /* Badges Specifiques TLA */
+        .badge-tla-kine {
+            font-size: 0.75rem;
+            background-color: var(--tla-color);
+            color: white;
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            width: fit-content;
+            margin-top: 2px;
+            border: none;
+        }
+        .badge-tla-kine.facture {
+            background-color: #e5e5ea;
+            color: #8e8e93;
+            text-decoration: line-through;
+            cursor: pointer; /* Permet aux kinés de décocher si erreur */
+        }
+        .badge-tla-sec-facture {
+            font-size: 0.7rem;
+            background-color: var(--success);
+            color: white;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: bold;
+            width: fit-content;
+            margin-top: 2px;
+        }
+        .sec-tla-checkbox-container {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.8rem;
+            color: #555;
+            margin-top: 2px;
+            cursor: pointer;
+            background: #eefdfb;
+            padding: 3px 6px;
+            border-radius: 4px;
+            width: fit-content;
+        }
+
         /* Bouton d'accès aux notes */
         .btn-note-declencheur {
             font-size: 0.75rem;
@@ -619,7 +666,7 @@
             const role = inputRole.value;
 
             if (!nom || !mdp) {
-                alert("Veuillez renseigner un nom et un mot de passe.");
+                alert("Veuillez renseigneur un nom et un mot de passe.");
                 return;
             }
 
@@ -781,7 +828,8 @@
                         statut: r.statut,
                         verrouille: r.journee_verrouillee || false,
                         kineNom: r.kine_nom || "Kiné A",
-                        ordre: r.ordre || 0 
+                        ordre: r.ordre || 0,
+                        tlaStatut: r.tla_statut || null // Nouveau champ pour le suivi TLA/Factures
                     });
                 });
 
@@ -923,13 +971,11 @@
             rafraichirAffichage();
         }
 
-        // CORRECTION DU BUG ICI : L'ordre manuel prévaut absolument sur l'heure
         function trierPlannings(a, b) {
             if (a.ordre !== b.ordre) {
                 return a.ordre - b.ordre;
             }
             
-            // Si l'ordre est identique (ex: nouveaux ajouts non reclassés), on utilise l'heure
             const aHeureRenseignee = a.heure && a.heure !== "00:00";
             const bHeureRenseignee = b.heure && b.heure !== "00:00";
 
@@ -939,6 +985,47 @@
                 return a.heure.localeCompare(b.heure);
             }
             return 0;
+        }
+
+        // Action asymétrique de gestion du module TLA
+        async function basculerTlaStatut(idPlanif, actionUtilisateur) {
+            let rdvTrouve = null;
+            let dateCleTrouvee = null;
+
+            Object.keys(planningsParDate).forEach(cle => {
+                const cible = planningsParDate[cle].find(r => r.idPlanif === idPlanif);
+                if(cible) { rdvTrouve = cible; dateCleTrouvee = cle; }
+            });
+            if (!rdvTrouve) return;
+
+            let nouveauStatut = null;
+
+            if (actionUtilisateur === 'secretariat_click') {
+                // Le secrétariat coche/décoche la présence des factures dans le TLA
+                if (rdvTrouve.tlaStatut === null) {
+                    nouveauStatut = 'dans_tla';
+                } else {
+                    nouveauStatut = null; // Enlève la coche ou annule le statut facturé
+                }
+            } else if (actionUtilisateur === 'kine_click') {
+                // Le kiné valide l'action sur le terrain (passe de 'dans_tla' à 'facture' ou vice-versa)
+                if (rdvTrouve.tlaStatut === 'dans_tla') {
+                    nouveauStatut = 'facture';
+                } else if (rdvTrouve.tlaStatut === 'facture') {
+                    nouveauStatut = 'dans_tla'; // Permet de revenir en arrière si mauvaise manip
+                }
+            }
+
+            rdvTrouve.tlaStatut = nouveauStatut;
+            rafraichirAffichage();
+
+            if (supabaseClient) {
+                try {
+                    await supabaseClient.from('plannings_dates').update({ tla_statut: nouveauStatut }).eq('id_planif', idPlanif);
+                } catch (err) {
+                    console.error("Erreur de sauvegarde Supabase TLA :", err);
+                }
+            }
         }
 
         function afficherPlanning() {
@@ -1027,6 +1114,32 @@
                 const masquerFleches = kineVisionne === "TOUS" || (rdv.verrouille && !estSecretariat);
                 const affichageHeure = rdv.heure !== "00:00" ? `🕒 ${rdv.heure}` : "⏰ Non spécifié";
 
+                // --- CONSTRUCTION DU COMPOSANT ASYMÉTRIQUE TLA ---
+                let htmlModuleTla = '';
+                if (estSecretariat) {
+                    // Secrétariat : Gère la coche TLA ou voit la complétion
+                    if (rdv.tlaStatut === 'facture') {
+                        htmlModuleTla = `
+                            <div style="display:flex; flex-direction:column; gap:2px;">
+                                <span class="badge-tla-sec-facture">✅ Facturé (TLA traité)</span>
+                                <button class="btn-icon" style="font-size:0.7rem; color:var(--danger); text-align:left; padding:0;" onclick="basculerTlaStatut('${rdv.idPlanif}', 'secretariat_click')">🔄 Supprimer la coche / Réinitialiser</button>
+                            </div>`;
+                    } else {
+                        const isCoché = rdv.tlaStatut === 'dans_tla' ? 'checked' : '';
+                        htmlModuleTla = `
+                            <label class="sec-tla-checkbox-container" onclick="event.stopPropagation();">
+                                <input type="checkbox" ${isCoché} onchange="basculerTlaStatut('${rdv.idPlanif}', 'secretariat_click')"> Facture au TLA
+                            </label>`;
+                    }
+                } else {
+                    // Côté Kiné : Ne voit le bouton que si le secrétariat l'a envoyé dans le TLA ('dans_tla' ou 'facture')
+                    if (rdv.tlaStatut === 'dans_tla') {
+                        htmlModuleTla = `<button class="badge-tla-kine" onclick="basculerTlaStatut('${rdv.idPlanif}', 'kine_click')">📱 Charger & Facturer TLA</button>`;
+                    } else if (rdv.tlaStatut === 'facture') {
+                        htmlModuleTla = `<button class="badge-tla-kine facture" onclick="basculerTlaStatut('${rdv.idPlanif}', 'kine_click')">✓ TLA Facturé</button>`;
+                    }
+                }
+
                 card.innerHTML = `
                     <div class="patient-card-left">
                         ${!masquerFleches ? `
@@ -1043,6 +1156,7 @@
                             ${patient.a_prevoir ? `<span class="badge-card-prevoir">🚨 À prévoir</span>` : ''}
                             ${patient.notes ? `<span class="btn-note-declencheur" onclick="ouvrirNoteVolante('${patient.id}')">📝 Note</span>` : ''}
                             ${kineVisionne === "TOUS" ? `<span class="kine-tag">Praticien : ${rdv.kineNom} ${rdv.verrouille ? '🔒' : ''}</span>` : ''}
+                            ${htmlModuleTla}
                         </div>
                     </div>
                     <div class="btn-group">
@@ -1069,12 +1183,10 @@
             const rdvA = rdvFiltrés[indexActuel];
             const rdvB = rdvFiltrés[cibleIndex];
 
-            // Inversion propre des deux valeurs d'ordre
             let tempOrdre = rdvA.ordre;
             rdvA.ordre = rdvB.ordre;
             rdvB.ordre = tempOrdre;
 
-            // Sécurité si deux éléments possédaient une valeur d'ordre identique à l'origine
             if (rdvA.ordre === rdvB.ordre) {
                 if (direction > 0) {
                     rdvA.ordre = rdvB.ordre + 1;
@@ -1182,7 +1294,8 @@
                     statut: null,
                     journee_verrouillee: false,
                     kine_nom: praticienCible,
-                    ordre: maxOrdreActuel + i + 1 
+                    ordre: maxOrdreActuel + i + 1,
+                    tla_statut: null
                 });
             });
 
@@ -1324,10 +1437,6 @@
         function ouvrirModal(id) { document.getElementById(id).style.display = 'flex'; }
         function fermerModal(id) { document.getElementById(id).style.display = 'none'; }
 
-        function abrirPlanificateur() { // alias de secours
-            ouvrirPlanificateur();
-        }
-
         function ouvrirPlanificateur() {
             const selectPatient = document.getElementById('select-patient');
             const selectKineAffecte = document.getElementById('planif-kine-affecte');
@@ -1412,7 +1521,7 @@
             });
             let texte = "";
             if(vus.length) texte += `🟢 *Patients vus :*\n${vus.join('\n')}\n`;
-            if(absents.length) texte += `🔴 *Absents :*\n${absents.join('\n')}\n`;
+            if(absents.length) text += `🔴 *Absents :*\n${absents.join('\n')}\n`;
             if(nonTraites.length) texte += `⚪ *Non traités / Prévus :*\n${nonTraites.join('\n')}\n`;
             return texte || " Aucun patient programmé.\n";
         }
