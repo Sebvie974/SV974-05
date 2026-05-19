@@ -495,7 +495,7 @@
         
         let vueActuelle = 'planning';
         let dateAncre = new Date();
-        let datesSemaine EnCours = []; 
+        let datesSemaineEnCours = []; 
         let indiceJourActuel = 0;
 
         let cataloguePatients = [];
@@ -585,7 +585,7 @@
             }
         }
 
-        function ouvrirEditionKine(id) {
+        function abrirEditionKine(id) {
             const u = listeUtilisateursComplets.find(item => String(item.id) === String(id));
             if (!u) return;
 
@@ -783,7 +783,7 @@
                         statut: r.statut,
                         verrouille: r.journee_verrouillee || false,
                         kineNom: r.kine_nom || "Kiné A",
-                        ordre: r.ordre || 0 // Récupération de la nouvelle colonne ordre
+                        ordre: r.ordre || 0 
                     });
                 });
 
@@ -934,11 +934,9 @@
             const aHeureRenseignee = a.heure !== "00:00";
             const bHeureRenseignee = b.heure !== "00:00";
 
-            // Règle 1 : Les patients avec une vraie heure s'affichent en priorité absolue
             if (aHeureRenseignee && !bHeureRenseignee) return -1;
             if (!aHeureRenseignee && bHeureRenseignee) return 1;
 
-            // Règle 2 : Si les deux ont une heure renseignée, on trie par heure d'abord, puis par ordre
             if (aHeureRenseignee && bHeureRenseignee) {
                 if (a.heure !== b.heure) {
                     return a.heure.localeCompare(b.heure);
@@ -946,7 +944,6 @@
                 return a.ordre - b.ordre;
             }
 
-            // Règle 3 : Si aucun n'a d'heure (les deux sont à "00:00"), on trie par ordre uniquement
             return a.ordre - b.ordre;
         }
 
@@ -975,7 +972,6 @@
                 rdvAAfficher = tousRdvDuJour.filter(r => r.kineNom === kineVisionne);
             }
             
-            // Application du nouveau tri intelligent
             rdvAAfficher.sort(trierPlannings);
 
             const estSecretariat = (kineRole === 'secretariat');
@@ -1035,8 +1031,6 @@
                 if(patient.telephone_2) chaineTels += ` / ${patient.telephone_2}`;
 
                 const masquerFleches = kineVisionne === "TOUS" || (rdv.verrouille && !estSecretariat);
-
-                // Affichage propre de l'heure si elle existe
                 const affichageHeure = rdv.heure !== "00:00" ? `🕒 ${rdv.heure}` : "⏰ Non spécifié";
 
                 card.innerHTML = `
@@ -1050,7 +1044,7 @@
                         <div class="patient-info">
                             <span class="patient-name">${patient.nom}</span>
                             <span style="font-size:0.85rem; font-weight:bold; color: ${rdv.heure !== '00:00' ? 'var(--purple)' : 'var(--neutral)'};">${affichageHeure}</span>
-                            <a href="http://maps.google.com/?q=${encodeURIComponent(patient.adresse)}" target="_blank" class="patient-address">📍 ${patient.adresse}</a>
+                            <a href="https://maps.google.com/?q=${encodeURIComponent(patient.adresse)}" target="_blank" class="patient-address">📍 ${patient.adresse}</a>
                             ${chaineTels ? `<a href="tel:${patient.telephone}" class="patient-phone">${chaineTels}</a>` : ''}
                             ${patient.a_prevoir ? `<span class="badge-card-prevoir">🚨 À prévoir</span>` : ''}
                             ${patient.notes ? `<span class="btn-note-declencheur" onclick="ouvrirNoteVolante('${patient.id}')">📝 Note</span>` : ''}
@@ -1067,7 +1061,6 @@
             });
         }
 
-        // Réorganisation manuelle basée uniquement sur la colonne ordre
         async function deplacerRdv(indexActuel, direction) {
             const dateSelectionnee = datesSemaineEnCours[indiceJourActuel];
             const cleDate = getCleDate(dateSelectionnee);
@@ -1082,12 +1075,10 @@
             const rdvA = rdvFiltrés[indexActuel];
             const rdvB = rdvFiltrés[cibleIndex];
 
-            // Permutation simple des poids d'ordre
             let tempOrdre = rdvA.ordre;
             rdvA.ordre = rdvB.ordre;
             rdvB.ordre = tempOrdre;
 
-            // Si par hasard ils avaient le même ordre (ex: 0 par défaut), on force un écartement net
             if (rdvA.ordre === rdvB.ordre) {
                 if (direction > 0) {
                     rdvA.ordre = rdvB.ordre + 1;
@@ -1096,11 +1087,9 @@
                 }
             }
 
-            // Tri optimiste instantané à l'écran
             rdvFiltrés.sort(trierPlannings);
             rafraichirAffichage();
 
-            // Sauvegarde définitive de la colonne ordre dans Supabase
             if (supabaseClient) {
                 await Promise.all([
                     supabaseClient.from('plannings_dates').update({ ordre: rdvA.ordre }).eq('id_planif', rdvA.idPlanif),
@@ -1165,7 +1154,7 @@
             const praticienCible = document.getElementById('planif-kine-affecte').value;
             const patientId = document.getElementById('select-patient').value;
             const heureSaisie = document.getElementById('planif-heure').value;
-            const heure = heureSaisie ? heureSaisie : "00:00"; // Si pas d'heure, 00:00 par défaut
+            const heure = heureSaisie ? heureSaisie : "00:00"; 
             const checkboxes = document.querySelectorAll('input[name="jours-planif"]:checked');
 
             if(!praticienCible || !patientId || checkboxes.length === 0) {
@@ -1174,8 +1163,6 @@
             }
 
             const lignesAInserer = [];
-            
-            // Calcul automatique d'un index d'ordre incrémental pour éviter les doublons au départ
             const cleDateAujourdhui = getCleDate(datesSemaineEnCours[indiceJourActuel]);
             const rdvExistants = planningsParDate[cleDateAujourdhui] || [];
             const maxOrdreActuel = rdvExistants.reduce((max, r) => r.ordre > max ? r.ordre : max, 0);
@@ -1190,7 +1177,7 @@
                     statut: null,
                     journee_verrouillee: false,
                     kine_nom: praticienCible,
-                    ordre: maxOrdreActuel + i + 1 // S'ajoute automatiquement à la suite
+                    ordre: maxOrdreActuel + i + 1 
                 });
             });
 
@@ -1201,7 +1188,6 @@
                 
                 await supabaseClient.from('catalogue_patients').update({ a_prevoir: false }).eq('id', patientId);
                 
-                // Vider l'input d'heure pour la prochaine fois
                 document.getElementById('planif-heure').value = '';
                 chargerDonneesDepuisServeur();
             }
