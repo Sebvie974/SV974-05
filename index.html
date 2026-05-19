@@ -583,7 +583,7 @@
             }
         }
 
-        function ouvrirEditionKine(id) {
+        function abrirEditionKine(id) {
             const u = listeUtilisateursComplets.find(item => String(item.id) === String(id));
             if (!u) return;
 
@@ -1042,7 +1042,7 @@
                         <div class="patient-info">
                             <span class="patient-name">${patient.nom}</span>
                             <span style="font-size:0.85rem; font-weight:bold; color: ${rdv.heure !== '00:00' ? 'var(--purple)' : 'var(--neutral)'};">${affichageHeure}</span>
-                            <a href="https://maps.google.com/?q=${encodeURIComponent(patient.adresse)}" target="_blank" class="patient-address">📍 ${patient.adresse}</a>
+                            <a href="http://maps.google.com/?q=${encodeURIComponent(patient.adresse)}" target="_blank" class="patient-address">📍 ${patient.adresse}</a>
                             ${chaineTels ? `<a href="tel:${patient.telephone}" class="patient-phone">${chaineTels}</a>` : ''}
                             ${patient.a_prevoir ? `<span class="badge-card-prevoir">🚨 À prévoir</span>` : ''}
                             ${patient.notes ? `<span class="btn-note-declencheur" onclick="ouvrirNoteVolante('${patient.id}')">📝 Note</span>` : ''}
@@ -1064,19 +1064,23 @@
             const cleDate = getCleDate(dateSelectionnee);
             const tousRdvDuJour = planningsParDate[cleDate] || [];
             
+            // Re-générer exactement le tableau trié visible à l'écran pour caler les index reçus
             let rdvFiltrés = tousRdvDuJour.filter(r => r.kineNom === kineVisionne);
             rdvFiltrés.sort(trierPlannings);
 
             const cibleIndex = indexActuel + direction;
             if (cibleIndex < 0 || cibleIndex >= rdvFiltrés.length) return;
 
+            // Sélectionner les deux éléments cibles à échanger
             const rdvA = rdvFiltrés[indexActuel];
             const rdvB = rdvFiltrés[cibleIndex];
 
+            // Échanger leurs ordres
             let tempOrdre = rdvA.ordre;
             rdvA.ordre = rdvB.ordre;
             rdvB.ordre = tempOrdre;
 
+            // Gérer le cas où deux rendez-vous ont le même ordre d'origine
             if (rdvA.ordre === rdvB.ordre) {
                 if (direction > 0) {
                     rdvA.ordre = rdvB.ordre + 1;
@@ -1085,18 +1089,17 @@
                 }
             }
 
-            // Correction : On enregistre les modifications dans la mémoire locale globale
+            // Répercuter le changement dans la base locale complète de la journée
             planningsParDate[cleDate] = tousRdvDuJour.map(r => {
                 if (r.idPlanif === rdvA.idPlanif) return rdvA;
                 if (r.idPlanif === rdvB.idPlanif) return rdvB;
                 return r;
             });
 
-            // Tri local et rafraîchissement réactif de l'écran
-            planningsParDate[cleDate].sort(trierPlannings);
+            // Rafraîchir instantanément l'affichage (L'interface se met à jour immédiatement)
             rafraichirAffichage();
 
-            // Envoi des modifications en arrière-plan vers Supabase
+            // Lancer la persistance Supabase de façon asynchrone en arrière-plan
             if (supabaseClient) {
                 try {
                     await Promise.all([
@@ -1104,7 +1107,7 @@
                         supabaseClient.from('plannings_dates').update({ ordre: rdvB.ordre }).eq('id_planif', rdvB.idPlanif)
                     ]);
                 } catch (error) {
-                    console.error("Erreur lors du déplacement :", error);
+                    console.error("Erreur de synchronisation Supabase sur le tri :", error);
                 }
             }
         }
