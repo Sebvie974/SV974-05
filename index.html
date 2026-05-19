@@ -339,7 +339,6 @@
         
         let supabaseClient = null;
 
-        // Mot de passe superviseur
         const MOT_DE_PASSE_CABINET = "kine2026"; 
         const nomsJours = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi'];
         
@@ -368,7 +367,6 @@
             return true;
         }
 
-        // --- GESTION CENTRALISÉE DES COMPTES UTILISATEURS ---
         async function chargerListeKines() {
             if (!initialiserSupabase()) return;
             try {
@@ -414,7 +412,6 @@
         function basculerAffichageConfig(provenance) {
             const panel = document.getElementById('config-panel');
             
-            // Déplacement physique du bloc HTML dans le DOM selon d'où on l'appelle
             if (provenance === 'login') {
                 document.querySelector('.login-box').appendChild(panel);
             } else if (provenance === 'interface') {
@@ -481,7 +478,6 @@
             kineVisionne = document.getElementById('filtre-view-kine').value;
             rafraichirAffichage();
         }
-        // ------------------------------------
 
         function verifierConnexion() {
             const mdpSaisi = document.getElementById('password-input').value;
@@ -701,7 +697,17 @@
             
             rdvAAfficher.sort((a, b) => a.heure.localeCompare(b.heure));
 
-            journeeEstVerrouillee = rdvAAfficher.some(r => r.verrouille === true);
+            // --- MISE À JOUR SÉCURITÉ MODIFICATION SECRÉTARIAT ---
+            // On autorise globalement la planification et le reset si le secrétariat est connecté
+            const estSecretariat = (kineRole === 'secretariat');
+            
+            // La journée générale n'est considérée verrouillée en vue globale que si TOUS les rendez-vous affichés le sont.
+            // En vue par kiné individuel, elle dépend du verrou de ce dernier.
+            if(rdvAAfficher.length > 0) {
+                journeeEstVerrouillee = rdvAAfficher.every(r => r.verrouille === true);
+            } else {
+                journeeEstVerrouillee = false;
+            }
 
             const btnVerrou = document.getElementById('btn-verrouiller-jour');
             if (btnVerrou) {
@@ -709,7 +715,9 @@
                     btnVerrou.style.display = 'none'; 
                 } else {
                     btnVerrou.style.display = 'block';
-                    if (journeeEstVerrouillee) {
+                    // On recalcule le verrou spécifique à ce kiné précis pour l'affichage du bouton
+                    const kineVerrouille = tousRdvDuJour.filter(r => r.kineNom === kineVisionne).some(r => r.verrouille === true);
+                    if (kineVerrouille) {
                         btnVerrou.innerText = `Tournée de ${kineVisionne} Validée 🔒 (Déverrouiller)`;
                         btnVerrou.className = "btn-secondary";
                     } else {
@@ -719,15 +727,14 @@
                 }
             }
 
-            const estLectureSeuleSec = (kineRole === 'secretariat' && kineVisionne === 'TOUS');
-            document.getElementById('btn-global-planifier').disabled = journeeEstVerrouillee || estLectureSeuleSec;
-            document.getElementById('btn-global-reset').disabled = journeeEstVerrouillee || estLectureSeuleSec;
+            // Autorisation d'ajouter ou reset : si secrétaire, le bouton est tjs actif (sauf si tout est verrouillé)
+            document.getElementById('btn-global-planifier').disabled = !estSecretariat && journeeEstVerrouillee;
+            document.getElementById('btn-global-reset').disabled = kineVisionne === "TOUS" || (!estSecretariat && journeeEstVerrouillee);
 
             const statsEl = document.getElementById('tournee-stats');
             if (statsEl) {
                 let cibleTexte = kineVisionne === "TOUS" ? "Général cabinet" : kineVisionne;
                 let texteStats = `${cibleTexte} (${String(dateSelectionnee.getDate()).padStart(2,'0')}/${String(dateSelectionnee.getMonth()+1).padStart(2,'0')}) : ${rdvAAfficher.filter(r => r.statut !== null).length} / ${rdvAAfficher.length} traités`;
-                if (journeeEstVerrouillee) texteStats += " [🔒 REQUIS CLOS]";
                 statsEl.innerText = texteStats;
             }
 
@@ -747,14 +754,15 @@
                 const card = document.createElement('div');
                 card.className = `patient-card ${rdv.statut || ''}`;
                 
-                const desactiveBouton = (journeeEstVerrouillee || estLectureSeuleSec) ? 'disabled' : '';
+                // Un bouton individuel est désactivé si la ligne précise est verrouillée, SAUF si l'utilisateur est secrétaire (qui garde la main)
+                const desactiveBouton = (rdv.verrouille && !estSecretariat) ? 'disabled' : '';
 
                 card.innerHTML = `
                     <div class="patient-info">
                         <span class="patient-name">${patient.nom}</span>
                         <span style="font-size:0.85rem; font-weight:bold;">🕒 ${rdv.heure}</span>
-                        <a href="http://googleusercontent.com/maps.google.com/3{encodeURIComponent(patient.adresse)}" target="_blank" class="patient-address">📍 ${patient.adresse}</a>
-                        ${kineVisionne === "TOUS" ? `<span class="kine-tag">Praticien : ${rdv.kineNom}</span>` : ''}
+                        <a href="http://googleusercontent.com/maps.google.com/3${encodeURIComponent(patient.adresse)}" target="_blank" class="patient-address">📍 ${patient.adresse}</a>
+                        ${kineVisionne === "TOUS" ? `<span class="kine-tag">Praticien : ${rdv.kineNom} ${rdv.verrouille ? '🔒' : ''}</span>` : ''}
                     </div>
                     <div class="btn-group">
                         <button class="btn-status btn-vu ${rdv.statut === 'vu' ? 'active' : ''}" ${desactiveBouton} onclick="changerStatutRdv('${rdv.idPlanif}', 'vu')">✅</button>
@@ -777,7 +785,9 @@
                 return;
             }
 
-            if (!journeeEstVerrouillee) {
+            const kineVerrouille = rdvDuKine.some(r => r.verrouille === true);
+
+            if (!kineVerrouille) {
                 if (confirm(`Voulez-vous valider définitivement la tournée de ${kineVisionne} ?`)) {
                     if (supabaseClient) {
                         const ids = rdvDuKine.map(r => r.idPlanif);
@@ -800,12 +810,16 @@
         }
 
         async function changerStatutRdv(idPlanif, statutBouton) {
-            const cleDate = getCleDate(datesSemaineEnCours[indiceJourActuel]);
-            const rdv = planningsParDate[cleDate].find(r => r.idPlanif === idPlanif);
-            if (!rdv) return;
+            // Trouver le rdv peu importe la date
+            let rdv Trouve = null;
+            Object.keys(planningsParDate).forEach(cle => {
+                const cible = planningsParDate[cle].find(r => r.idPlanif === idPlanif);
+                if(cible) rdvTrouve = cible;
+            });
+            if (!rdvTrouve) return;
 
-            const nouveauStatut = rdv.statut === statutBouton ? null : statutBouton;
-            rdv.statut = nouveauStatut;
+            const nouveauStatut = rdvTrouve.statut === statutBouton ? null : statutBouton;
+            rdvTrouve.statut = nouveauStatut;
             rafraichirAffichage();
 
             if (supabaseClient) {
@@ -923,11 +937,6 @@
 
         function ouvrirModal(id) { document.getElementById(id).style.display = 'flex'; }
         function fermerModal(id) { document.getElementById(id).style.display = 'none'; }
-
-        function abrirPlanificateur() {
-            // alias typo protect
-            ouvrirPlanificateur();
-        }
 
         function ouvrirPlanificateur() {
             const selectPatient = document.getElementById('select-patient');
