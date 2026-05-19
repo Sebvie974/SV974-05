@@ -47,6 +47,9 @@
             text-align: center;
             width: 90%;
             max-width: 350px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
         }
 
         /* Interface Principale */
@@ -64,6 +67,15 @@
         }
 
         h1 { margin: 0; font-size: 1.4rem; color: var(--primary); }
+
+        .user-badge {
+            font-size: 0.85rem;
+            background: #e5e5ea;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-weight: bold;
+            color: var(--purple);
+        }
 
         .sync-indicator {
             font-size: 0.8rem;
@@ -107,14 +119,14 @@
         .stats { font-size: 0.9rem; color: var(--neutral); font-weight: bold; margin-bottom: 10px; }
         .actions-bar { display: flex; gap: 8px; flex-wrap: wrap; }
 
-        button {
+        button, select, input {
             border: none;
             padding: 10px 14px;
             border-radius: 8px;
             font-weight: bold;
-            cursor: pointer;
             font-size: 0.85rem;
         }
+        button { cursor: pointer; }
         button:disabled {
             opacity: 0.4 !important;
             cursor: not-allowed !important;
@@ -170,18 +182,31 @@
 
     <div id="login-screen">
         <div class="login-box">
-            <h2 style="color: var(--primary); margin-top:0;">Accès Cabinet</h2>
-            <p style="color: var(--neutral); font-size:0.9rem;">Entrez le mot de passe du cabinet pour vous synchroniser.</p>
-            <input type="password" id="password-input" placeholder="Mot de passe" style="width:100%; padding:12px; border-radius:8px; border:1px solid #ccc; box-sizing:border-box; margin-bottom:15px; text-align:center; font-size:1.1rem;">
-            <button class="btn-primary" style="width:100%; padding:12px;" onclick="verifierConnexion()">Se connecter 🔐</button>
+            <h2 style="color: var(--primary); margin:0;">Accès Cabinet</h2>
+            <p style="color: var(--neutral); font-size:0.9rem; margin:0;">Sélectionnez votre profil et entrez le mot de passe.</p>
+            
+            <select id="kine-select-login" style="padding:12px; font-size:1rem; border:1px solid #ccc;">
+                <option value="Kiné A">Kiné A</option>
+                <option value="Kiné B">Kiné B</option>
+                <option value="Kiné C">Kiné C</option>
+            </select>
+
+            <input type="password" id="password-input" placeholder="Mot de passe" style="padding:12px; border:1px solid #ccc; text-align:center; font-size:1.1rem;">
+            <button class="btn-primary" style="padding:12px; font-size:1rem;" onclick="verifierConnexion()">Se connecter 🔐</button>
         </div>
     </div>
 
     <div id="main-app">
         <header>
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-                <h1 id="app-title">Planning Tournées</h1>
-                <div id="sync-badge" class="sync-indicator sync-online">Prêt 🟢</div>
+                <div>
+                    <h1 id="app-title" style="margin-bottom: 4px;">Planning Tournées</h1>
+                    <span class="user-badge" id="nom-kine-badge">Praticien : ...</span>
+                </div>
+                <div style="display:flex; flex-direction:column; gap:5px; align-items:flex-end;">
+                    <div id="sync-badge" class="sync-indicator sync-online">Prêt 🟢</div>
+                    <button class="btn-icon" style="font-size:0.8rem; color:var(--danger); padding:0;" onclick="deconnexion()">Déconnexion 🚪</button>
+                </div>
             </div>
 
             <div style="margin-bottom: 12px;">
@@ -202,7 +227,7 @@
                     <button class="btn-purple" onclick="exporterRapportSemaine()">Rapport Hebdo 📅</button>
                     <button class="btn-success" id="btn-global-planifier" onclick="ouvrirPlanificateur()">Planifier ➕</button>
                     <button class="btn-secondary" id="btn-global-reset" onclick="reinitialiserJour()">Reset 🔄</button>
-                    <button class="btn-orange" style="width:100%; margin-top:5px;" id="btn-verrouiller-jour" onclick="gererVerrouillageJour()">Valider et Verrouiller la journée 🔒</button>
+                    <button class="btn-orange" style="width:100%; margin-top:5px;" id="btn-verrouiller-jour" onclick="gererVerrouillageJour()">Valider et Verrouiller ma journée 🔒</button>
                 </div>
             </div>
 
@@ -265,7 +290,10 @@
 
         let cataloguePatients = [];
         let planningsParDate = {};
-        let journeeEstVerrouillee = false; // Variable d'état locale pour le jour sélectionné
+        let journeeEstVerrouillee = false; 
+        
+        // Nouvelle variable pour stocker le nom du kiné connecté
+        let kineConnecte = ""; 
 
         function initialiserSupabase() {
             if (supabaseClient === null) {
@@ -280,26 +308,36 @@
 
         function verifierConnexion() {
             const mdp = document.getElementById('password-input').value;
+            const kineSelectionne = document.getElementById('kine-select-login').value;
+            
             if (mdp === MOT_DE_PASSE_CABINET) {
                 if (!initialiserSupabase()) {
                     alert("Connexion à la base de données impossible pour le moment. Veuillez réessayer.");
                     return;
                 }
                 localStorage.setItem('kine_connecte', 'true');
+                localStorage.setItem('kine_nom_actif', kineSelectionne);
+                kineConnecte = kineSelectionne;
                 initialiserApplication();
             } else {
                 alert("Mot de passe incorrect.");
             }
         }
 
+        function deconnexion() {
+            localStorage.removeItem('kine_connecte');
+            localStorage.removeItem('kine_nom_actif');
+            window.location.reload();
+        }
+
         window.addEventListener('DOMContentLoaded', () => {
             if (localStorage.getItem('kine_connecte') === 'true') {
+                kineConnecte = localStorage.getItem('kine_nom_actif') || "Kiné A";
                 setTimeout(() => {
                     if (initialiserSupabase()) {
                         initialiserApplication();
                     } else {
-                        localStorage.removeItem('kine_connecte');
-                        window.location.reload();
+                        deconnexion();
                     }
                 }, 300);
             }
@@ -308,6 +346,7 @@
         function initialiserApplication() {
             document.getElementById('login-screen').style.display = 'none';
             document.getElementById('main-app').style.display = 'block';
+            document.getElementById('nom-kine-badge').innerText = `Praticien : ${kineConnecte}`;
             
             calculerSemaine();
             chargerDonneesDepuisServeur();
@@ -349,7 +388,8 @@
                         patientId: r.patient_id,
                         heure: r.heure ? r.heure.substring(0, 5) : "00:00",
                         statut: r.statut,
-                        verrouille: r.journee_verrouillee || false
+                        verrouille: r.journee_verrouillee || false,
+                        kineNom: r.kine_nom || "Kiné A" // Récupération du kiné affecté
                     });
                 });
 
@@ -446,32 +486,34 @@
 
             const dateSelectionnee = datesSemaineEnCours[indiceJourActuel];
             const cleDate = getCleDate(dateSelectionnee);
-            const rdvDuJour = planningsParDate[cleDate] || [];
-            rdvDuJour.sort((a, b) => a.heure.localeCompare(b.heure));
+            
+            // FILTRAGE : On ne garde QUE les rendez-vous du jour appartenant au kiné connecté
+            const tousRdvDuJour = planningsParDate[cleDate] || [];
+            const rdvDuKineActuel = tousRdvDuJour.filter(r => r.kineNom === kineConnecte);
+            
+            rdvDuKineActuel.sort((a, b) => a.heure.localeCompare(b.heure));
 
-            // Détection du verrouillage : si au moins un rdv du jour est marqué verrouillé
-            journeeEstVerrouillee = rdvDuJour.some(r => r.verrouille === true);
+            // Détection du verrouillage UNIQUEMENT pour ce kiné ce jour-là
+            journeeEstVerrouillee = rdvDuKineActuel.some(r => r.verrouille === true);
 
-            // Mise à jour graphique du bouton de verrouillage général
             const btnVerrou = document.getElementById('btn-verrouiller-jour');
             if (btnVerrou) {
                 if (journeeEstVerrouillee) {
-                    btnVerrou.innerText = "Journée Validée 🔒 (Cliquez pour déverrouiller)";
+                    btnVerrou.innerText = "Ma tournée est Validée 🔒 (Déverrouiller)";
                     btnVerrou.className = "btn-secondary";
                 } else {
-                    btnVerrou.innerText = "Valider et Verrouiller la journée 🔐";
+                    btnVerrou.innerText = "Valider et Verrouiller ma journée 🔐";
                     btnVerrou.className = "btn-orange";
                 }
             }
 
-            // Désactivation des boutons d'en-tête si verrouillé
             document.getElementById('btn-global-planifier').disabled = journeeEstVerrouillee;
             document.getElementById('btn-global-reset').disabled = journeeEstVerrouillee;
 
             const statsEl = document.getElementById('tournee-stats');
             if (statsEl) {
-                let texteStats = `${getLabelDate(dateSelectionnee)} : ${rdvDuJour.filter(r => r.statut !== null).length} / ${rdvDuJour.length} traités`;
-                if (journeeEstVerrouillee) texteStats += " [JOURNÉE CLÔTURÉE 🔒]";
+                let texteStats = `${getLabelDate(dateSelectionnee)} : ${rdvDuKineActuel.filter(r => r.statut !== null).length} / ${rdvDuKineActuel.length} traités`;
+                if (journeeEstVerrouillee) texteStats += " [CLÔTURÉE 🔒]";
                 statsEl.innerText = texteStats;
             }
 
@@ -479,12 +521,12 @@
             if (!conteneur) return;
             conteneur.innerHTML = '';
 
-            if (rdvDuJour.length === 0) {
-                conteneur.innerHTML = '<p style="text-align:center; color:var(--neutral); margin-top:20px;">Aucun patient planifié.</p>';
+            if (rdvDuKineActuel.length === 0) {
+                conteneur.innerHTML = `<p style="text-align:center; color:var(--neutral); margin-top:20px;">Aucun patient planifié pour ${kineConnecte} ce jour.</p>`;
                 return;
             }
 
-            rdvDuJour.forEach(rdv => {
+            rdvDuKineActuel.forEach(rdv => {
                 const patient = cataloguePatients.find(p => String(p.id) === String(rdv.patientId));
                 if(!patient) return;
 
@@ -506,36 +548,34 @@
             });
         }
 
-        // Fonction pour gérer le verrouillage ou le déverrouillage au clic
         async function gererVerrouillageJour() {
             const cleDate = getCleDate(datesSemaineEnCours[indiceJourActuel]);
-            const rdvDuJour = planningsParDate[cleDate] || [];
+            const tousRdvDuJour = planningsParDate[cleDate] || [];
+            const rdvDuKine = tousRdvDuJour.filter(r => r.kineNom === kineConnecte);
 
-            if (rdvDuJour.length === 0) {
+            if (rdvDuKine.length === 0) {
                 alert("Impossible de verrouiller une journée vide.");
                 return;
             }
 
             if (!journeeEstVerrouillee) {
-                // Action de Verrouillage
-                if (confirm("Voulez-vous valider définitivement cette journée ? Les modifications seront bloquées.")) {
+                if (confirm(`Voulez-vous valider définitivement votre tournée du jour, ${kineConnecte} ?`)) {
                     if (supabaseClient) {
-                        const ids = rdvDuJour.map(r => r.idPlanif);
+                        const ids = rdvDuKine.map(r => r.idPlanif);
                         await supabaseClient.from('plannings_dates').update({ journee_verrouillee: true }).in('id_planif', ids);
                         chargerDonneesDepuisServeur();
                     }
                 }
             } else {
-                // Action de Déverrouillage (Demande de mot de passe)
-                const mdp = prompt("Entrez le mot de passe du cabinet pour modifier cette journée :");
+                const mdp = prompt("Entrez le mot de passe du cabinet pour déverrouiller votre journée :");
                 if (mdp === MOT_DE_PASSE_CABINET) {
                     if (supabaseClient) {
-                        const ids = rdvDuJour.map(r => r.idPlanif);
+                        const ids = rdvDuKine.map(r => r.idPlanif);
                         await supabaseClient.from('plannings_dates').update({ journee_verrouillee: false }).in('id_planif', ids);
                         chargerDonneesDepuisServeur();
                     }
                 } else if (mdp !== null) {
-                    alert("Mot de passe incorrect. La journée reste verrouillée.");
+                    alert("Mot de passe incorrect.");
                 }
             }
         }
@@ -572,7 +612,8 @@
                     date_cle: getCleDate(dateCible),
                     heure: heure,
                     statut: null,
-                    journee_verrouillee: false
+                    journee_verrouillee: false,
+                    kine_nom: kineConnecte // Enregistrement automatique au nom du kiné connecté
                 });
             });
 
@@ -584,7 +625,7 @@
             }
         }
 
-        async function retirarDuPlanning(idPlanif) {
+        async function retirerDuPlanning(idPlanif) {
             if (journeeEstVerrouillee) return;
             if (confirm("Retirer ce rendez-vous ?")) {
                 if (supabaseClient) {
@@ -596,9 +637,11 @@
 
         async function reinitialiserJour() {
             if (journeeEstVerrouillee) return;
-            if (confirm("Réinitialiser les statuts du jour ?")) {
+            if (confirm("Réinitialiser les statuts de votre tournée du jour ?")) {
                 const cleDate = getCleDate(datesSemaineEnCours[indiceJourActuel]);
-                const ids = (planningsParDate[cleDate] || []).map(r => r.idPlanif);
+                const tousRdv = planningsParDate[cleDate] || [];
+                const ids = tousRdv.filter(r => r.kineNom === kineConnecte).map(r => r.idPlanif);
+                
                 if(ids.length > 0 && supabaseClient) {
                     await supabaseClient.from('plannings_dates').update({ statut: null }).in('id_planif', ids);
                     chargerDonneesDepuisServeur();
@@ -689,6 +732,8 @@
             ouvrirModal('modal-planifier');
         }
 
+        function abrirModal(id) { ouvrirModal(id); }
+
         function ouvrirFormulairePatient(id = '') {
             if(id) {
                 const p = cataloguePatients.find(item => String(item.id) === String(id));
@@ -726,17 +771,23 @@
 
         function exporterRapportJour() {
             const dateObj = datesSemaineEnCours[indiceJourActuel];
-            const rdvs = planningsParDate[getCleDate(dateObj)] || [];
-            let texte = `*Rapport du ${getLabelDate(dateObj)}*\n\n${genererBlocRapport(rdvs)}`;
-            navigator.clipboard.writeText(texte).then(() => alert("Rapport jour copié !"));
+            const tousRdvs = planningsParDate[getCleDate(dateObj)] || [];
+            // RAPPORT FILTRÉ : Uniquement les données du kiné connecté
+            const rdvsKine = tousRdvs.filter(r => r.kineNom === kineConnecte);
+
+            let texte = `*Rapport du ${getLabelDate(dateObj)} - ${kineConnecte}*\n\n${genererBlocRapport(rdvsKine)}`;
+            navigator.clipboard.writeText(texte).then(() => alert("Votre rapport jour a été copié !"));
         }
 
         function exporterRapportSemaine() {
-            let texte = `📅 *BILAN HEBDOMADAIRE*\n\n`;
+            let texte = `📅 *BILAN HEBDOMADAIRE - ${kineConnecte}*\n\n`;
             datesSemaineEnCours.forEach(d => {
-                texte += `▶️ *${getLabelDate(d).toUpperCase()}*\n${genererBlocRapport(planningsParDate[getCleDate(d)] || [])}\n`;
+                const tousRdvs = planningsParDate[getCleDate(d)] || [];
+                // RAPPORT FILTRÉ : Uniquement pour le kiné connecté
+                const rdvsKine = tousRdvs.filter(r => r.kineNom === kineConnecte);
+                texte += `▶️ *${getLabelDate(d).toUpperCase()}*\n${genererBlocRapport(rdvsKine)}\n`;
             });
-            navigator.clipboard.writeText(texte).then(() => alert("Rapport de la semaine copié !"));
+            navigator.clipboard.writeText(texte).then(() => alert("Votre rapport hebdomadaire a été copié !"));
         }
 
         if ('serviceWorker' in navigator) {
