@@ -1037,7 +1037,6 @@ async function chargerDonneesDepuisServeur() {
             }
         }
 
-        // MISE À JOUR : Permet de pré-sélectionner un patient si on lui passe son ID
         function ouvrirPlanificateur(preselectedPatientId = null) {
             const selectKine = document.getElementById('planif-kine-affecte');
             const selectPatient = document.getElementById('select-patient');
@@ -1143,7 +1142,6 @@ async function chargerDonneesDepuisServeur() {
             rafraichirAffichage();
         }
 
-        // MISE À JOUR : Ajout des deux boutons dans le bandeau "À prévoir"
         function ouvrirModalAPrevoir() {
             const aPrevoir = cataloguePatients.filter(p => p.a_prevoir);
             const conteneur = document.getElementById('conteneur-liste-prevoir');
@@ -1182,7 +1180,7 @@ async function chargerDonneesDepuisServeur() {
             alert("La fonction d'export de la semaine sera générée ici.");
         }
 
-        // --- FONCTIONS FICHIER PATIENT ---
+        // --- FONCTIONS FICHIER PATIENT MISES À JOUR ---
         
         function afficherCatalogue() {
             const conteneur = document.getElementById('view-fichier');
@@ -1191,13 +1189,13 @@ async function chargerDonneesDepuisServeur() {
             
             document.getElementById('compteur-recherche').innerText = `${patientsFiltres.length} patient(s) enregistré(s)`;
 
+            // MISE À JOUR : Suppression du bouton modifier, le nom devient directement cliquable.
             conteneur.innerHTML = patientsFiltres.map(p => `
                 <div class="patient-card" style="border-left-color:${p.a_prevoir ? 'var(--danger)' : 'var(--purple)'}; flex-direction: row; flex-wrap: wrap; align-items: center;">
-                    <div class="patient-info" style="flex: 1;">
-                        <span class="patient-name">${p.nom} ${p.a_prevoir ? '<span class="badge-card-prevoir">🚨 À prévoir</span>' : ''}</span>
-                        <span>📍 ${p.adresse}</span>
+                    <div class="patient-info" style="flex: 1; width: 100%;">
+                        <span class="patient-name" style="cursor:pointer; color:var(--primary); text-decoration:underline;" onclick="ouvrirFormulairePatient('${p.id}')">${p.nom} ✏️ ${p.a_prevoir ? '<span class="badge-card-prevoir" style="margin-left: 8px;">🚨 À prévoir</span>' : ''}</span>
+                        <span style="margin-top: 4px;">📍 ${p.adresse}</span>
                     </div>
-                    <button class="btn-primary" style="background-color: var(--purple); padding: 6px 12px; font-size: 0.8rem; flex: 0 0 auto;" onclick="ouvrirFormulairePatient('${p.id}')">✏️ Modifier</button>
                 </div>`).join('');
         }
 
