@@ -898,7 +898,6 @@ async function chargerDonneesDepuisServeur() {
                     }
                 }
 
-                // GESTION DU BADGE NOTE TOUJOURS VISIBLE
                 const aDesNotes = patient.notes && patient.notes.trim() !== '';
                 const opaciteNote = aDesNotes ? '1' : '0.5';
                 const texteNote = aDesNotes ? '📝 Note' : '📝 Note (vide)';
@@ -1010,7 +1009,6 @@ async function chargerDonneesDepuisServeur() {
             } catch(e) { console.error(e); }
         }
 
-        // --- FONCTIONS POUR OUVRIR ET SAUVEGARDER LES NOTES EN POP-UP ---
         function ouvrirNoteVolante(patientId) {
             const patient = cataloguePatients.find(p => String(p.id) === String(patientId));
             if (!patient) return;
@@ -1032,14 +1030,15 @@ async function chargerDonneesDepuisServeur() {
                     .eq('id', patientId);
                 
                 fermerModal('modal-note-volante');
-                chargerDonneesDepuisServeur(); // Rafraîchit tout pour mettre à jour l'opacité du badge
+                chargerDonneesDepuisServeur(); 
             } catch(e) {
                 console.error("Erreur lors de la sauvegarde de la note", e);
                 alert("Erreur lors de la sauvegarde.");
             }
         }
 
-        function ouvrirPlanificateur() {
+        // MISE À JOUR : Permet de pré-sélectionner un patient si on lui passe son ID
+        function ouvrirPlanificateur(preselectedPatientId = null) {
             const selectKine = document.getElementById('planif-kine-affecte');
             const selectPatient = document.getElementById('select-patient');
             const joursContainer = document.getElementById('conteneur-jours-checkbox');
@@ -1049,7 +1048,7 @@ async function chargerDonneesDepuisServeur() {
             
             selectPatient.innerHTML = cataloguePatients
                 .sort((a,b) => a.nom.localeCompare(b.nom))
-                .map(p => `<option value="${p.id}">${p.nom}</option>`).join('');
+                .map(p => `<option value="${p.id}" ${p.id === preselectedPatientId ? 'selected' : ''}>${p.nom}</option>`).join('');
             
             joursContainer.innerHTML = datesSemaineEnCours.map((d, i) => `
                 <label style="display:flex; gap:10px; cursor:pointer;">
@@ -1144,6 +1143,7 @@ async function chargerDonneesDepuisServeur() {
             rafraichirAffichage();
         }
 
+        // MISE À JOUR : Ajout des deux boutons dans le bandeau "À prévoir"
         function ouvrirModalAPrevoir() {
             const aPrevoir = cataloguePatients.filter(p => p.a_prevoir);
             const conteneur = document.getElementById('conteneur-liste-prevoir');
@@ -1152,12 +1152,15 @@ async function chargerDonneesDepuisServeur() {
                 conteneur.innerHTML = '<p style="text-align:center;">Aucun patient à prévoir pour le moment.</p>';
             } else {
                 conteneur.innerHTML = aPrevoir.map(p => `
-                    <div class="item-prevoir-modal">
+                    <div class="item-prevoir-modal" style="flex-direction: column; align-items: stretch; gap: 8px;">
                         <div>
                             <strong style="font-size:1.1rem;">${p.nom}</strong>
                             <div style="font-size:0.85rem; color:var(--neutral); margin-top:4px;">${p.notes || 'Aucune note supplémentaire'}</div>
                         </div>
-                        <button class="btn-primary" style="padding:6px 12px; font-size:0.8rem;" onclick="fermerModal('modal-liste-prevoir'); ouvrirFormulairePatient('${p.id}')">Ouvrir la fiche</button>
+                        <div style="display: flex; gap: 6px;">
+                            <button class="btn-success" style="padding:6px; font-size:0.85rem; flex: 1;" onclick="fermerModal('modal-liste-prevoir'); ouvrirPlanificateur('${p.id}')">📅 Planifier</button>
+                            <button class="btn-primary" style="padding:6px; font-size:0.85rem; background-color: var(--purple); flex: 1;" onclick="fermerModal('modal-liste-prevoir'); ouvrirFormulairePatient('${p.id}')">✏️ Fiche</button>
+                        </div>
                     </div>
                 `).join('');
             }
