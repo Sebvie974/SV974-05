@@ -27,6 +27,7 @@
             padding: 15px;
         }
 
+        /* Écran de Connexion */
         #login-screen {
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
@@ -36,6 +37,7 @@
             justify-content: center;
             align-items: center;
             z-index: 100;
+            gap: 15px;
         }
         .login-box {
             background: white;
@@ -48,8 +50,41 @@
             display: flex;
             flex-direction: column;
             gap: 12px;
+            position: relative;
         }
 
+        .btn-config-corner {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: transparent;
+            font-size: 1.2rem;
+            padding: 0;
+            border: none;
+            cursor: pointer;
+        }
+
+        /* Panneau admin de config des kinés */
+        #config-panel {
+            display: none;
+            border-top: 2px dashed #e5e5ea;
+            margin-top: 10px;
+            padding-top: 15px;
+            text-align: left;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .kine-list-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #f4f6f9;
+            padding: 6px 10px;
+            border-radius: 6px;
+            font-size: 0.9rem;
+        }
+
+        /* Interface Principale */
         #main-app { display: none; }
 
         header {
@@ -72,7 +107,6 @@
             border-radius: 12px;
             font-weight: bold;
             color: var(--purple);
-            display: inline-block;
         }
 
         .sync-indicator {
@@ -125,7 +159,10 @@
             font-size: 0.85rem;
         }
         button { cursor: pointer; }
-        button:disabled { opacity: 0.4 !important; cursor: not-allowed !important; }
+        button:disabled {
+            opacity: 0.4 !important;
+            cursor: not-allowed !important;
+        }
         .btn-primary { background-color: var(--primary); color: white; flex: 1; }
         .btn-secondary { background-color: var(--neutral); color: white; }
         .btn-success { background-color: var(--success); color: white; }
@@ -133,12 +170,11 @@
         .btn-purple { background-color: var(--purple); color: white; }
         .btn-orange { background-color: var(--orange); color: white; }
 
-        .nav-menu { display: flex; gap: 5px; margin-bottom: 12px; }
-        .nav-menu button { flex: 1; padding: 8px 4px; }
-
+        /* Vues */
         .app-view { display: none; }
         .app-view.active { display: flex; flex-direction: column; gap: 10px; }
         
+        /* Cartes Patients */
         .patient-card {
             background: var(--card-bg);
             padding: 15px;
@@ -161,6 +197,7 @@
         .btn-nonvu.active { background-color: var(--danger); color: white; }
         .btn-icon { background: transparent; font-size: 1rem; border: none; cursor: pointer; }
 
+        /* Modales */
         .modal {
             display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0,0,0,0.5); z-index: 20; justify-content: center; align-items: center;
@@ -177,15 +214,25 @@
 
     <div id="login-screen">
         <div class="login-box">
-            <h2 style="color: var(--primary); margin:0;">Accès Cabinet</h2>
-            <p style="color: var(--neutral); font-size:0.9rem; margin:0;">Sélectionnez votre compte pour vous connecter.</p>
-            
-            <select id="user-select-login" style="padding:12px; font-size:1rem; border:1px solid #ccc;">
-                <option value="">Chargement des utilisateurs...</option>
-            </select>
+            <button class="btn-config-corner" onclick="basculerAffichageConfig()" title="Gérer la liste des Kinés">⚙️</button>
 
-            <input type="password" id="password-input" placeholder="Mot de passe personnalisé" style="padding:12px; border:1px solid #ccc; text-align:center; font-size:1.1rem;">
+            <h2 style="color: var(--primary); margin:0;">Accès Cabinet</h2>
+            <p style="color: var(--neutral); font-size:0.9rem; margin:0;">Sélectionnez votre profil et entrez le mot de passe.</p>
+            
+            <select id="kine-select-login" style="padding:12px; font-size:1rem; border:1px solid #ccc; font-weight: bold;"></select>
+
+            <input type="password" id="password-input" placeholder="Mot de passe" style="padding:12px; border:1px solid #ccc; text-align:center; font-size:1.1rem;">
             <button class="btn-primary" style="padding:12px; font-size:1rem;" onclick="verifierConnexion()">Se connecter 🔐</button>
+            
+            <div id="config-panel">
+                <h4 style="margin: 0 0 5px 0; color: var(--purple);">⚙️ Configuration Praticiens</h4>
+                <div style="display: flex; gap: 5px; margin-bottom: 10px;">
+                    <input type="text" id="nouveau-kine-input" placeholder="Ex: Jean" style="flex:1; padding:6px; border:1px solid #ccc;">
+                    <button class="btn-success" style="padding:6px 12px;" onclick="ajouterNouveauKine()">Ajouter</button>
+                </div>
+                <div id="liste-kines-admin" style="display: flex; flex-direction: column; gap: 5px; max-height: 120px; overflow-y: auto;">
+                    </div>
+            </div>
         </div>
     </div>
 
@@ -194,7 +241,7 @@
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
                 <div>
                     <h1 id="app-title" style="margin-bottom: 4px;">Planning Tournées</h1>
-                    <span class="user-badge" id="nom-kine-badge">Session : ...</span>
+                    <span class="user-badge" id="nom-kine-badge">Praticien : ...</span>
                 </div>
                 <div style="display:flex; flex-direction:column; gap:5px; align-items:flex-end;">
                     <div id="sync-badge" class="sync-indicator sync-online">Prêt 🟢</div>
@@ -202,15 +249,8 @@
                 </div>
             </div>
 
-            <div id="wrapper-vue-secretariat" style="display:none; background:#f0f0f5; padding:10px; border-radius:8px; margin-bottom:12px; flex-direction:column; gap:4px;">
-                <label style="font-size:0.8rem; font-weight:bold; color:var(--neutral)">👁️ Voir la session de :</label>
-                <select id="select-session-secretariat" style="width:100%; border:1px solid #ccc; padding:8px;" onchange="changerSessionFiltreSecretariat()"></select>
-            </div>
-
-            <div class="nav-menu">
-                <button class="btn-primary" id="nav-btn-planning" onclick="changerVue('planning')">Planning 🗓️</button>
-                <button class="btn-secondary" id="nav-btn-fichier" onclick="changerVue('fichier')">Patients 🗂️</button>
-                <button class="btn-secondary" id="nav-btn-equipe" style="display:none;" onclick="changerVue('equipe')">Équipe 👥</button>
+            <div style="margin-bottom: 12px;">
+                <button class="btn-purple" style="width: 100%;" id="btn-toggle-view" onclick="basculerVue()">Voir le Fichier Patients 🗂️</button>
             </div>
             
             <div id="header-planning">
@@ -227,23 +267,18 @@
                     <button class="btn-purple" onclick="exporterRapportSemaine()">Rapport Hebdo 📅</button>
                     <button class="btn-success" id="btn-global-planifier" onclick="ouvrirPlanificateur()">Planifier ➕</button>
                     <button class="btn-secondary" id="btn-global-reset" onclick="reinitialiserJour()">Reset 🔄</button>
-                    <button class="btn-orange" style="width:100%; margin-top:5px;" id="btn-verrouiller-jour" onclick="gererVerrouillageJour()">Valider et Verrouiller cette journée 🔒</button>
+                    <button class="btn-orange" style="width:100%; margin-top:5px;" id="btn-verrouiller-jour" onclick="gererVerrouillageJour()">Valider et Verrouiller ma journée 🔒</button>
                 </div>
             </div>
 
             <div id="header-fichier" style="display: none;">
                 <button class="btn-success" style="width: 100%;" onclick="ouvrirFormulairePatient()">Créer un nouveau patient 👤➕</button>
             </div>
-
-            <div id="header-equipe" style="display: none;">
-                <button class="btn-purple" style="width: 100%;" onclick="ouvrirFormulaireUtilisateur()">Ajouter un membre à l'équipe 👥➕</button>
-            </div>
         </header>
 
         <main>
             <div class="app-view active" id="view-planning"></div>
             <div class="app-view" id="view-fichier"></div>
-            <div class="app-view" id="view-equipe"></div>
         </main>
     </div>
 
@@ -270,32 +305,11 @@
             <label>Nom complet</label>
             <input type="text" id="patient-nom" placeholder="Mme Martine Dupont" required>
             <label>Adresse</label>
-            <input type="text" id="patient-adresse" placeholder="12 rue des Fleurs" required>
+            <input type="text" id="patient-adresse" placeholder="12 rue des Fleurs, Saint-Pierre" required>
             <div style="display: flex; gap: 10px; margin-top: 10px;">
                 <button class="btn-purple" onclick="sauvegarderFichePatient()">Enregistrer</button>
                 <button class="btn-danger" id="btn-supprimer-fiche" onclick="supprimerFichePatient()">Supprimer</button>
                 <button class="btn-secondary" onclick="fermerModal('modal-patient')">Annuler</button>
-            </div>
-        </div>
-    </div>
-
-    <div class="modal" id="modal-utilisateur">
-        <div class="modal-content">
-            <h3 id="user-modal-title">Fiche Utilisateur</h3>
-            <input type="hidden" id="user-id">
-            <label>Nom ou Prénom</label>
-            <input type="text" id="user-nom" placeholder="Ex: Prénom ou Cabinet" required>
-            <label>Rôle</label>
-            <select id="user-role">
-                <option value="kine">Kiné (Tournée individuelle)</option>
-                <option value="secretariat">Secrétariat (Accès total)</option>
-            </select>
-            <label>Mot de passe personnel</label>
-            <input type="text" id="user-mdp" placeholder="Code secret" required>
-            <div style="display: flex; gap: 10px; margin-top: 10px;">
-                <button class="btn-primary" onclick="sauvegarderUtilisateur()">Enregistrer</button>
-                <button class="btn-danger" id="btn-supprimer-user" onclick="supprimerUtilisateur()">Supprimer</button>
-                <button class="btn-secondary" onclick="fermerModal('modal-utilisateur')">Annuler</button>
             </div>
         </div>
     </div>
@@ -305,6 +319,8 @@
         const SUPABASE_KEY = "sb_publishable_472y-YwY-VyEsRz7nqaMJg_LC3W6gDJ";
         
         let supabaseClient = null;
+
+        const MOT_DE_PASSE_CABINET = "kine2026"; 
         const nomsJours = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi'];
         
         let vueActuelle = 'planning';
@@ -313,11 +329,578 @@
         let indiceJourActuel = 0;
 
         let cataloguePatients = [];
-        let listeUtilisateurs = [];
         let planningsParDate = {};
         let journeeEstVerrouillee = false; 
         
-        let utilisateurConnecte = null; // Objet utilisateur complet
-        let sessionFiltreNom = ""; // Le nom du kiné dont on regarde actuellement la tournée
+        let kineConnecte = ""; 
+        let listeKines = []; // Tableau dynamique géré en local
 
-        function initialiserSupabase()
+        function initialiserSupabase() {
+            if (supabaseClient === null) {
+                if (typeof window.supabase !== 'undefined' && typeof window.supabase.createClient === 'function') {
+                    supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+                    return true;
+                }
+                return false;
+            }
+            return true;
+        }
+
+        // --- GESTION DYNAMIQUE DES KINÉS ---
+        function chargerListeKines() {
+            const cache = localStorage.getItem('liste_kines_cabinet');
+            if (cache) {
+                listeKines = JSON.parse(cache);
+            } else {
+                // Initialisation par défaut si vide
+                listeKines = ["Kiné A", "Kiné B"];
+                localStorage.setItem('liste_kines_cabinet', JSON.stringify(listeKines));
+            }
+            majSelecteursKine();
+        }
+
+        function majSelecteursKine() {
+            const selectLogin = document.getElementById('kine-select-login');
+            const conteneurAdmin = document.getElementById('liste-kines-admin');
+            
+            if (selectLogin) {
+                selectLogin.innerHTML = listeKines.map(k => `<option value="${k}">${k}</option>`).join('');
+            }
+            if (conteneurAdmin) {
+                conteneurAdmin.innerHTML = listeKines.map(k => `
+                    <div class="kine-list-item">
+                        <span>👤 ${k}</span>
+                        <button class="btn-icon" style="color:var(--danger); font-size:0.85rem;" onclick="supprimerKine('${k}')">🗑️</button>
+                    </div>
+                `).join('');
+            }
+        }
+
+        function basculerAffichageConfig() {
+            const panel = document.getElementById('config-panel');
+            if (panel.style.display === 'flex') {
+                panel.style.display = 'none';
+            } else {
+                const mdp = prompt("Entrez le mot de passe cabinet pour gérer la configuration :");
+                if (mdp === MOT_DE_PASSE_CABINET) {
+                    panel.style.display = 'flex';
+                } else if (mdp !== null) {
+                    alert("Mot de passe incorrect.");
+                }
+            }
+        }
+
+        function ajouterNouveauKine() {
+            const input = document.getElementById('nouveau-kine-input');
+            const nom = input.value.trim();
+            if (!nom) return;
+            if (listeKines.includes(nom)) {
+                alert("Ce nom existe déjà.");
+                return;
+            }
+            listeKines.push(nom);
+            localStorage.setItem('liste_kines_cabinet', JSON.stringify(listeKines));
+            input.value = '';
+            majSelecteursKine();
+        }
+
+        function supprimerKine(nom) {
+            if (confirm(`Supprimer le profil de ${nom} de cet appareil ? (Les données sur Supabase ne seront pas perdues)`)) {
+                listeKines = listeKines.filter(k => k !== nom);
+                localStorage.setItem('liste_kines_cabinet', JSON.stringify(listeKines));
+                majSelecteursKine();
+            }
+        }
+        // ------------------------------------
+
+        function verifierConnexion() {
+            const mdp = document.getElementById('password-input').value;
+            const kineSelectionne = document.getElementById('kine-select-login').value;
+            
+            if (!kineSelectionne) {
+                alert("Veuillez d'abord configurer au moins un utilisateur via le bouton ⚙️.");
+                return;
+            }
+
+            if (mdp === MOT_DE_PASSE_CABINET) {
+                if (!initialiserSupabase()) {
+                    alert("Connexion à la base de données impossible pour le moment. Veuillez réessayer.");
+                    return;
+                }
+                localStorage.setItem('kine_connecte', 'true');
+                localStorage.setItem('kine_nom_actif', kineSelectionne);
+                kineConnecte = kineSelectionne;
+                initialiserApplication();
+            } else {
+                alert("Mot de passe incorrect.");
+            }
+        }
+
+        function deconnexion() {
+            localStorage.removeItem('kine_connecte');
+            localStorage.removeItem('kine_nom_actif');
+            window.location.reload();
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            chargerListeKines(); // Charge la liste dès le démarrage
+            
+            if (localStorage.getItem('kine_connecte') === 'true') {
+                kineConnecte = localStorage.getItem('kine_nom_actif') || listeKines[0] || "Kiné A";
+                setTimeout(() => {
+                    if (initialiserSupabase()) {
+                        initialiserApplication();
+                    } else {
+                        deconnexion();
+                    }
+                }, 300);
+            }
+        });
+
+        function initialiserApplication() {
+            document.getElementById('login-screen').style.display = 'none';
+            document.getElementById('main-app').style.display = 'block';
+            document.getElementById('nom-kine-badge').innerText = `Praticien : ${kineConnecte}`;
+            
+            calculerSemaine();
+            chargerDonneesDepuisServeur();
+            brancherTempsReel();
+        }
+
+        window.addEventListener('online', () => modifierBadgeReseau(true));
+        window.addEventListener('offline', () => modifierBadgeReseau(false));
+
+        function modifierBadgeReseau(estEnLigne) {
+            const badge = document.getElementById('sync-badge');
+            if (badge) {
+                if (estEnLigne) {
+                    badge.innerText = "Connecté 🟢";
+                    badge.className = "sync-indicator sync-online";
+                    chargerDonneesDepuisServeur();
+                } else {
+                    badge.innerText = "Hors-ligne 🔴";
+                    badge.className = "sync-indicator sync-offline";
+                }
+            }
+        }
+
+        async function chargerDonneesDepuisServeur() {
+            if (!initialiserSupabase()) return;
+            try {
+                const { data: patients, error: errP } = await supabaseClient.from('catalogue_patients').select('*');
+                if (errP) throw errP;
+                cataloguePatients = patients || [];
+
+                const { data: rdv, error: errR } = await supabaseClient.from('plannings_dates').select('*');
+                if (errR) throw errR;
+
+                planningsParDate = {};
+                (rdv || []).forEach(r => {
+                    if (!planningsParDate[r.date_cle]) planningsParDate[r.date_cle] = [];
+                    planningsParDate[r.date_cle].push({
+                        idPlanif: r.id_planif,
+                        patientId: r.patient_id,
+                        heure: r.heure ? r.heure.substring(0, 5) : "00:00",
+                        statut: r.statut,
+                        verrouille: r.journee_verrouillee || false,
+                        kineNom: r.kine_nom || "Kiné A"
+                    });
+                });
+
+                localStorage.setItem('cache_patients', JSON.stringify(cataloguePatients));
+                localStorage.setItem('cache_plannings', JSON.stringify(planningsParDate));
+
+                rafraichirAffichage();
+            } catch (e) {
+                console.log("Mode local temporaire actif :", e);
+                cataloguePatients = JSON.parse(localStorage.getItem('cache_patients')) || [];
+                planningsParDate = JSON.parse(localStorage.getItem('cache_plannings')) || {};
+                modifierBadgeReseau(false);
+                rafraichirAffichage();
+            }
+        }
+
+        function brancherTempsReel() {
+            if (!initialiserSupabase()) return;
+            supabaseClient.channel('custom-all-channel')
+            .on('postgres_changes', { event: '*', schema: 'public' }, () => {
+                chargerDonneesDepuisServeur();
+            })
+            .subscribe();
+        }
+
+        function calculerSemaine() {
+            datesSemaineEnCours = [];
+            let AlignmentDay = dateAncre.getDay();
+            let distanceAuLundi = AlignmentDay === 0 ? -6 : 1 - AlignmentDay;
+            let lundiSemaine = new Date(dateAncre);
+            lundiSemaine.setDate(dateAncre.getDate() + distanceAuLundi);
+
+            for (let i = 0; i < 5; i++) {
+                let j = new Date(lundiSemaine);
+                j.setDate(lundiSemaine.getDate() + i);
+                datesSemaineEnCours.push(j);
+            }
+            const opt = { day: '2-digit', month: '2-digit' };
+            const el = document.getElementById('label-semaine');
+            if (el) el.innerText = `Sem. du ${datesSemaineEnCours[0].toLocaleDateString('fr-FR', opt)} au ${datesSemaineEnCours[4].toLocaleDateString('fr-FR', opt)}`;
+        }
+
+        function changerSemaine(direction) {
+            dateAncre.setDate(dateAncre.getDate() + (direction * 7));
+            calculerSemaine();
+            chargerDonneesDepuisServeur();
+        }
+
+        function getCleDate(dateObj) { return dateObj.toISOString().split('T')[0]; }
+        function getLabelDate(dateObj) {
+            const nom = nomsJours[dateObj.getDay() - 1] || 'Lundi';
+            return `${nom} ${String(dateObj.getDate()).padStart(2, '0')}/${String(dateObj.getMonth() + 1).padStart(2, '0')}`;
+        }
+
+        function basculerVue() {
+            const btn = document.getElementById('btn-toggle-view');
+            if (vueActuelle === 'planning') {
+                vueActuelle = 'fichier';
+                document.getElementById('app-title').innerText = "Fichier Patients";
+                btn.innerText = "Voir le Planning 🗓️";
+                document.getElementById('header-planning').style.display = 'none';
+                document.getElementById('header-fichier').style.display = 'block';
+                document.getElementById('view-planning').classList.remove('active');
+                document.getElementById('view-fichier').classList.add('active');
+            } else {
+                vueActuelle = 'planning';
+                document.getElementById('app-title').innerText = "Planning Tournées";
+                btn.innerText = "Voir le Fichier Patients 🗂️";
+                document.getElementById('header-planning').style.display = 'block';
+                document.getElementById('header-fichier').style.display = 'none';
+                document.getElementById('view-planning').classList.remove('active');
+                document.getElementById('view-app').classList.add('active');
+            }
+            rafraichirAffichage();
+        }
+
+        function rafraichirAffichage() {
+            if (vueActuelle === 'planning') afficherPlanning();
+            else afficherCatalogue();
+        }
+
+        function afficherPlanning() {
+            const tabsConteneur = document.getElementById('days-tabs');
+            if (!tabsConteneur) return;
+            tabsConteneur.innerHTML = '';
+            
+            datesSemaineEnCours.forEach((dateObj, index) => {
+                const btn = document.createElement('button');
+                btn.className = `day-btn ${index === indiceJourActuel ? 'active' : ''}`;
+                btn.innerText = getLabelDate(dateObj);
+                btn.onclick = () => { indiceJourActuel = index; afficherPlanning(); };
+                tabsConteneur.appendChild(btn);
+            });
+
+            const dateSelectionnee = datesSemaineEnCours[indiceJourActuel];
+            const cleDate = getCleDate(dateSelectionnee);
+            
+            const tousRdvDuJour = planningsParDate[cleDate] || [];
+            const rdvDuKineActuel = tousRdvDuJour.filter(r => r.kineNom === kineConnecte);
+            
+            rdvDuKineActuel.sort((a, b) => a.heure.localeCompare(b.heure));
+
+            journeeEstVerrouillee = rdvDuKineActuel.some(r => r.verrouille === true);
+
+            const btnVerrou = document.getElementById('btn-verrouiller-jour');
+            if (btnVerrou) {
+                if (journeeEstVerrouillee) {
+                    btnVerrou.innerText = "Ma tournée est Validée 🔒 (Déverrouiller)";
+                    btnVerrou.className = "btn-secondary";
+                } else {
+                    btnVerrou.innerText = "Valider et Verrouiller ma journée 🔐";
+                    btnVerrou.className = "btn-orange";
+                }
+            }
+
+            document.getElementById('btn-global-planifier').disabled = journeeEstVerrouillee;
+            document.getElementById('btn-global-reset').disabled = journeeEstVerrouillee;
+
+            const statsEl = document.getElementById('tournee-stats');
+            if (statsEl) {
+                let texteStats = `${getLabelDate(dateSelectionnee)} : ${rdvDuKineActuel.filter(r => r.statut !== null).length} / ${rdvDuKineActuel.length} traités`;
+                if (journeeEstVerrouillee) texteStats += " [CLÔTURÉE 🔒]";
+                statsEl.innerText = texteStats;
+            }
+
+            const conteneur = document.getElementById('view-planning');
+            if (!conteneur) return;
+            conteneur.innerHTML = '';
+
+            if (rdvDuKineActuel.length === 0) {
+                conteneur.innerHTML = `<p style="text-align:center; color:var(--neutral); margin-top:20px;">Aucun patient planifié pour ${kineConnecte} ce jour.</p>`;
+                return;
+            }
+
+            rdvDuKineActuel.forEach(rdv => {
+                const patient = cataloguePatients.find(p => String(p.id) === String(rdv.patientId));
+                if(!patient) return;
+
+                const card = document.createElement('div');
+                card.className = `patient-card ${rdv.statut || ''}`;
+                card.innerHTML = `
+                    <div class="patient-info">
+                        <span class="patient-name">${patient.nom}</span>
+                        <span style="font-size:0.85rem; font-weight:bold;">🕒 ${rdv.heure}</span>
+                        <a href="https://maps.google.com/?q=${encodeURIComponent(patient.adresse)}" target="_blank" class="patient-address">📍 ${patient.adresse}</a>
+                    </div>
+                    <div class="btn-group">
+                        <button class="btn-status btn-vu ${rdv.statut === 'vu' ? 'active' : ''}" ${journeeEstVerrouillee ? 'disabled' : ''} onclick="changerStatutRdv('${rdv.idPlanif}', 'vu')">✅</button>
+                        <button class="btn-status btn-nonvu ${rdv.statut === 'non-vu' ? 'active' : ''}" ${journeeEstVerrouillee ? 'disabled' : ''} onclick="changerStatutRdv('${rdv.idPlanif}', 'non-vu')">❌</button>
+                        <button class="btn-icon" ${journeeEstVerrouillee ? 'disabled' : ''} onclick="retirerDuPlanning('${rdv.idPlanif}')">🗑️</button>
+                    </div>
+                `;
+                conteneur.appendChild(card);
+            });
+        }
+
+        async function gererVerrouillageJour() {
+            const cleDate = getCleDate(datesSemaineEnCours[indiceJourActuel]);
+            const tousRdvDuJour = planningsParDate[cleDate] || [];
+            const rdvDuKine = tousRdvDuJour.filter(r => r.kineNom === kineConnecte);
+
+            if (rdvDuKine.length === 0) {
+                alert("Impossible de verrouiller une journée vide.");
+                return;
+            }
+
+            if (!journeeEstVerrouillee) {
+                if (confirm(`Voulez-vous valider définitivement votre tournée du jour, ${kineConnecte} ?`)) {
+                    if (supabaseClient) {
+                        const ids = rdvDuKine.map(r => r.idPlanif);
+                        await supabaseClient.from('plannings_dates').update({ journee_verrouillee: true }).in('id_planif', ids);
+                        chargerDonneesDepuisServeur();
+                    }
+                }
+            } else {
+                const mdp = prompt("Entrez le mot de passe du cabinet pour déverrouiller votre journée :");
+                if (mdp === MOT_DE_PASSE_CABINET) {
+                    if (supabaseClient) {
+                        const ids = rdvDuKine.map(r => r.idPlanif);
+                        await supabaseClient.from('plannings_dates').update({ journee_verrouillee: false }).in('id_planif', ids);
+                        chargerDonneesDepuisServeur();
+                    }
+                } else if (mdp !== null) {
+                    alert("Mot de passe incorrect.");
+                }
+            }
+        }
+
+        async function changerStatutRdv(idPlanif, statutBouton) {
+            if (journeeEstVerrouillee) return;
+            const cleDate = getCleDate(datesSemaineEnCours[indiceJourActuel]);
+            const rdv = planningsParDate[cleDate].find(r => r.idPlanif === idPlanif);
+            if (!rdv) return;
+
+            const nouveauStatut = rdv.statut === statutBouton ? null : statutBouton;
+            rdv.statut = nouveauStatut;
+            rafraichirAffichage();
+
+            if (supabaseClient) {
+                await supabaseClient.from('plannings_dates').update({ statut: nouveauStatut }).eq('id_planif', idPlanif);
+            }
+        }
+
+        async function ajouterAuPlanningMultiJours() {
+            if (journeeEstVerrouillee) return;
+            const patientId = document.getElementById('select-patient').value;
+            const heure = document.getElementById('planif-heure').value || "00:00";
+            const checkboxes = document.querySelectorAll('input[name="jours-planif"]:checked');
+
+            if(!patientId || checkboxes.length === 0) return;
+
+            const lignesAInserer = [];
+            checkboxes.forEach(cb => {
+                const dateCible = datesSemaineEnCours[parseInt(cb.value)];
+                lignesAInserer.push({
+                    id_planif: Math.floor(Math.random() * 1000000000).toString(),
+                    patient_id: patientId,
+                    date_cle: getCleDate(dateCible),
+                    heure: heure,
+                    statut: null,
+                    journee_verrouillee: false,
+                    kine_nom: kineConnecte
+                });
+            });
+
+            fermerModal('modal-planifier');
+            if (supabaseClient) {
+                const { error } = await supabaseClient.from('plannings_dates').insert(lignesAInserer);
+                if(error) alert("Erreur planning : " + error.message);
+                chargerDonneesDepuisServeur();
+            }
+        }
+
+        async function retirerDuPlanning(idPlanif) {
+            if (journeeEstVerrouillee) return;
+            if (confirm("Retirer ce rendez-vous ?")) {
+                if (supabaseClient) {
+                    await supabaseClient.from('plannings_dates').delete().eq('id_planif', idPlanif);
+                    chargerDonneesDepuisServeur();
+                }
+            }
+        }
+
+        async function reinitialiserJour() {
+            if (journeeEstVerrouillee) return;
+            if (confirm("Réinitialiser les statuts de votre tournée du jour ?")) {
+                const cleDate = getCleDate(datesSemaineEnCours[indiceJourActuel]);
+                const tousRdv = planningsParDate[cleDate] || [];
+                const ids = tousRdv.filter(r => r.kineNom === kineConnecte).map(r => r.idPlanif);
+                
+                if(ids.length > 0 && supabaseClient) {
+                    await supabaseClient.from('plannings_dates').update({ statut: null }).in('id_planif', ids);
+                    chargerDonneesDepuisServeur();
+                }
+            }
+        }
+
+        function afficherCatalogue() {
+            const conteneur = document.getElementById('view-fichier');
+            if (!conteneur) return;
+            conteneur.innerHTML = '';
+
+            cataloguePatients.sort((a,b) => a.nom.localeCompare(b.nom)).forEach(p => {
+                const card = document.createElement('div');
+                card.className = 'patient-card';
+                card.style.borderLeftColor = 'var(--purple)';
+                card.innerHTML = `
+                    <div class="patient-info">
+                        <span class="patient-name">${p.nom}</span>
+                        <span style="font-size:0.85rem; color:var(--neutral);">📍 ${p.adresse}</span>
+                    </div>
+                    <div class="btn-group">
+                        <button class="btn-primary" style="background-color: var(--purple);" onclick="ouvrirFormulairePatient('${p.id}')">✏️ Modifier</button>
+                    </div>
+                `;
+                conteneur.appendChild(card);
+            });
+        }
+
+        async function sauvegarderFichePatient() {
+            const id = document.getElementById('patient-id').value;
+            const nom = document.getElementById('patient-nom').value.trim();
+            const adresse = document.getElementById('patient-adresse').value.trim();
+
+            if(!nom || !adresse) { alert("Veuillez remplir le nom et l'adresse."); return; }
+            fermerModal('modal-patient');
+
+            if (!initialiserSupabase()) { 
+                alert("La base de données n'est pas connectée. Réessayez."); 
+                return; 
+            }
+
+            if (id) {
+                const { error } = await supabaseClient.from('catalogue_patients').update({ nom, adresse }).eq('id', id);
+                if (error) alert("Erreur lors de la modification : " + error.message);
+            } else {
+                const nouvelId = Math.floor(Math.random() * 1000000000).toString(); 
+                const { error } = await supabaseClient.from('catalogue_patients').insert([{ id: nouvelId, nom, adresse }]);
+                if (error) alert("Erreur lors de la création : " + error.message);
+            }
+            chargerDonneesDepuisServeur();
+        }
+
+        async function supprimerFichePatient() {
+            const id = document.getElementById('patient-id').value;
+            if (id && confirm("Supprimer définitivement ce patient ?") && supabaseClient) {
+                fermerModal('modal-patient');
+                await supabaseClient.from('catalogue_patients').delete().eq('id', id);
+                chargerDonneesDepuisServeur();
+            }
+        }
+
+        function ouvrirModal(id) { document.getElementById(id).style.display = 'flex'; }
+        function fermerModal(id) { document.getElementById(id).style.display = 'none'; }
+
+        function ouvrirPlanificateur() {
+            if (journeeEstVerrouillee) return;
+            const select = document.getElementById('select-patient');
+            if (!select) return;
+            select.innerHTML = '';
+            if(cataloguePatients.length === 0) { alert("Le catalogue est vide."); return; }
+
+            cataloguePatients.sort((a,b) => a.nom.localeCompare(b.nom)).forEach(p => {
+                select.innerHTML += `<option value="${p.id}">${p.nom}</option>`;
+            });
+
+            const conteneurJours = document.getElementById('conteneur-jours-checkbox');
+            if (!conteneurJours) return;
+            conteneurJours.innerHTML = '';
+            datesSemaineEnCours.forEach((dateObj, index) => {
+                conteneurJours.innerHTML += `
+                    <label style="display:flex; gap:10px; align-items:center;">
+                        <input type="checkbox" name="jours-planif" value="${index}" ${index === indiceJourActuel ? 'checked' : ''}>
+                        ${getLabelDate(dateObj)}
+                    </label>
+                `;
+            });
+            ouvrirModal('modal-planifier');
+        }
+
+        function ouvrirFormulairePatient(id = '') {
+            if(id) {
+                const p = cataloguePatients.find(item => String(item.id) === String(id));
+                if(!p) return;
+                document.getElementById('patient-modal-title').innerText = "Modifier la fiche";
+                document.getElementById('patient-id').value = p.id;
+                document.getElementById('patient-nom').value = p.nom;
+                document.getElementById('patient-adresse').value = p.adresse;
+                document.getElementById('btn-supprimer-fiche').style.display = 'block';
+            } else {
+                document.getElementById('patient-modal-title').innerText = "Nouveau patient";
+                document.getElementById('patient-id').value = '';
+                document.getElementById('patient-nom').value = '';
+                document.getElementById('patient-adresse').value = '';
+                document.getElementById('btn-supprimer-fiche').style.display = 'none';
+            }
+            ouvrirModal('modal-patient');
+        }
+
+        function genererBlocRapport(rdvs) {
+            let vus = [], absents = [], nonTraites = [];
+            rdvs.forEach(r => {
+                const p = cataloguePatients.find(item => String(item.id) === String(r.patientId));
+                if (!p) return;
+                if (r.statut === 'vu') vus.push("  - " + p.nom);
+                else if (r.statut === 'non-vu') absents.push("  - " + p.nom);
+                else nonTraites.push("  - " + p.nom);
+            });
+            let texte = "";
+            if(vus.length) texte += `🟢 *Patients vus :*\n${vus.join('\n')}\n`;
+            if(absents.length) texte += `🔴 *Absents :*\n${absents.join('\n')}\n`;
+            if(nonTraites.length) texte += `⚪ *Non traités :*\n${nonTraites.join('\n')}\n`;
+            return texte || " Aucun patient programmé.\n";
+        }
+
+        function exporterRapportJour() {
+            const dateObj = datesSemaineEnCours[indiceJourActuel];
+            const tousRdvs = planningsParDate[getCleDate(dateObj)] || [];
+            const rdvsKine = tousRdvs.filter(r => r.kineNom === kineConnecte);
+
+            let texte = `*Rapport du ${getLabelDate(dateObj)} - ${kineConnecte}*\n\n${genererBlocRapport(rdvsKine)}`;
+            navigator.clipboard.writeText(texte).then(() => alert("Votre rapport jour a été copié !"));
+        }
+
+        function exporterRapportSemaine() {
+            let texte = `📅 *BILAN HEBDOMADAIRE - ${kineConnecte}*\n\n`;
+            datesSemaineEnCours.forEach(d => {
+                const tousRdvs = planningsParDate[getCleDate(d)] || [];
+                const rdvsKine = tousRdvs.filter(r => r.kineNom === kineConnecte);
+                texte += `▶️ *${getLabelDate(d).toUpperCase()}*\n${genererBlocRapport(rdvsKine)}\n`;
+            });
+            navigator.clipboard.writeText(texte).then(() => alert("Votre rapport hebdomadaire a été copié !"));
+        }
+
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => { navigator.serviceWorker.register('sw.js'); });
+        }
+    </script>
+</body>
+</html>
