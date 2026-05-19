@@ -1060,7 +1060,6 @@ async function chargerDonneesDepuisServeur() {
             ouvrirModal('modal-planifier');
         }
 
-        // --- CORRECTION MAJEURE ICI (Dates & Interception d'erreur) ---
         async function ajouterAuPlanningMultiJours() {
             const patientId = document.getElementById('select-patient').value;
             const kineAffecte = document.getElementById('planif-kine-affecte').value;
@@ -1079,8 +1078,8 @@ async function chargerDonneesDepuisServeur() {
                 return {
                     id_planif: Math.floor(Math.random() * 1000000000).toString(),
                     patient_id: patientId,
-                    date_cle: getCleDate(dateCible), // Utilise la fonction getCleDate corrigée plus bas
-                    heure: heure || null,
+                    date_cle: getCleDate(dateCible),
+                    heure: heure || "00:00",
                     kine_nom: kineAffecte,
                     statut: null,
                     ordre: 99,
@@ -1183,8 +1182,13 @@ async function chargerDonneesDepuisServeur() {
             document.getElementById('compteur-recherche').innerText = `${nb} patient(s) trouvé(s)`;
         }
 
-        function exporterRapportJour() { alert("La fonction d'export du jour sera générée ici."); }
-        function exporterRapportSemaine() { alert("La fonction d'export de la semaine sera générée ici."); }
+        function exporterRapportJour() {
+            alert("La fonction d'export du jour sera générée ici.");
+        }
+
+        function exporterRapportSemaine() {
+            alert("La fonction d'export de la semaine sera générée ici.");
+        }
 
         function afficherCatalogue() {
             const conteneur = document.getElementById('view-fichier');
@@ -1248,7 +1252,6 @@ async function chargerDonneesDepuisServeur() {
         function ouvrirModal(id) { document.getElementById(id).style.display = 'flex'; }
         function fermerModal(id) { document.getElementById(id).style.display = 'none'; }
         
-        // CORRECTION : Évite le décalage de fuseau horaire (La Réunion UTC+4)
         function getCleDate(d) { 
             const tzOffset = d.getTimezoneOffset() * 60000;
             return new Date(d - tzOffset).toISOString().split('T')[0]; 
