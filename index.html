@@ -299,13 +299,14 @@
             font-size: 0.75rem;
             background: #fff3cd;
             color: #856404;
-            padding: 2px 6px;
-            border-radius: 4px;
+            padding: 4px 8px;
+            border-radius: 6px;
             font-weight: bold;
             width: fit-content;
-            margin-top: 2px;
+            margin-top: 4px;
             cursor: pointer;
             border: 1px solid #ffeeba;
+            display: inline-block;
         }
 
         .btn-group { display: flex; gap: 6px; align-items: center; }
@@ -475,7 +476,16 @@
     </div>
 
     <div class="modal" id="modal-liste-prevoir"><div class="modal-content" style="max-width: 500px;"><h3 style="color: var(--danger);">🚨 Patients à prévoir</h3><div id="conteneur-liste-prevoir" style="display: flex; flex-direction: column; gap: 10px; max-height: 50vh; overflow-y: auto;"></div><div style="margin-top: 10px; text-align: right;"><button class="btn-secondary" onclick="fermerModal('modal-liste-prevoir')">Fermer</button></div></div></div>
-    <div class="modal" id="modal-note-volante" onclick="fermerModal('modal-note-volante')"><div class="modal-content" style="max-width: 350px;" onclick="event.stopPropagation()"><h3 style="margin: 0 0 5px 0; color: var(--purple);">📝 Notes & Infos</h3><p id="note-volante-nom-patient" style="font-weight: bold;"></p><div id="note-volante-corps" style="background: #fffcf3; padding: 12px; border-radius: 8px; border-left: 4px solid var(--orange); word-break: break-word; white-space: pre-wrap;"></div><button class="btn-primary" style="margin-top:10px;" onclick="fermerModal('modal-note-volante')">Fermer</button></div></div>
+    
+    <div class="modal" id="modal-note-volante" onclick="fermerModal('modal-note-volante')">
+        <div class="modal-content" style="max-width: 350px;" onclick="event.stopPropagation()">
+            <h3 style="margin: 0 0 5px 0; color: var(--purple);">📝 Notes & Infos</h3>
+            <p id="note-volante-nom-patient" style="font-weight: bold;"></p>
+            <div id="note-volante-corps" style="background: #fffcf3; padding: 12px; border-radius: 8px; border-left: 4px solid var(--orange); word-break: break-word; white-space: pre-wrap;"></div>
+            <button class="btn-primary" style="margin-top:10px;" onclick="fermerModal('modal-note-volante')">Fermer</button>
+        </div>
+    </div>
+    
     <div class="modal" id="modal-planifier"><div class="modal-content"><h3>Planifier un patient</h3><label>Praticien affecté</label><select id="planif-kine-affecte"></select><label>Choisir un patient</label><select id="select-patient"></select><label>Heure</label><input type="time" id="planif-heure"><label>Jours :</label><div class="days-checkbox-grid" id="conteneur-jours-checkbox"></div><div style="display: flex; gap: 10px; margin-top: 10px;"><button class="btn-primary" onclick="ajouterAuPlanningMultiJours()">Planifier</button><button class="btn-secondary" onclick="fermerModal('modal-planifier')">Annuler</button></div></div></div>
     <div class="modal" id="modal-patient"><div class="modal-content"><h3 id="patient-modal-title">Fiche Patient</h3><input type="hidden" id="patient-id"><label>Nom</label><input type="text" id="patient-nom" required><label>Adresse</label><input type="text" id="patient-adresse" required><label>Tél 1</label><input type="tel" id="patient-telephone"><div id="zone-tel-secondaire" style="display:none; flex-direction:column; gap:4px;"><label>Tél 2</label><input type="tel" id="patient-telephone2"></div><button type="button" id="btn-add-tel2" class="btn-secondary" style="padding:5px; font-size:0.8rem; width:fit-content;" onclick="document.getElementById('zone-tel-secondaire').style.display='flex'; this.style.display='none';">➕ Ajouter un autre numéro</button><label>Informations</label><textarea id="patient-notes" rows="3"></textarea><label style="display: flex; align-items: center; gap: 10px; background: #ffe5e5; padding: 10px; border-radius: 8px; margin-top: 5px; font-weight: bold; color: #b30000; cursor: pointer;"><input type="checkbox" id="patient-aprevoir" style="width: auto;"> 🚨 Patient à prévoir</label><div style="display: flex; gap: 10px; margin-top: 10px;"><button class="btn-purple" onclick="sauvegarderFichePatient()">Enregistrer</button><button class="btn-danger" id="btn-supprimer-fiche" onclick="supprimerFichePatient()">Supprimer</button><button class="btn-secondary" onclick="fermerModal('modal-patient')">Annuler</button></div></div></div>
 
@@ -657,7 +667,6 @@
             initialiserSupabase(); 
             await chargerListeKines();
             
-            // Correction réseau "Hors-ligne" : On interroge directement le statut de la connexion 
             modifierBadgeReseau(navigator.onLine);
 
             if (localStorage.getItem('kine_connecte') === 'true') {
@@ -677,8 +686,6 @@
             document.getElementById('zone-filtre-secretariat').style.display = (kineRole === 'secretariat') ? 'flex' : 'none';
             
             calculerSemaine(); 
-            
-            // On force le chargement serveur. Si ça rate (vrai hors-ligne), la fonction va basculer automatiquement.
             chargerDonneesDepuisServeur(); 
             brancherTempsReel();
         }
@@ -917,8 +924,6 @@ async function chargerDonneesDepuisServeur() {
             });
         }
 
-        // --- FONCTIONS DE PLANIFICATION RECONSTITUÉES ---
-
         async function deplacerRdv(idPlanif, direction) {
             const dateSelectionnee = datesSemaineEnCours[indiceJourActuel];
             const cleDate = getCleDate(dateSelectionnee);
@@ -931,7 +936,6 @@ async function chargerDonneesDepuisServeur() {
             const cibleIndex = index + direction;
             if (cibleIndex < 0 || cibleIndex >= rdvDuJour.length) return;
 
-            // Échange des ordres
             const rdvA = rdvDuJour[index];
             const rdvB = rdvDuJour[cibleIndex];
             const ordreA = rdvA.ordre || 0;
@@ -940,7 +944,7 @@ async function chargerDonneesDepuisServeur() {
             rdvA.ordre = ordreB;
             rdvB.ordre = ordreA;
 
-            rafraichirAffichage(); // Maj optimiste
+            rafraichirAffichage();
 
             if (initialiserSupabase()) {
                 await supabaseClient.from('plannings_dates').update({ ordre: rdvA.ordre }).eq('id_planif', rdvA.idPlanif);
@@ -952,14 +956,13 @@ async function chargerDonneesDepuisServeur() {
         async function changerStatutRdv(idPlanif, nouveauStatut) {
             if (!initialiserSupabase()) return;
             
-            // Logique de toggle
             let statutFinal = nouveauStatut;
             const dateSelectionnee = datesSemaineEnCours[indiceJourActuel];
             const cleDate = getCleDate(dateSelectionnee);
             const rdv = planningsParDate[cleDate]?.find(r => String(r.idPlanif) === String(idPlanif));
             
             if (rdv && rdv.statut === nouveauStatut) {
-                statutFinal = null; // Désélection
+                statutFinal = null;
             }
 
             try {
@@ -997,6 +1000,7 @@ async function chargerDonneesDepuisServeur() {
             } catch(e) { console.error(e); }
         }
 
+        // --- FONCTION POUR OUVRIR LES NOTES EN POP-UP ---
         function ouvrirNoteVolante(patientId) {
             const patient = cataloguePatients.find(p => String(p.id) === String(patientId));
             if (!patient) return;
@@ -1010,16 +1014,13 @@ async function chargerDonneesDepuisServeur() {
             const selectPatient = document.getElementById('select-patient');
             const joursContainer = document.getElementById('conteneur-jours-checkbox');
             
-            // Remplir les kinés
             const praticiens = listeUtilisateursComplets.filter(u => u.role === 'kine' || u.role === 'remplacant').map(u => u.nom);
             selectKine.innerHTML = praticiens.map(k => `<option value="${k}" ${k === kineVisionne ? 'selected' : ''}>${k}</option>`).join('');
             
-            // Remplir les patients (triés)
             selectPatient.innerHTML = cataloguePatients
                 .sort((a,b) => a.nom.localeCompare(b.nom))
                 .map(p => `<option value="${p.id}">${p.nom}</option>`).join('');
             
-            // Remplir les jours de la semaine
             joursContainer.innerHTML = datesSemaineEnCours.map((d, i) => `
                 <label style="display:flex; gap:10px; cursor:pointer;">
                     <input type="checkbox" value="${i}" ${i === indiceJourActuel ? 'checked' : ''}>
@@ -1053,7 +1054,7 @@ async function chargerDonneesDepuisServeur() {
                     heure: heure || null,
                     kine_nom: kineAffecte,
                     statut: null,
-                    ordre: 99 // Ajouté à la fin par défaut
+                    ordre: 99
                 };
             });
 
@@ -1157,13 +1158,14 @@ async function chargerDonneesDepuisServeur() {
             
             document.getElementById('compteur-recherche').innerText = `${patientsFiltres.length} patient(s) enregistré(s)`;
 
+            // MODIFICATION ICI : Le bouton Modifier est réduit en largeur (padding réduit, width en mode 'auto', et disposition flex ajustée).
             conteneur.innerHTML = patientsFiltres.map(p => `
-                <div class="patient-card" style="border-left-color:${p.a_prevoir ? 'var(--danger)' : 'var(--purple)'};">
-                    <div class="patient-info">
+                <div class="patient-card" style="border-left-color:${p.a_prevoir ? 'var(--danger)' : 'var(--purple)'}; flex-direction: row; flex-wrap: wrap; align-items: center;">
+                    <div class="patient-info" style="flex: 1;">
                         <span class="patient-name">${p.nom} ${p.a_prevoir ? '<span class="badge-card-prevoir">🚨 À prévoir</span>' : ''}</span>
                         <span>📍 ${p.adresse}</span>
                     </div>
-                    <button class="btn-primary" style="background-color: var(--purple);" onclick="ouvrirFormulairePatient('${p.id}')">✏️ Modifier</button>
+                    <button class="btn-primary" style="background-color: var(--purple); padding: 6px 12px; font-size: 0.8rem; flex: 0 0 auto;" onclick="ouvrirFormulairePatient('${p.id}')">✏️ Modifier</button>
                 </div>`).join('');
         }
 
