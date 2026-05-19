@@ -19,7 +19,7 @@
             --orange: #ff9500;
             --alert-bg: #ffe5e5;
             --alert-text: #b30000;
-            --tla-color: #00c7b1;
+            --tla-color: #34c759; /* Changé en Vert */
         }
 
         body {
@@ -236,7 +236,7 @@
         /* Badges Spécifiques TLA */
         .badge-tla-kine {
             font-size: 0.75rem;
-            background-color: var(--orange);
+            background-color: var(--tla-color); /* Vert défini dans :root */
             color: white;
             padding: 5px 10px;
             border-radius: 6px;
@@ -277,6 +277,17 @@
             border-radius: 4px;
             width: fit-content;
             font-weight: bold;
+        }
+
+        /* Style pour le bouton filtre TLA rapide */
+        .btn-filter-tla {
+            background-color: #e5e5ea;
+            color: #555;
+            transition: all 0.2s ease;
+        }
+        .btn-filter-tla.active {
+            background-color: #00c7b1;
+            color: white;
         }
 
         /* Bouton d'accès aux notes */
@@ -435,6 +446,7 @@
                     <button class="btn-purple" id="btn-rapport-semaine" onclick="exporterRapportSemaine()">Rapport Hebdo 📅</button>
                     <button class="btn-success" id="btn-global-planifier" onclick="ouvrirPlanificateur()">Planifier ➕</button>
                     <button class="btn-secondary" id="btn-global-reset" onclick="reinitialiserJour()">Reset 🔄</button>
+                    <button class="btn-filter-tla" id="btn-filtre-tla-uniquement" onclick="basculerFiltreTlaUniquement()" style="padding: 10px 14px; font-weight: bold; border-radius: 8px;">Filtre TLA 📱</button>
                     <button class="btn-orange" style="width:100%; margin-top:5px;" id="btn-verrouiller-jour" onclick="gererVerrouillageJour()">Valider et Verrouiller ma journée 🔒</button>
                 </div>
             </div>
@@ -551,6 +563,9 @@
         let kineRole = "kine"; 
         let kineVisionne = ""; 
         let listeUtilisateursComplets = []; 
+
+        // Variable d'état pour le filtrage TLA
+        let filtreTlaUniquementActif = false;
 
         function initialiserSupabase() {
             if (supabaseClient === null) {
@@ -987,6 +1002,22 @@
             return 0;
         }
 
+        // Gérer l'activation/désactivation du filtre TLA
+        function basculerFiltreTlaUniquement() {
+            filtreTlaUniquementActif = !filtreTlaUniquementActif;
+            const btn = document.getElementById('btn-filtre-tla-uniquement');
+            if(btn) {
+                if(filtreTlaUniquementActif) {
+                    btn.classList.add('active');
+                    btn.innerText = "Filtre : TLA Uniquement 📱";
+                } else {
+                    btn.classList.remove('active');
+                    btn.innerText = "Filtre TLA 📱";
+                }
+            }
+            afficherPlanning();
+        }
+
         async function basculerTlaStatut(idPlanif, actionUtilisateur) {
             let rdvTrouve = null;
 
@@ -1049,6 +1080,11 @@
                 rdvAAfficher = tousRdvDuJour.filter(r => r.kineNom === kineVisionne);
             }
             
+            // --- NOUVEAU : Application du filtre TLA si activé ---
+            if (filtreTlaUniquementActif) {
+                rdvAAfficher = rdvAAfficher.filter(r => r.tlaStatut === 'dans_tla' || r.tlaStatut === 'facture');
+            }
+
             rdvAAfficher.sort(trierPlannings);
 
             const estSecretariat = (kineRole === 'secretariat');
@@ -1082,7 +1118,8 @@
             const statsEl = document.getElementById('tournee-stats');
             if (statsEl) {
                 let cibleTexte = kineVisionne === "TOUS" ? "Général cabinet" : kineVisionne;
-                let texteStats = `${cibleTexte} (${String(dateSelectionnee.getDate()).padStart(2,'0')}/${String(dateSelectionnee.getMonth()+1).padStart(2,'0')}) : ${rdvAAfficher.filter(r => r.statut !== null).length} / ${rdvAAfficher.length} traités`;
+                let addFiltreTexte = filtreTlaUniquementActif ? " [Filtre TLA Actif]" : "";
+                let texteStats = `${cibleTexte} (${String(dateSelectionnee.getDate()).padStart(2,'0')}/${String(dateSelectionnee.getMonth()+1).padStart(2,'0')})${addFiltreTexte} : ${rdvAAfficher.filter(r => r.statut !== null).length} / ${rdvAAfficher.length} traités`;
                 statsEl.innerText = texteStats;
             }
 
@@ -1127,11 +1164,11 @@
                             </label>`;
                     }
                 } else {
-                    // Côté Kiné : Invisible si non coché ou si réinitialisé
+                    // Côté Kiné : Intitulé raccourci en "TLA" et Couleur passe en Vert complet
                     if (rdv.tlaStatut === 'dans_tla') {
-                        htmlModuleTla = `<button class="badge-tla-kine" onclick="basculerTlaStatut('${rdv.idPlanif}', 'kine_click')">📱 TLA : À charger !</button>`;
+                        htmlModuleTla = `<button class="badge-tla-kine" onclick="basculerTlaStatut('${rdv.idPlanif}', 'kine_click')">📱 TLA</button>`;
                     } else if (rdv.tlaStatut === 'facture') {
-                        htmlModuleTla = `<button class="badge-tla-kine facture" onclick="basculerTlaStatut('${rdv.idPlanif}', 'kine_click')">✓ TLA Facturé</button>`;
+                        htmlModuleTla = `<button class="badge-tla-kine facture" onclick="basculerTlaStatut('${rdv.idPlanif}', 'kine_click')">✓ TLA</button>`;
                     }
                 }
 
@@ -1526,6 +1563,9 @@
             const tousRdvs = planningsParDate[getCleDate(dateObj)] || [];
             
             let rdvsCibles = kineVisionne === "TOUS" ? tousRdvs : tousRdvs.filter(r => r.kineNom === kineVisionne);
+            if (filtreTlaUniquementActif) {
+                rdvsCibles = rdvsCibles.filter(r => r.tlaStatut === 'dans_tla' || r.tlaStatut === 'facture');
+            }
             rdvsCibles.sort(trierPlannings);
             let cibleTexte = kineVisionne === "TOUS" ? "GLOBAL CABINET" : kineVisionne;
 
@@ -1540,6 +1580,9 @@
             datesSemaineEnCours.forEach(d => {
                 const tousRdvs = planningsParDate[getCleDate(d)] || [];
                 let rdvsCibles = kineVisionne === "TOUS" ? tousRdvs : tousRdvs.filter(r => r.kineNom === kineVisionne);
+                if (filtreTlaUniquementActif) {
+                    rdvsCibles = rdvsCibles.filter(r => r.tlaStatut === 'dans_tla' || r.tlaStatut === 'facture');
+                }
                 rdvsCibles.sort(trierPlannings);
                 texte += `▶️ *${getLabelDate(d).toUpperCase()}*\n${genererBlocRapport(rdvsCibles)}\n`;
             });
