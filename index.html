@@ -231,12 +231,12 @@
         .patient-address { font-size: 0.85rem; color: var(--neutral); text-decoration: none; }
         .patient-phone { font-size: 0.85rem; color: var(--primary); text-decoration: none; font-weight: bold; }
         .kine-tag { font-size: 0.75rem; background: #e5e5ea; color: #555; padding: 2px 6px; border-radius: 4px; font-weight: bold; width: fit-content; margin-top: 2px;}
-        .badge-card-prevoir { font-size: 0.7 gram; background: var(--danger); color: white; padding: 2px 6px; border-radius: 4px; font-weight: bold; width: fit-content; }
+        .badge-card-prevoir { font-size: 0.7rem; background: var(--danger); color: white; padding: 2px 6px; border-radius: 4px; font-weight: bold; width: fit-content; }
         
         /* Badges Spécifiques TLA */
         .badge-tla-kine {
             font-size: 0.75rem;
-            background-color: #aeaeae;
+            background-color: var(--orange);
             color: white;
             padding: 5px 10px;
             border-radius: 6px;
@@ -248,10 +248,6 @@
             width: fit-content;
             margin-top: 4px;
             border: none;
-        }
-        .badge-tla-kine.action-requise {
-            background-color: var(--orange);
-            animation: pulse 2s infinite;
         }
         .badge-tla-kine.facture {
             background-color: #e5e5ea;
@@ -596,7 +592,7 @@
                     <div class="kine-list-item">
                         <span>👤 <b>${u.nom}</b> [${u.role === 'secretariat' ? 'Secrétariat' : 'Kiné'}]</span>
                         <div style="display: flex; gap: 8px;">
-                            <button class="btn-icon" style="color:var(--primary); font-size:0.85rem;" onclick="ouvrirEditionKine('${u.id}')" title="Modifier">✏️</button>
+                            <button class="btn-icon" style="color:var(--primary); font-size:0.85rem;" onclick="abrirEditionKine('${u.id}')" title="Modifier">✏️</button>
                             <button class="btn-icon" style="color:var(--danger); font-size:0.85rem;" onclick="supprimerKine('${u.nom}')" title="Supprimer">🗑️</button>
                         </div>
                     </div>
@@ -1000,7 +996,7 @@
             });
             if (!rdvTrouve) return;
 
-            let nouveauStatut = null;
+            let nouveauStatut = rdvTrouve.tlaStatut;
 
             if (actionUtilisateur === 'secretariat_click') {
                 if (rdvTrouve.tlaStatut === null) {
@@ -1009,10 +1005,10 @@
                     nouveauStatut = null; 
                 }
             } else if (actionUtilisateur === 'kine_click') {
-                if (rdvTrouve.tlaStatut === 'dans_tla' || rdvTrouve.tlaStatut === null) {
+                if (rdvTrouve.tlaStatut === 'dans_tla') {
                     nouveauStatut = 'facture';
                 } else if (rdvTrouve.tlaStatut === 'facture') {
-                    nouveauStatut = null; 
+                    nouveauStatut = 'dans_tla'; 
                 }
             }
 
@@ -1121,7 +1117,7 @@
                         htmlModuleTla = `
                             <div style="display:flex; flex-direction:column; gap:2px;">
                                 <span class="badge-tla-sec-facture">✅ Facturé (TLA traité)</span>
-                                <button class="btn-icon" style="font-size:0.75rem; color:var(--danger); text-align:left; padding:0; font-weight:bold;" onclick="basculerTlaStatut('${rdv.idPlanif}', 'secretariat_click')">🔄 Supprimer la coche</button>
+                                <button class="btn-icon" style="font-size:0.75rem; color:var(--danger); text-align:left; padding:0; font-weight:bold;" onclick="basculerTlaStatut('${rdv.idPlanif}', 'secretariat_click')">🔄 Annuler la demande</button>
                             </div>`;
                     } else {
                         const isCoché = rdv.tlaStatut === 'dans_tla' ? 'checked' : '';
@@ -1131,13 +1127,11 @@
                             </label>`;
                     }
                 } else {
-                    // Côté Kiné : Toujours visible sur mobile/desktop
+                    // Côté Kiné : Invisible si non coché ou si réinitialisé
                     if (rdv.tlaStatut === 'dans_tla') {
-                        htmlModuleTla = `<button class="badge-tla-kine action-requise" onclick="basculerTlaStatut('${rdv.idPlanif}', 'kine_click')">📱 TLA : À charger !</button>`;
+                        htmlModuleTla = `<button class="badge-tla-kine" onclick="basculerTlaStatut('${rdv.idPlanif}', 'kine_click')">📱 TLA : À charger !</button>`;
                     } else if (rdv.tlaStatut === 'facture') {
                         htmlModuleTla = `<button class="badge-tla-kine facture" onclick="basculerTlaStatut('${rdv.idPlanif}', 'kine_click')">✓ TLA Facturé</button>`;
-                    } else {
-                        htmlModuleTla = `<button class="badge-tla-kine" onclick="basculerTlaStatut('${rdv.idPlanif}', 'kine_click')">📱 TLA (Neutre)</button>`;
                     }
                 }
 
@@ -1152,7 +1146,7 @@
                         <div class="patient-info">
                             <span class="patient-name">${patient.nom}</span>
                             <span style="font-size:0.85rem; font-weight:bold; color: ${rdv.heure !== '00:00' ? 'var(--purple)' : 'var(--neutral)'};">${affichageHeure}</span>
-                            <a href="https://maps.google.com/?q=${encodeURIComponent(patient.adresse)}" target="_blank" class="patient-address">📍 ${patient.adresse}</a>
+                            <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(patient.adresse)}" target="_blank" class="patient-address">📍 ${patient.adresse}</a>
                             ${chaineTels ? `<a href="tel:${patient.telephone}" class="patient-phone">${chaineTels}</a>` : ''}
                             ${patient.a_prevoir ? `<span class="badge-card-prevoir">🚨 À prévoir</span>` : ''}
                             ${patient.notes ? `<span class="btn-note-declencheur" onclick="ouvrirNoteVolante('${patient.id}')">📝 Note</span>` : ''}
@@ -1471,7 +1465,7 @@
             ouvrirModal('modal-planifier');
         }
 
-        function ouvrirFormulairePatient(id = '') {
+        function abrirFormulairePatient(id = '') {
             document.getElementById('zone-tel-secondaire').style.display = 'none';
             document.getElementById('btn-add-tel2').style.display = 'block';
 
@@ -1522,7 +1516,7 @@
             });
             let texte = "";
             if(vus.length) texte += `🟢 *Patients vus :*\n${vus.join('\n')}\n`;
-            if(absents.length) text += `🔴 *Absents :*\n${absents.join('\n')}\n`;
+            if(absents.length) texte += `🔴 *Absents :*\n${absents.join('\n')}\n`;
             if(nonTraites.length) texte += `⚪ *Non traités / Prévus :*\n${nonTraites.join('\n')}\n`;
             return texte || " Aucun patient programmé.\n";
         }
