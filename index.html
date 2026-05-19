@@ -410,6 +410,10 @@
                         <option value="remplacant">Rôle : Remplaçant</option>
                         <option value="secretariat">Rôle : Secrétariat</option>
                     </select>
+
+                    <select id="nouveau-kine-remplace-input" style="padding:6px; border:1px solid #ccc; background: white; font-weight: bold; display: none;">
+                        <option value="">-- Quel Kiné remplace-t-il ? --</option>
+                    </select>
                     
                     <div style="display: flex; gap: 5px; width: 100%;">
                         <button id="btn-soumettre-kine" class="btn-success" style="padding:8px; flex: 1;" onclick="sauvegarderKine()">Créer l'utilisateur</button>
@@ -595,6 +599,7 @@
         
         let kineConnecte = ""; 
         let kineRole = "kine"; 
+        let kineRemplace = ""; // NOUVEAU : Sauvegarde du titulaire remplacé
         let kineVisionne = ""; 
         let listeUtilisateursComplets = []; 
 
@@ -671,13 +676,25 @@
             }
         }
 
+        // NOUVEAU : Affichage conditionnel du menu du kiné remplacé lors de la création d'un compte
+        document.getElementById('nouveau-role-input').addEventListener('change', function() {
+            const remplaceInput = document.getElementById('nouveau-kine-remplace-input');
+            if (this.value === 'remplacant') {
+                remplaceInput.style.display = 'block';
+                const kinesTitulaires = listeUtilisateursComplets.filter(u => u.role === 'kine');
+                remplaceInput.innerHTML = '<option value="">-- Sélectionnez le Kiné remplacé --</option>' + kinesTitulaires.map(k => `<option value="${k.nom}">${k.nom}</option>`).join('');
+            } else {
+                remplaceInput.style.display = 'none';
+                remplaceInput.value = '';
+            }
+        });
+
         function majSelecteursKine() {
             const selectLogin = document.getElementById('kine-select-login');
             const conteneurAdmin = document.getElementById('liste-kines-admin');
             const filtreSec = document.getElementById('filtre-view-kine');
             const selectDeclaration = document.getElementById('select-declaration-tla');
             
-            // Fonction d'aide pour afficher proprement le rôle
             const getRoleLabel = (role) => {
                 if (role === 'secretariat') return 'Secrétariat';
                 if (role === 'remplacant') return 'Remplaçant';
@@ -688,18 +705,19 @@
                 selectLogin.innerHTML = listeUtilisateursComplets.map(u => `<option value="${u.nom}">${u.nom} (${getRoleLabel(u.role)})</option>`).join('');
             }
             if (conteneurAdmin) {
-                conteneurAdmin.innerHTML = listeUtilisateursComplets.map(u => `
+                conteneurAdmin.innerHTML = listeUtilisateursComplets.map(u => {
+                    const infoRemplace = (u.role === 'remplacant' && u.kine_remplace) ? ` de ${u.kine_remplace}` : '';
+                    return `
                     <div class="kine-list-item">
-                        <span>👤 <b>${u.nom}</b> [${getRoleLabel(u.role)}]</span>
+                        <span>👤 <b>${u.nom}</b> [${getRoleLabel(u.role)}${infoRemplace}]</span>
                         <div style="display: flex; gap: 8px;">
                             <button class="btn-icon" style="color:var(--primary); font-size:0.85rem;" onclick="abrirEditionKine('${u.id}')" title="Modifier">✏️</button>
                             <button class="btn-icon" style="color:var(--danger); font-size:0.85rem;" onclick="supprimerKine('${u.nom}')" title="Supprimer">🗑️</button>
                         </div>
                     </div>
-                `).join('');
+                `}).join('');
             }
             if (filtreSec) {
-                // On affiche les Kinés ET les Remplaçants dans les filtres
                 const praticiensUniquement = listeUtilisateursComplets.filter(u => u.role === 'kine' || u.role === 'remplacant').map(u => u.nom);
                 let optionsHTML = `<option value="TOUS">👥 Tous les praticiens</option>`;
                 optionsHTML += praticiensUniquement.map(k => `<option value="${k}">👤 ${k}</option>`).join('');
@@ -747,6 +765,17 @@
             document.getElementById('nouveau-mdp-input').value = u.mot_de_passe;
             document.getElementById('nouveau-role-input').value = u.role;
 
+            const remplaceInput = document.getElementById('nouveau-kine-remplace-input');
+            if(u.role === 'remplacant') {
+                remplaceInput.style.display = 'block';
+                const kinesTitulaires = listeUtilisateursComplets.filter(u => u.role === 'kine');
+                remplaceInput.innerHTML = '<option value="">-- Sélectionnez le Kiné remplacé --</option>' + kinesTitulaires.map(k => `<option value="${k.nom}">${k.nom}</option>`).join('');
+                remplaceInput.value = u.kine_remplace || '';
+            } else {
+                remplaceInput.style.display = 'none';
+                remplaceInput.value = '';
+            }
+
             document.getElementById('btn-soumettre-kine').innerText = "Enregistrer les modifications 💾";
             document.getElementById('btn-annuler-kine').style.display = 'block';
         }
@@ -757,6 +786,8 @@
             document.getElementById('nouveau-kine-input').value = '';
             document.getElementById('nouveau-mdp-input').value = '';
             document.getElementById('nouveau-role-input').value = 'kine';
+            document.getElementById('nouveau-kine-remplace-input').style.display = 'none';
+            document.getElementById('nouveau-kine-remplace-input').value = '';
 
             document.getElementById('btn-soumettre-kine').innerText = "Créer l'utilisateur";
             document.getElementById('btn-annuler-kine').style.display = 'none';
@@ -767,19 +798,26 @@
             const inputNom = document.getElementById('nouveau-kine-input');
             const inputMdp = document.getElementById('nouveau-mdp-input');
             const inputRole = document.getElementById('nouveau-role-input');
+            const inputRemplace = document.getElementById('nouveau-kine-remplace-input');
             
             const nom = inputNom.value.trim();
             const mdp = inputMdp.value.trim();
             const role = inputRole.value;
+            const kine_remplace = role === 'remplacant' ? inputRemplace.value : null;
 
             if (!nom || !mdp) {
-                alert("Veuillez renseigneur un nom et un mot de passe.");
+                alert("Veuillez renseigner un nom et un mot de passe.");
+                return;
+            }
+
+            if (role === 'remplacant' && !kine_remplace) {
+                alert("Pour un remplaçant, veuillez sélectionner le kiné qu'il remplace.");
                 return;
             }
 
             if (!initialiserSupabase()) return;
 
-            const payload = { nom: nom, mot_de_passe: mdp, role: role };
+            const payload = { nom: nom, mot_de_passe: mdp, role: role, kine_remplace: kine_remplace };
 
             if (id) {
                 const { error } = await supabaseClient.from('practiciens').update(payload).eq('id', id);
@@ -845,10 +883,18 @@
                 localStorage.setItem('kine_connecte', 'true');
                 localStorage.setItem('kine_nom_actif', cible.nom);
                 localStorage.setItem('kine_role_actif', cible.role);
+                localStorage.setItem('kine_remplace_actif', cible.kine_remplace || '');
                 
                 kineConnecte = cible.nom;
                 kineRole = cible.role;
-                kineVisionne = cible.role === 'secretariat' ? 'TOUS' : cible.nom;
+                kineRemplace = cible.kine_remplace || '';
+                
+                // NOUVEAU LOGIQUE : Si c'est un remplaçant, il visionne le titulaire. Sinon comportement normal.
+                if (cible.role === 'remplacant' && cible.kine_remplace) {
+                    kineVisionne = cible.kine_remplace;
+                } else {
+                    kineVisionne = cible.role === 'secretariat' ? 'TOUS' : cible.nom;
+                }
                 
                 initialiserApplication();
             } else {
@@ -860,6 +906,7 @@
             localStorage.removeItem('kine_connecte');
             localStorage.removeItem('kine_nom_actif');
             localStorage.removeItem('kine_role_actif');
+            localStorage.removeItem('kine_remplace_actif');
             window.location.reload();
         }
 
@@ -870,7 +917,13 @@
             if (localStorage.getItem('kine_connecte') === 'true') {
                 kineConnecte = localStorage.getItem('kine_nom_actif');
                 kineRole = localStorage.getItem('kine_role_actif') || 'kine';
-                kineVisionne = kineRole === 'secretariat' ? 'TOUS' : kineConnecte;
+                kineRemplace = localStorage.getItem('kine_remplace_actif') || '';
+                
+                if (kineRole === 'remplacant' && kineRemplace) {
+                    kineVisionne = kineRemplace;
+                } else {
+                    kineVisionne = kineRole === 'secretariat' ? 'TOUS' : kineConnecte;
+                }
                 
                 setTimeout(() => {
                     if (initialiserSupabase()) {
@@ -886,10 +939,9 @@
             document.getElementById('login-screen').style.display = 'none';
             document.getElementById('main-app').style.display = 'block';
             
-            // Adaptation du badge selon le rôle
             let labelBadgeRole = "Kiné";
             if(kineRole === 'secretariat') labelBadgeRole = "Secrétaire";
-            if(kineRole === 'remplacant') labelBadgeRole = "Remplaçant";
+            if(kineRole === 'remplacant') labelBadgeRole = `Remplaçant de ${kineRemplace}`;
             
             document.getElementById('nom-kine-badge').innerText = `Session : ${kineConnecte} (${labelBadgeRole})`;
             
@@ -1576,7 +1628,7 @@
                 selectPatient.innerHTML += `<option value="${p.id}">${p.nom} ${p.a_prevoir ? '(🚨 À prévoir)' : ''}</option>`;
             });
 
-            // On permet d'affecter un rendez-vous aux Kinés ET aux Remplaçants
+            // On affiche tous les praticiens
             const praticiensDispos = listeUtilisateursComplets.filter(u => u.role === 'kine' || u.role === 'remplacant');
             selectKineAffecte.innerHTML = praticiensDispos.map(u => `<option value="${u.nom}">${u.nom}</option>`).join('');
             
