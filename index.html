@@ -110,7 +110,7 @@
             background: var(--card-bg);
             padding: 15px;
             border-radius: 12px;
-            box-shadow: 0 2px 8 rgba(0,0,0,0.05);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
             margin-bottom: 15px;
             position: sticky;
             top: 0;
@@ -170,7 +170,7 @@
         .stats { font-size: 0.9rem; color: var(--neutral); font-weight: bold; margin-bottom: 10px; }
         .actions-bar { display: flex; gap: 8px; flex-wrap: wrap; }
 
-        button, select, input {
+        button, select, input, textarea {
             border: none;
             padding: 10px 14px;
             border-radius: 8px;
@@ -180,7 +180,7 @@
         button { cursor: pointer; }
         button:disabled {
             opacity: 0.4 !important;
-            cursor: not-allowed !allowed !important;
+            cursor: not-allowed !important;
         }
         .btn-primary { background-color: var(--primary); color: white; flex: 1; }
         .btn-secondary { background-color: var(--neutral); color: white; }
@@ -212,6 +212,20 @@
         .patient-phone { font-size: 0.85rem; color: var(--primary); text-decoration: none; font-weight: bold; }
         .kine-tag { font-size: 0.75rem; background: #e5e5ea; color: #555; padding: 2px 6px; border-radius: 4px; font-weight: bold; width: fit-content; margin-top: 2px;}
         .badge-card-prevoir { font-size: 0.7rem; background: var(--orange); color: white; padding: 2px 6px; border-radius: 4px; font-weight: bold; width: fit-content; }
+        
+        /* Bouton d'accès aux notes */
+        .btn-note-declencheur {
+            font-size: 0.75rem;
+            background: #fff3cd;
+            color: #856404;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: bold;
+            width: fit-content;
+            margin-top: 2px;
+            cursor: pointer;
+            border: 1px solid #ffeeba;
+        }
 
         .btn-group { display: flex; gap: 6px; align-items: center; }
         .btn-status { width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; background: #f0f0f5; }
@@ -228,7 +242,7 @@
             background: white; padding: 20px; border-radius: 16px; width: 90%; max-width: 400px;
             display: flex; flex-direction: column; gap: 12px; max-height: 90vh; overflow-y: auto;
         }
-        .modal-content input, .modal-content select { width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #ccc; box-sizing: border-box; }
+        .modal-content input, .modal-content select, .modal-content textarea { width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #ccc; box-sizing: border-box; }
         .days-checkbox-grid { display: flex; flex-direction: column; gap: 8px; background: #f4f6f9; padding: 10px; border-radius: 8px; }
         
         /* Liste interne modale à prévoir */
@@ -386,6 +400,17 @@
         </div>
     </div>
 
+    <div class="modal" id="modal-note-volante" onclick="fermerModal('modal-note-volante')">
+        <div class="modal-content" style="max-width: 350px;" onclick="event.stopPropagation()">
+            <h3 style="margin: 0 0 5px 0; color: var(--purple); display: flex; align-items: center; gap: 6px;">📝 Notes & Infos</h3>
+            <p id="note-volante-nom-patient" style="font-weight: bold; font-size: 0.95rem; margin: 0 0 10px 0; border-bottom: 1px solid #e5e5ea; padding-bottom: 5px;"></p>
+            <div id="note-volante-corps" style="font-size: 0.95rem; line-height: 1.4; color: #444; background: #fffcf3; padding: 12px; border-radius: 8px; border-left: 4px solid var(--orange); word-break: break-word; white-space: pre-wrap;"></div>
+            <div style="margin-top: 5px; text-align: right;">
+                <button class="btn-primary" style="padding: 8px 16px;" onclick="fermerModal('modal-note-volante')">Fermer</button>
+            </div>
+        </div>
+    </div>
+
     <div class="modal" id="modal-planifier">
         <div class="modal-content">
             <h3>Planifier un patient</h3>
@@ -423,6 +448,9 @@
                 <input type="tel" id="patient-telephone2" placeholder="0262 00 00 00">
             </div>
             <button type="button" id="btn-add-tel2" class="btn-secondary" style="padding:5px; font-size:0.8rem; width:fit-content;" onclick="document.getElementById('zone-tel-secondaire').style.display='flex'; this.style.display='none';">➕ Ajouter un autre numéro</button>
+
+            <label>Informations diverses (Codes, pathologie, consignes...)</label>
+            <textarea id="patient-notes" rows="3" placeholder="Digicode, chien dans la cour, oxygène, etc..." style="resize: vertical; font-family: inherit; font-size: 0.9rem;"></textarea>
 
             <label style="display: flex; align-items: center; gap: 10px; background: #fff3cd; padding: 10px; border-radius: 8px; margin-top: 5px; font-weight: bold; color: #856404; cursor: pointer;">
                 <input type="checkbox" id="patient-aprevoir" style="width: auto;"> ⏳ Patient à prévoir (en attente)
@@ -790,6 +818,7 @@
                         <strong style="font-size:1rem; color:var(--text-color);">${p.nom}</strong>
                         <span style="font-size:0.8rem; color:var(--neutral);">📍 ${p.adresse}</span>
                         ${numTels ? `<span style="font-size:0.85rem; color:var(--primary); font-weight:bold;">${numTels}</span>` : ''}
+                        ${p.notes ? `<span class="btn-note-declencheur" onclick="event.stopPropagation(); ouvrirNoteVolante('${p.id}')">📝 Note</span>` : ''}
                     </div>
                     <div style="display:flex; gap:5px;">
                         <button class="btn-success" style="padding:6px 10px; font-size:0.8rem;" onclick="fermerModal('modal-liste-prevoir'); ouvrirPlanificateurSpecifique('${p.id}')">Planifier ➕</button>
@@ -799,6 +828,16 @@
                 conteneur.appendChild(item);
             });
             ouvrirModal('modal-liste-prevoir');
+        }
+
+        // Déclenche l'affichage de la note volante
+        function ouvrirNoteVolante(patientId) {
+            const p = cataloguePatients.find(item => String(item.id) === String(patientId));
+            if (!p || !p.notes) return;
+            
+            document.getElementById('note-volante-nom-patient').innerText = p.nom;
+            document.getElementById('note-volante-corps').innerText = p.notes;
+            ouvrirModal('modal-note-volante');
         }
 
         function ouvrirPlanificateurSpecifique(patientId) {
@@ -965,6 +1004,7 @@
                         <a href="http://googleusercontent.com/maps.google.com/3${encodeURIComponent(patient.adresse)}" target="_blank" class="patient-address">📍 ${patient.adresse}</a>
                         ${chaineTels ? `<a href="tel:${patient.telephone}" class="patient-phone">${chaineTels}</a>` : ''}
                         ${patient.a_prevoir ? `<span class="badge-card-prevoir">⏳ À prévoir</span>` : ''}
+                        ${patient.notes ? `<span class="btn-note-declencheur" onclick="ouvrirNoteVolante('${patient.id}')">📝 Note</span>` : ''}
                         ${kineVisionne === "TOUS" ? `<span class="kine-tag">Praticien : ${rdv.kineNom} ${rdv.verrouille ? '🔒' : ''}</span>` : ''}
                     </div>
                     <div class="btn-group">
@@ -1088,7 +1128,6 @@
             }
         }
 
-        // Fonction de filtrage intuitive appelée à chaque saisie
         function filtrerFichierPatientsIntuitivement() {
             afficherCatalogue();
         }
@@ -1098,12 +1137,10 @@
             if (!conteneur) return;
             conteneur.innerHTML = '';
 
-            // Récupération de la valeur textuelle entrée dans la barre de recherche
             const rechercheTerme = document.getElementById('recherche-patient-input').value.toLowerCase().trim();
 
-            // Filtrage intelligent (saisie intuitive)
             const patientsFiltres = cataloguePatients.filter(p => {
-                if (!rechercheTerme) return true; // Si rien n'est tapé, on garde tout
+                if (!rechercheTerme) return true; 
                 
                 const nomMatch = p.nom && p.nom.toLowerCase().includes(rechercheTerme);
                 const adresseMatch = p.adresse && p.adresse.toLowerCase().includes(rechercheTerme);
@@ -1111,7 +1148,6 @@
                 return nomMatch || adresseMatch;
             });
 
-            // Mise à jour du compteur dynamique
             const compteurEl = document.getElementById('compteur-recherche');
             if (compteurEl) {
                 if (!rechercheTerme) {
@@ -1139,6 +1175,7 @@
                         <span class="patient-name">${p.nom} ${p.a_prevoir ? '<span class="badge-card-prevoir">⏳ À prévoir</span>' : ''}</span>
                         <span style="font-size:0.85rem; color:var(--neutral);">📍 ${p.adresse}</span>
                         ${chaineTels ? `<span style="font-size:0.85rem; color:var(--primary); font-weight:bold;">${chaineTels}</span>` : ''}
+                        ${p.notes ? `<span class="btn-note-declencheur" onclick="ouvrirNoteVolante('${p.id}')">📝 Note</span>` : ''}
                     </div>
                     <div class="btn-group">
                         <button class="btn-primary" style="background-color: var(--purple);" onclick="ouvrirFormulairePatient('${p.id}')">✏️ Modifier</button>
@@ -1154,6 +1191,7 @@
             const adresse = document.getElementById('patient-adresse').value.trim();
             const telephone = document.getElementById('patient-telephone').value.trim();
             const telephone_2 = document.getElementById('patient-telephone2').value.trim();
+            const notes = document.getElementById('patient-notes').value.trim();
             const a_prevoir = document.getElementById('patient-aprevoir').checked;
 
             if(!nom || !adresse) { alert("Veuillez remplir le nom et l'adresse."); return; }
@@ -1161,7 +1199,7 @@
 
             if (!initialiserSupabase()) return;
 
-            const payload = { nom, adresse, telephone, telephone_2, a_prevoir };
+            const payload = { nom, adresse, telephone, telephone_2, notes, a_prevoir };
 
             if (id) {
                 const { error } = await supabaseClient.from('catalogue_patients').update(payload).eq('id', id);
@@ -1186,6 +1224,8 @@
 
         function ouvrirModal(id) { document.getElementById(id).style.display = 'flex'; }
         function fermerModal(id) { document.getElementById(id).style.display = 'none'; }
+
+        function abrirModal(id) { document.getElementById(id).style.display = 'flex'; }
 
         function ouvrirPlanificateur() {
             const selectPatient = document.getElementById('select-patient');
@@ -1233,6 +1273,7 @@
                 document.getElementById('patient-adresse').value = p.adresse;
                 document.getElementById('patient-telephone').value = p.telephone || '';
                 document.getElementById('patient-telephone2').value = p.telephone_2 || '';
+                document.getElementById('patient-notes').value = p.notes || '';
                 document.getElementById('patient-aprevoir').checked = p.a_prevoir || false;
                 
                 if(p.telephone_2) {
@@ -1247,6 +1288,7 @@
                 document.getElementById('patient-adresse').value = '';
                 document.getElementById('patient-telephone').value = '';
                 document.getElementById('patient-telephone2').value = '';
+                document.getElementById('patient-notes').value = '';
                 document.getElementById('patient-aprevoir').checked = false;
                 document.getElementById('btn-supprimer-fiche').style.display = 'none';
             }
@@ -1260,6 +1302,7 @@
                 if (!p) return;
                 let ligne = `  - [${r.heure}] ${p.nom}`;
                 if (p.telephone) ligne += ` (${p.telephone})`;
+                if (p.notes) ligne += ` [Note: ${p.notes}]`;
                 if (kineVisionne === "TOUS") ligne += ` (Par: ${r.kineNom})`;
                 
                 if (r.statut === 'vu') vus.push(ligne);
