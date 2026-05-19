@@ -481,8 +481,12 @@
         <div class="modal-content" style="max-width: 350px;" onclick="event.stopPropagation()">
             <h3 style="margin: 0 0 5px 0; color: var(--purple);">📝 Notes & Infos</h3>
             <p id="note-volante-nom-patient" style="font-weight: bold;"></p>
-            <div id="note-volante-corps" style="background: #fffcf3; padding: 12px; border-radius: 8px; border-left: 4px solid var(--orange); word-break: break-word; white-space: pre-wrap;"></div>
-            <button class="btn-primary" style="margin-top:10px;" onclick="fermerModal('modal-note-volante')">Fermer</button>
+            <input type="hidden" id="note-volante-patient-id">
+            <textarea id="note-volante-corps" rows="5" placeholder="Saisissez vos notes ou informations ici..." style="width: 100%; background: #fffcf3; padding: 12px; border-radius: 8px; border: 1px solid #ccc; border-left: 4px solid var(--orange); box-sizing: border-box; font-family: inherit; font-size: 0.9rem; resize: vertical;"></textarea>
+            <div style="display: flex; gap: 10px; margin-top:10px;">
+                <button class="btn-success" onclick="sauvegarderNoteVolante()">Enregistrer 💾</button>
+                <button class="btn-secondary" onclick="fermerModal('modal-note-volante')">Fermer</button>
+            </div>
         </div>
     </div>
     
@@ -712,7 +716,6 @@ async function chargerDonneesDepuisServeur() {
                     });
                 });
                 
-                // Mise à jour du bandeau "À prévoir"
                 const nbAPrevoir = cataloguePatients.filter(p => p.a_prevoir).length;
                 const bandeau = document.getElementById('bandeau-a-prevoir');
                 if (nbAPrevoir > 0) {
@@ -895,6 +898,11 @@ async function chargerDonneesDepuisServeur() {
                     }
                 }
 
+                // GESTION DU BADGE NOTE TOUJOURS VISIBLE
+                const aDesNotes = patient.notes && patient.notes.trim() !== '';
+                const opaciteNote = aDesNotes ? '1' : '0.5';
+                const texteNote = aDesNotes ? '📝 Note' : '📝 Note (vide)';
+
                 card.innerHTML = `
                     <div class="patient-card-left">
                         ${!masquerFleches ? `
@@ -909,7 +917,9 @@ async function chargerDonneesDepuisServeur() {
                             <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(patient.adresse)}" target="_blank" class="patient-address">📍 ${patient.adresse}</a>
                             ${chaineTels ? `<a href="tel:${patient.telephone}" class="patient-phone">${chaineTels}</a>` : ''}
                             ${patient.a_prevoir ? `<span class="badge-card-prevoir">🚨 À prévoir</span>` : ''}
-                            ${patient.notes ? `<span class="btn-note-declencheur" onclick="ouvrirNoteVolante('${patient.id}')">📝 Note</span>` : ''}
+                            
+                            <span class="btn-note-declencheur" style="opacity: ${opaciteNote};" onclick="ouvrirNoteVolante('${patient.id}')">${texteNote}</span>
+                            
                             ${kineVisionne === "TOUS" ? `<span class="kine-tag">Praticien : ${rdv.kineNom} ${rdv.verrouille ? '🔒' : ''}</span>` : ''}
                             ${htmlModuleTla}
                         </div>
@@ -1000,13 +1010,33 @@ async function chargerDonneesDepuisServeur() {
             } catch(e) { console.error(e); }
         }
 
-        // --- FONCTION POUR OUVRIR LES NOTES EN POP-UP ---
+        // --- FONCTIONS POUR OUVRIR ET SAUVEGARDER LES NOTES EN POP-UP ---
         function ouvrirNoteVolante(patientId) {
             const patient = cataloguePatients.find(p => String(p.id) === String(patientId));
             if (!patient) return;
             document.getElementById('note-volante-nom-patient').innerText = `Patient : ${patient.nom}`;
-            document.getElementById('note-volante-corps').innerText = patient.notes || "Aucune note.";
+            document.getElementById('note-volante-patient-id').value = patient.id;
+            document.getElementById('note-volante-corps').value = patient.notes || "";
             ouvrirModal('modal-note-volante');
+        }
+
+        async function sauvegarderNoteVolante() {
+            const patientId = document.getElementById('note-volante-patient-id').value;
+            const nouvellesNotes = document.getElementById('note-volante-corps').value;
+            
+            if (!initialiserSupabase()) return;
+
+            try {
+                await supabaseClient.from('catalogue_patients')
+                    .update({ notes: nouvellesNotes })
+                    .eq('id', patientId);
+                
+                fermerModal('modal-note-volante');
+                chargerDonneesDepuisServeur(); // Rafraîchit tout pour mettre à jour l'opacité du badge
+            } catch(e) {
+                console.error("Erreur lors de la sauvegarde de la note", e);
+                alert("Erreur lors de la sauvegarde.");
+            }
         }
 
         function ouvrirPlanificateur() {
@@ -1158,7 +1188,6 @@ async function chargerDonneesDepuisServeur() {
             
             document.getElementById('compteur-recherche').innerText = `${patientsFiltres.length} patient(s) enregistré(s)`;
 
-            // MODIFICATION ICI : Le bouton Modifier est réduit en largeur (padding réduit, width en mode 'auto', et disposition flex ajustée).
             conteneur.innerHTML = patientsFiltres.map(p => `
                 <div class="patient-card" style="border-left-color:${p.a_prevoir ? 'var(--danger)' : 'var(--purple)'}; flex-direction: row; flex-wrap: wrap; align-items: center;">
                     <div class="patient-info" style="flex: 1;">
