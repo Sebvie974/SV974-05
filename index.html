@@ -526,7 +526,7 @@
                 localStorage.setItem('cache_utilisateurs', JSON.stringify(listeUtilisateursComplets));
                 majSelecteursKine();
             } catch (e) {
-                console.log("Lecture du personnel depuis le cache local offline :", e);
+                console.log("Le personnel n'a pas pu être lu en direct, chargement depuis le cache local offline.");
                 listeUtilisateursComplets = JSON.parse(localStorage.getItem('cache_utilisateurs')) || [];
                 majSelecteursKine();
             }
@@ -791,7 +791,7 @@
                 rafraichirAffichage();
                 majBandeauAPrevoir();
             } catch (e) {
-                console.log("Mode local temporaire actif :", e);
+                console.log("Mode déconnecté, chargement du cache local.");
                 cataloguePatients = JSON.parse(localStorage.getItem('cache_patients')) || [];
                 planningsParDate = JSON.parse(localStorage.getItem('cache_plannings')) || {};
                 modifierBadgeReseau(false);
@@ -873,8 +873,8 @@
 
         function calculerSemaine() {
             datesSemaineEnCours = [];
-            let AlignmentDay = dateAncre.getDay();
-            let distanceAuLundi = AlignmentDay === 0 ? -6 : 1 - AlignmentDay;
+            let checkDay = dateAncre.getDay();
+            let distanceAuLundi = checkDay === 0 ? -6 : 1 - checkDay;
             let lundiSemaine = new Date(dateAncre);
             lundiSemaine.setDate(dateAncre.getDate() + distanceAuLundi);
 
@@ -1037,7 +1037,7 @@
                         <div class="patient-info">
                             <span class="patient-name">${patient.nom}</span>
                             <span style="font-size:0.85rem; font-weight:bold; color: ${rdv.heure !== '00:00' ? 'var(--purple)' : 'var(--neutral)'};">${affichageHeure}</span>
-                            <a href="http://maps.google.com/?q=${encodeURIComponent(patient.adresse)}" target="_blank" class="patient-address">📍 ${patient.adresse}</a>
+                            <a href="https://maps.google.com/?q=${encodeURIComponent(patient.adresse)}" target="_blank" class="patient-address">📍 ${patient.adresse}</a>
                             ${chaineTels ? `<a href="tel:${patient.telephone}" class="patient-phone">${chaineTels}</a>` : ''}
                             ${patient.a_prevoir ? `<span class="badge-card-prevoir">🚨 À prévoir</span>` : ''}
                             ${patient.notes ? `<span class="btn-note-declencheur" onclick="ouvrirNoteVolante('${patient.id}')">📝 Note</span>` : ''}
@@ -1231,7 +1231,7 @@
 
             const patientsFiltres = cataloguePatients.filter(p => {
                 if (!rechercheTerme) return true; 
-                const nomMatch = p.nom && p.nom.toLowerCase().includes(rechercheTermre);
+                const nomMatch = p.nom && p.nom.toLowerCase().includes(rechercheTerme);
                 const adresseMatch = p.adresse && p.adresse.toLowerCase().includes(rechercheTerme);
                 return nomMatch || adresseMatch;
             });
@@ -1271,6 +1271,14 @@
                 `;
                 conteneur.appendChild(card);
             });
+        }
+
+        function rafraichirAffichage() {
+            if (vueActuelle === 'planning') {
+                afficherPlanning();
+            } else {
+                afficherCatalogue();
+            }
         }
 
         async function sauvegarderFichePatient() {
