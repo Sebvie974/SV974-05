@@ -19,7 +19,7 @@
             --orange: #ff9500;
             --alert-bg: #ffe5e5;
             --alert-text: #b30000;
-            --tla-color: #34c759; /* Changé en Vert */
+            --tla-color: #34c759;
         }
 
         body {
@@ -129,6 +129,22 @@
             color: var(--purple);
         }
 
+        /* Nouveau badge de localisation globale du boitier TLA */
+        .tla-location-badge {
+            font-size: 0.85rem;
+            background: #eefdfb;
+            border: 1px solid #00c7b1;
+            color: #008777;
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-top: 8px;
+            width: fit-content;
+        }
+
         .sync-indicator {
             font-size: 0.8rem;
             display: inline-flex;
@@ -231,12 +247,12 @@
         .patient-address { font-size: 0.85rem; color: var(--neutral); text-decoration: none; }
         .patient-phone { font-size: 0.85rem; color: var(--primary); text-decoration: none; font-weight: bold; }
         .kine-tag { font-size: 0.75rem; background: #e5e5ea; color: #555; padding: 2px 6px; border-radius: 4px; font-weight: bold; width: fit-content; margin-top: 2px;}
-        .badge-card-prevoir { font-size: 0.7rem; background: var(--danger); color: white; padding: 2px 6px; border-radius: 4px; font-weight: bold; width: fit-content; }
+        .badge-card-prevoir { font-size: 0.7 gram; background: var(--danger); color: white; padding: 2px 6px; border-radius: 4px; font-weight: bold; width: fit-content; }
         
         /* Badges Spécifiques TLA */
         .badge-tla-kine {
             font-size: 0.75rem;
-            background-color: var(--tla-color); /* Vert défini dans :root */
+            background-color: var(--tla-color);
             color: white;
             padding: 5px 10px;
             border-radius: 6px;
@@ -408,13 +424,28 @@
         </div>
 
         <header>
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
                 <div>
                     <h1 id="app-title" style="margin-bottom: 4px;">Planning Tournées</h1>
-                    <span class="user-badge" id="nom-kine-badge">Session : ...</span>
+                    <div style="display: flex; flex-direction: column; gap: 4px;">
+                        <div>
+                            <span class="user-badge" id="nom-kine-badge">Session : ...</span>
+                        </div>
+                        <div class="tla-location-badge" id="affichage-tla-detenteur">
+                            📱 Chargement du TLA...
+                        </div>
+                    </div>
                 </div>
-                <div style="display:flex; flex-direction:column; gap:5px; align-items:flex-end;">
+                <div style="display:flex; flex-direction:column; gap:8px; align-items:flex-end;">
                     <div id="sync-badge" class="sync-indicator sync-online">Prêt 🟢</div>
+                    
+                    <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 2px;">
+                        <span style="font-size: 0.75rem; font-weight: bold; color: var(--neutral);">Le boîtier TLA est avec :</span>
+                        <select id="select-declaration-tla" style="padding: 4px 8px; font-size: 0.8rem; border: 1px solid #ccc; background: #fff;" onchange="declarerDetenteurTla(this.value)">
+                            <option value="Cabinet">🏢 Au Cabinet</option>
+                        </select>
+                    </div>
+
                     <button class="btn-icon" style="font-size:0.8rem; color:var(--danger); padding:0;" onclick="deconnexion()">Déconnexion 🚪</button>
                 </div>
             </div>
@@ -564,7 +595,6 @@
         let kineVisionne = ""; 
         let listeUtilisateursComplets = []; 
 
-        // Variable d'état pour le filtrage TLA
         let filtreTlaUniquementActif = false;
 
         function initialiserSupabase() {
@@ -587,10 +617,62 @@
                 listeUtilisateursComplets = data || [];
                 localStorage.setItem('cache_utilisateurs', JSON.stringify(listeUtilisateursComplets));
                 majSelecteursKine();
+                gererAffichageGlobalTla(); // Met à jour le bandeau TLA à chaque chargement de la liste
             } catch (e) {
                 console.log("Le personnel n'a pas pu être lu en direct, chargement depuis le cache local offline.");
                 listeUtilisateursComplets = JSON.parse(localStorage.getItem('cache_utilisateurs')) || [];
                 majSelecteursKine();
+                gererAffichageGlobalTla();
+            }
+        }
+
+        /* NOUVEAU : Calcule qui possède le TLA et met à jour le sélecteur et le badge */
+        function gererAffichageGlobalTla() {
+            const badgeGlobal = document.getElementById('affichage-tla-detenteur');
+            const selectDeclaration = document.getElementById('select-declaration-tla');
+            
+            // Trouver qui a detient_tla === true
+            const detenteurActuel = listeUtilisateursComplets.find(u => u.detient_tla === true);
+            const nomDetenteur = detenteurActuel ? detenteurActuel.nom : "Cabinet";
+
+            // 1. Mise à jour du gros badge vert en haut à gauche
+            if (badgeGlobal) {
+                if (nomDetenteur === "Cabinet") {
+                    badgeGlobal.innerHTML = `🏢 TLA actuellement : <b>Au Cabinet</b>`;
+                    badgeGlobal.style.borderColor = "var(--neutral)";
+                    badgeGlobal.style.color = "#555";
+                    badgeGlobal.style.background = "#e5e5ea";
+                } else {
+                    badgeGlobal.innerHTML = `📍 TLA actuellement avec : <b>${nomDetenteur}</b>`;
+                    badgeGlobal.style.borderColor = "#00c7b1";
+                    badgeGlobal.style.color = "#008777";
+                    badgeGlobal.style.background = "#eefdfb";
+                }
+            }
+
+            // 2. Ajuster la valeur sélectionnée dans le menu déroulant de droite
+            if (selectDeclaration) {
+                selectDeclaration.value = nomDetenteur;
+            }
+        }
+
+        /* NOUVEAU : Envoie l'ordre de changement de détenteur du TLA à Supabase */
+        async function declarerDetenteurTla(valeurSelectionnee) {
+            if (!initialiserSupabase()) return;
+            
+            try {
+                // On remet tout le monde à false d'abord (personne n'a le TLA)
+                await supabaseClient.from('practiciens').update({ detient_tla: false }).neq('id', '0');
+                
+                // Si la valeur n'est pas 'Cabinet', on l'attribue au bon utilisateur
+                if (valeurSelectionnee !== "Cabinet") {
+                    await supabaseClient.from('practiciens').update({ detient_tla: true }).eq('nom', valeurSelectionnee);
+                }
+                
+                // Rechargement immédiat pour synchroniser le tout
+                await chargerListeKines();
+            } catch (err) {
+                console.error("Erreur lors du transfert du boîtier TLA :", err);
             }
         }
 
@@ -598,6 +680,7 @@
             const selectLogin = document.getElementById('kine-select-login');
             const conteneurAdmin = document.getElementById('liste-kines-admin');
             const filtreSec = document.getElementById('filtre-view-kine');
+            const selectDeclaration = document.getElementById('select-declaration-tla');
             
             if (selectLogin) {
                 selectLogin.innerHTML = listeUtilisateursComplets.map(u => `<option value="${u.nom}">${u.nom} (${u.role === 'secretariat' ? 'Secrétariat' : 'Kiné'})</option>`).join('');
@@ -620,6 +703,13 @@
                 filtreSec.innerHTML = optionsHTML;
                 if(!kineVisionne) kineVisionne = "TOUS";
                 filtreSec.value = kineVisionne;
+            }
+            
+            // NOUVEAU : Remplissage dynamique du sélecteur d'attribution du TLA
+            if (selectDeclaration) {
+                let optionsTla = `<option value="Cabinet">🏢 Au Cabinet</option>`;
+                optionsTla += listeUtilisateursComplets.map(u => `<option value="${u.nom}">👤 ${u.nom}</option>`).join('');
+                selectDeclaration.innerHTML = optionsTla;
             }
         }
 
@@ -704,6 +794,7 @@
                 }
                 const nouvelId = Math.floor(Math.random() * 1000000000).toString();
                 payload.id = nouvelId;
+                payload.detient_tla = false; // Ajout par défaut de la nouvelle colonne à false
 
                 const { error } = await supabaseClient.from('practiciens').insert([payload]);
                 if (error) {
@@ -1002,7 +1093,6 @@
             return 0;
         }
 
-        // Gérer l'activation/désactivation du filtre TLA
         function basculerFiltreTlaUniquement() {
             filtreTlaUniquementActif = !filtreTlaUniquementActif;
             const btn = document.getElementById('btn-filtre-tla-uniquement');
@@ -1080,7 +1170,6 @@
                 rdvAAfficher = tousRdvDuJour.filter(r => r.kineNom === kineVisionne);
             }
             
-            // --- NOUVEAU : Application du filtre TLA si activé ---
             if (filtreTlaUniquementActif) {
                 rdvAAfficher = rdvAAfficher.filter(r => r.tlaStatut === 'dans_tla' || r.tlaStatut === 'facture');
             }
@@ -1147,7 +1236,6 @@
                 const masquerFleches = kineVisionne === "TOUS" || (rdv.verrouille && !estSecretariat);
                 const affichageHeure = rdv.heure !== "00:00" ? `🕒 ${rdv.heure}` : "⏰ Non spécifié";
 
-                // --- CONSTRUCTION DU MODULE TLA ---
                 let htmlModuleTla = '';
                 if (estSecretariat) {
                     if (rdv.tlaStatut === 'facture') {
@@ -1164,7 +1252,6 @@
                             </label>`;
                     }
                 } else {
-                    // Côté Kiné : Intitulé raccourci en "TLA" et Couleur passe en Vert complet
                     if (rdv.tlaStatut === 'dans_tla') {
                         htmlModuleTla = `<button class="badge-tla-kine" onclick="basculerTlaStatut('${rdv.idPlanif}', 'kine_click')">📱 TLA</button>`;
                     } else if (rdv.tlaStatut === 'facture') {
