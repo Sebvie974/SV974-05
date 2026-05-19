@@ -731,27 +731,148 @@
         function rafraichirAffichage() { if(vueActuelle === 'planning') afficherPlanning(); else afficherCatalogue(); }
 
         function afficherPlanning() {
-            const tabs = document.getElementById('days-tabs');
-            tabs.innerHTML = datesSemaineEnCours.map((d, i) => `<button class="day-btn ${i === indiceJourActuel ? 'active' : ''}" onclick="indiceJourActuel=${i}; afficherPlanning();">${getLabelDate(d)}</button>`).join('');
+            const tabsConteneur = document.getElementById('days-tabs');
+            if (!tabsConteneur) return;
+            tabsConteneur.innerHTML = '';
             
-            // Note : le trierPlannings est appelé ici, assurez-vous qu'il est bien défini dans votre fichier d'origine !
-            const rdvJour = (planningsParDate[getCleDate(datesSemaineEnCours[indiceJourActuel])] || []).filter(r => (kineVisionne === "TOUS" || r.kineNom === kineVisionne) && (!filtreTlaUniquementActif || r.tlaStatut === 'dans_tla' || r.tlaStatut === 'facture')).sort(window.trierPlannings);
+            datesSemaineEnCours.forEach((dateObj, index) => {
+                const btn = document.createElement('button');
+                btn.className = `day-btn ${index === indiceJourActuel ? 'active' : ''}`;
+                btn.innerText = getLabelDate(dateObj);
+                btn.onclick = () => { indiceJourActuel = index; afficherPlanning(); };
+                tabsConteneur.appendChild(btn);
+            });
+
+            const dateSelectionnee = datesSemaineEnCours[indiceJourActuel];
+            const cleDate = getCleDate(dateSelectionnee);
             
+            const tousRdvDuJour = planningsParDate[cleDate] || [];
+            
+            let rdvAAfficher = [];
+            if (kineVisionne === "TOUS") {
+                rdvAAfficher = [...tousRdvDuJour]; 
+            } else {
+                rdvAAfficher = tousRdvDuJour.filter(r => r.kineNom === kineVisionne);
+            }
+            
+            if (typeof filtreTlaUniquementActif !== 'undefined' && filtreTlaUniquementActif) {
+                rdvAAfficher = rdvAAfficher.filter(r => r.tlaStatut === 'dans_tla' || r.tlaStatut === 'facture');
+            }
+
+            // Sécurité : on trie seulement si la fonction existe toujours dans votre fichier
+            if (typeof trierPlannings === 'function') {
+                rdvAAfficher.sort(trierPlannings);
+            }
+
+            const estSecretariat = (kineRole === 'secretariat');
+            
+            if(rdvAAfficher.length > 0) {
+                journeeEstVerrouillee = rdvAAfficher.every(r => r.verrouille === true);
+            } else {
+                journeeEstVerrouillee = false;
+            }
+
+            const btnVerrou = document.getElementById('btn-verrouiller-jour');
+            if (btnVerrou) {
+                if (kineVisionne === "TOUS") {
+                    btnVerrou.style.display = 'none'; 
+                } else {
+                    btnVerrou.style.display = 'block';
+                    const kineVerrouille = tousRdvDuJour.filter(r => r.kineNom === kineVisionne).some(r => r.verrouille === true);
+                    if (kineVerrouille) {
+                        btnVerrou.innerText = `Tournée de ${kineVisionne} Validée 🔒 (Déverrouiller)`;
+                        btnVerrou.className = "btn-secondary";
+                    } else {
+                        btnVerrou.innerText = `Valider la journée de ${kineVisionne} 🔐`;
+                        btnVerrou.className = "btn-orange";
+                    }
+                }
+            }
+
+            if (document.getElementById('btn-global-planifier')) document.getElementById('btn-global-planifier').disabled = !estSecretariat && journeeEstVerrouillee;
+            if (document.getElementById('btn-global-reset')) document.getElementById('btn-global-reset').disabled = kineVisionne === "TOUS" || (!estSecretariat && journeeEstVerrouillee);
+
+            // C'EST ICI QUE LE TEXTE "CHARGEMENT" EST REMPLACÉ PAR LES STATISTIQUES
+            const statsEl = document.getElementById('tournee-stats');
+            if (statsEl) {
+                let cibleTexte = kineVisionne === "TOUS" ? "Général cabinet" : kineVisionne;
+                let addFiltreTexte = (typeof filtreTlaUniquementActif !== 'undefined' && filtreTlaUniquementActif) ? " [Filtre TLA Actif]" : "";
+                let texteStats = `${cibleTexte} (${String(dateSelectionnee.getDate()).padStart(2,'0')}/${String(dateSelectionnee.getMonth()+1).padStart(2,'0')})${addFiltreTexte} : ${rdvAAfficher.filter(r => r.statut !== null && r.statut !== undefined && r.statut !== '').length} / ${rdvAAfficher.length} traités`;
+                statsEl.innerText = texteStats;
+            }
+
             const conteneur = document.getElementById('view-planning');
-            conteneur.innerHTML = rdvJour.length ? '' : `<p style="text-align:center;">Aucun patient.</p>`;
-            
-            rdvJour.forEach((r, idx) => {
-                const p = cataloguePatients.find(x => String(x.id) === String(r.patientId));
-                if (!p) return;
+            if (!conteneur) return;
+            conteneur.innerHTML = '';
+
+            if (rdvAAfficher.length === 0) {
+                conteneur.innerHTML = `<p style="text-align:center; color:var(--neutral); margin-top:20px;">Aucun patient planifié ici.</p>`;
+                return;
+            }
+
+            rdvAAfficher.forEach((rdv, idx) => {
+                const patient = cataloguePatients.find(p => String(p.id) === String(rdv.patientId));
+                if(!patient) return;
+
                 const card = document.createElement('div');
-                card.className = `patient-card ${r.statut || ''}`;
-                card.innerHTML = `<div class="patient-card-left"><div class="patient-info">
-                    <span class="patient-name" style="cursor:pointer; color:var(--primary); text-decoration:underline;" onclick="ouvrirFormulairePatient('${p.id}')">${p.nom} ✏️</span>
-                    <span style="font-size:0.85rem; font-weight:bold; color:${r.heure !== '00:00' ? 'var(--purple)' : 'var(--neutral)'};">🕒 ${r.heure}</span>
-                    <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(p.adresse)}" target="_blank">📍 ${p.adresse}</a>
-                    <a href="tel:${p.telephone}">${p.telephone || ''}</a>
-                    </div></div>
-                    <div class="btn-group"><button class="btn-status btn-vu ${r.statut==='vu'?'active':''}" onclick="changerStatutRdv('${r.idPlanif}', 'vu')">✅</button><button class="btn-status btn-nonvu ${r.statut==='non-vu'?'active':''}" onclick="changerStatutRdv('${r.idPlanif}', 'non-vu')">❌</button><button class="btn-icon" onclick="retirerDuPlanning('${r.idPlanif}')">🗑️</button></div>`;
+                card.className = `patient-card ${rdv.statut || ''}`;
+                
+                const desactiveBouton = (rdv.verrouille && !estSecretariat) ? 'disabled' : '';
+
+                let chaineTels = patient.telephone ? `📞 ${patient.telephone}` : '';
+                if(patient.telephone_2) chaineTels += ` / ${patient.telephone_2}`;
+
+                const masquerFleches = kineVisionne === "TOUS" || (rdv.verrouille && !estSecretariat);
+                const affichageHeure = (rdv.heure && rdv.heure !== "00:00") ? `🕒 ${rdv.heure}` : "⏰ Non spécifié";
+
+                let htmlModuleTla = '';
+                if (estSecretariat) {
+                    if (rdv.tlaStatut === 'facture') {
+                        htmlModuleTla = `
+                            <div style="display:flex; flex-direction:column; gap:2px;">
+                                <span class="badge-tla-sec-facture">✅ Facturé (TLA traité)</span>
+                                <button class="btn-icon" style="font-size:0.75rem; color:var(--danger); text-align:left; padding:0; font-weight:bold;" onclick="basculerTlaStatut('${rdv.idPlanif}', 'secretariat_click')">🔄 Annuler la demande</button>
+                            </div>`;
+                    } else {
+                        const isCoché = rdv.tlaStatut === 'dans_tla' ? 'checked' : '';
+                        htmlModuleTla = `
+                            <label class="sec-tla-checkbox-container" onclick="event.stopPropagation();">
+                                <input type="checkbox" ${isCoché} onchange="basculerTlaStatut('${rdv.idPlanif}', 'secretariat_click')"> Facture au TLA
+                            </label>`;
+                    }
+                } else {
+                    if (rdv.tlaStatut === 'dans_tla') {
+                        htmlModuleTla = `<button class="badge-tla-kine" onclick="basculerTlaStatut('${rdv.idPlanif}', 'kine_click')">📱 TLA</button>`;
+                    } else if (rdv.tlaStatut === 'facture') {
+                        htmlModuleTla = `<button class="badge-tla-kine facture" onclick="basculerTlaStatut('${rdv.idPlanif}', 'kine_click')">✓ TLA</button>`;
+                    }
+                }
+
+                card.innerHTML = `
+                    <div class="patient-card-left">
+                        ${!masquerFleches ? `
+                        <div class="reorder-actions">
+                            <button class="btn-reorder" onclick="deplacerRdv(${idx}, -1)" ${idx === 0 ? 'disabled' : ''} title="Monter">🔼</button>
+                            <button class="btn-reorder" onclick="deplacerRdv(${idx}, 1)" ${idx === rdvAAfficher.length - 1 ? 'disabled' : ''} title="Descendre">🔽</button>
+                        </div>
+                        ` : ''}
+                        <div class="patient-info">
+                            <span class="patient-name" style="cursor:pointer; color:var(--primary); text-decoration:underline;" onclick="ouvrirFormulairePatient('${patient.id}')">${patient.nom} ✏️</span>
+                            <span style="font-size:0.85rem; font-weight:bold; color: ${rdv.heure && rdv.heure !== '00:00' ? 'var(--purple)' : 'var(--neutral)'};">${affichageHeure}</span>
+                            <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(patient.adresse)}" target="_blank" class="patient-address">📍 ${patient.adresse}</a>
+                            ${chaineTels ? `<a href="tel:${patient.telephone}" class="patient-phone">${chaineTels}</a>` : ''}
+                            ${patient.a_prevoir ? `<span class="badge-card-prevoir">🚨 À prévoir</span>` : ''}
+                            ${patient.notes ? `<span class="btn-note-declencheur" onclick="ouvrirNoteVolante('${patient.id}')">📝 Note</span>` : ''}
+                            ${kineVisionne === "TOUS" ? `<span class="kine-tag">Praticien : ${rdv.kineNom} ${rdv.verrouille ? '🔒' : ''}</span>` : ''}
+                            ${htmlModuleTla}
+                        </div>
+                    </div>
+                    <div class="btn-group">
+                        <button class="btn-status btn-vu ${rdv.statut === 'vu' ? 'active' : ''}" ${desactiveBouton} onclick="changerStatutRdv('${rdv.idPlanif}', 'vu')">✅</button>
+                        <button class="btn-status btn-nonvu ${rdv.statut === 'non-vu' ? 'active' : ''}" ${desactiveBouton} onclick="changerStatutRdv('${rdv.idPlanif}', 'non-vu')">❌</button>
+                        <button class="btn-icon" ${desactiveBouton} onclick="retirerDuPlanning('${rdv.idPlanif}')">🗑️</button>
+                    </div>
+                `;
                 conteneur.appendChild(card);
             });
         }
