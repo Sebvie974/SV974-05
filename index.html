@@ -89,7 +89,7 @@
         /* Interface Principale */
         #main-app { display: none; }
 
-        /* Bandeau d'alerte Patients à prévoir - Mis en ROUGE */
+        /* Bandeau d'alerte Patients à prévoir */
         #bandeau-a-prevoir {
             display: none;
             background-color: var(--danger);
@@ -339,8 +339,7 @@
                         <button id="btn-annuler-kine" class="btn-secondary" style="padding:8px; display: none;" onclick="reinitialiserFormulaireKine()">Annuler</button>
                     </div>
                 </div>
-                <div id="liste-kines-admin" style="display: flex; flex-direction: column; gap: 5px; max-height: 120px; overflow-y: auto;">
-                    </div>
+                <div id="liste-kines-admin" style="display: flex; flex-direction: column; gap: 5px; max-height: 120px; overflow-y: auto;"></div>
             </div>
         </div>
     </div>
@@ -412,8 +411,7 @@
     <div class="modal" id="modal-liste-prevoir">
         <div class="modal-content" style="max-width: 500px;">
             <h3 style="color: var(--danger);">🚨 Patients à prévoir en attente</h3>
-            <div id="conteneur-liste-prevoir" style="display: flex; flex-direction: column; gap: 10px; max-height: 50vh; overflow-y: auto;">
-                </div>
+            <div id="conteneur-liste-prevoir" style="display: flex; flex-direction: column; gap: 10px; max-height: 50vh; overflow-y: auto;"></div>
             <div style="margin-top: 10px; text-align: right;">
                 <button class="btn-secondary" onclick="fermerModal('modal-liste-prevoir')">Fermer</button>
             </div>
@@ -585,7 +583,7 @@
             }
         }
 
-        function abrirEditionKine(id) {
+        function ouvrirEditionKine(id) {
             const u = listeUtilisateursComplets.find(item => String(item.id) === String(id));
             if (!u) return;
 
@@ -804,12 +802,12 @@
 
         function majBandeauAPrevoir() {
             const bandeau = document.getElementById('bandeau-a-prevoir');
-            const texte = document.getElementById('texte-bandeau-prevoir');
+            const text = document.getElementById('texte-bandeau-prevoir');
             const patientsAttente = cataloguePatients.filter(p => p.a_prevoir === true);
             
             if (patientsAttente.length > 0) {
                 bandeau.style.display = 'block';
-                texte.innerText = `${patientsAttente.length} patient${patientsAttente.length > 1 ? 's' : ''} à prévoir (Action requise)`;
+                text.innerText = `${patientsAttente.length} patient${patientsAttente.length > 1 ? 's' : ''} à prévoir (Action requise)`;
             } else {
                 bandeau.style.display = 'none';
             }
@@ -1087,14 +1085,27 @@
                 }
             }
 
-            rdvFiltrés.sort(trierPlannings);
+            // Correction : On enregistre les modifications dans la mémoire locale globale
+            planningsParDate[cleDate] = tousRdvDuJour.map(r => {
+                if (r.idPlanif === rdvA.idPlanif) return rdvA;
+                if (r.idPlanif === rdvB.idPlanif) return rdvB;
+                return r;
+            });
+
+            // Tri local et rafraîchissement réactif de l'écran
+            planningsParDate[cleDate].sort(trierPlannings);
             rafraichirAffichage();
 
+            // Envoi des modifications en arrière-plan vers Supabase
             if (supabaseClient) {
-                await Promise.all([
-                    supabaseClient.from('plannings_dates').update({ ordre: rdvA.ordre }).eq('id_planif', rdvA.idPlanif),
-                    supabaseClient.from('plannings_dates').update({ ordre: rdvB.ordre }).eq('id_planif', rdvB.idPlanif)
-                ]);
+                try {
+                    await Promise.all([
+                        supabaseClient.from('plannings_dates').update({ ordre: rdvA.ordre }).eq('id_planif', rdvA.idPlanif),
+                        supabaseClient.from('plannings_dates').update({ ordre: rdvB.ordre }).eq('id_planif', rdvB.idPlanif)
+                    ]);
+                } catch (error) {
+                    console.error("Erreur lors du déplacement :", error);
+                }
             }
         }
 
