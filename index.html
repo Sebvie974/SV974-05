@@ -115,11 +115,16 @@
             cursor: pointer;
             font-size: 0.85rem;
         }
+        button:disabled {
+            opacity: 0.4 !important;
+            cursor: not-allowed !important;
+        }
         .btn-primary { background-color: var(--primary); color: white; flex: 1; }
         .btn-secondary { background-color: var(--neutral); color: white; }
         .btn-success { background-color: var(--success); color: white; }
         .btn-danger { background-color: var(--danger); color: white; }
         .btn-purple { background-color: var(--purple); color: white; }
+        .btn-orange { background-color: var(--orange); color: white; }
 
         /* Vues */
         .app-view { display: none; }
@@ -191,11 +196,13 @@
                 </div>
                 <div class="days-nav" id="days-tabs"></div>
                 <div class="stats" id="tournee-stats">Chargement...</div>
+                
                 <div class="actions-bar">
                     <button class="btn-primary" onclick="exporterRapportJour()">Rapport Jour 📋</button>
                     <button class="btn-purple" onclick="exporterRapportSemaine()">Rapport Hebdo 📅</button>
-                    <button class="btn-success" onclick="ouvrirPlanificateur()">Planifier ➕</button>
-                    <button class="btn-secondary" onclick="reinitialiserJour()">Reset 🔄</button>
+                    <button class="btn-success" id="btn-global-planifier" onclick="ouvrirPlanificateur()">Planifier ➕</button>
+                    <button class="btn-secondary" id="btn-global-reset" onclick="reinitialiserJour()">Reset 🔄</button>
+                    <button class="btn-orange" style="width:100%; margin-top:5px;" id="btn-verrouiller-jour" onclick="gererVerrouillageJour()">Valider et Verrouiller la journée 🔒</button>
                 </div>
             </div>
 
@@ -246,7 +253,6 @@
         const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
         const SUPABASE_KEY = "sb_publishable_472y-YwY-VyEsRz7nqaMJg_LC3W6gDJ";
         
-        // CORRECTION : Changement de nom de la variable pour éviter la collision
         let supabaseClient = null;
 
         const MOT_DE_PASSE_CABINET = "kine2026"; 
@@ -259,6 +265,7 @@
 
         let cataloguePatients = [];
         let planningsParDate = {};
+        let journeeEstVerrouillee = false; // Variable d'état locale pour le jour sélectionné
 
         function initialiserSupabase() {
             if (supabaseClient === null) {
@@ -341,7 +348,8 @@
                         idPlanif: r.id_planif,
                         patientId: r.patient_id,
                         heure: r.heure ? r.heure.substring(0, 5) : "00:00",
-                        statut: r.statut
+                        statut: r.statut,
+                        verrouille: r.journee_verrouillee || false
                     });
                 });
 
@@ -441,8 +449,31 @@
             const rdvDuJour = planningsParDate[cleDate] || [];
             rdvDuJour.sort((a, b) => a.heure.localeCompare(b.heure));
 
+            // Détection du verrouillage : si au moins un rdv du jour est marqué verrouillé
+            journeeEstVerrouillee = rdvDuJour.some(r => r.verrouille === true);
+
+            // Mise à jour graphique du bouton de verrouillage général
+            const btnVerrou = document.getElementById('btn-verrouiller-jour');
+            if (btnVerrou) {
+                if (journeeEstVerrouillee) {
+                    btnVerrou.innerText = "Journée Validée 🔒 (Cliquez pour déverrouiller)";
+                    btnVerrou.className = "btn-secondary";
+                } else {
+                    btnVerrou.innerText = "Valider et Verrouiller la journée 🔐";
+                    btnVerrou.className = "btn-orange";
+                }
+            }
+
+            // Désactivation des boutons d'en-tête si verrouillé
+            document.getElementById('btn-global-planifier').disabled = journeeEstVerrouillee;
+            document.getElementById('btn-global-reset').disabled = journeeEstVerrouillee;
+
             const statsEl = document.getElementById('tournee-stats');
-            if (statsEl) statsEl.innerText = `${getLabelDate(dateSelectionnee)} : ${rdvDuJour.filter(r => r.statut !== null).length} / ${rdvDuJour.length} traités`;
+            if (statsEl) {
+                let texteStats = `${getLabelDate(dateSelectionnee)} : ${rdvDuJour.filter(r => r.statut !== null).length} / ${rdvDuJour.length} traités`;
+                if (journeeEstVerrouillee) texteStats += " [JOURNÉE CLÔTURÉE 🔒]";
+                statsEl.innerText = texteStats;
+            }
 
             const conteneur = document.getElementById('view-planning');
             if (!conteneur) return;
@@ -466,16 +497,51 @@
                         <a href="https://maps.google.com/?q=${encodeURIComponent(patient.adresse)}" target="_blank" class="patient-address">📍 ${patient.adresse}</a>
                     </div>
                     <div class="btn-group">
-                        <button class="btn-status btn-vu ${rdv.statut === 'vu' ? 'active' : ''}" onclick="changerStatutRdv('${rdv.idPlanif}', 'vu')">✅</button>
-                        <button class="btn-status btn-nonvu ${rdv.statut === 'non-vu' ? 'active' : ''}" onclick="changerStatutRdv('${rdv.idPlanif}', 'non-vu')">❌</button>
-                        <button class="btn-icon" onclick="retirerDuPlanning('${rdv.idPlanif}')">🗑️</button>
+                        <button class="btn-status btn-vu ${rdv.statut === 'vu' ? 'active' : ''}" ${journeeEstVerrouillee ? 'disabled' : ''} onclick="changerStatutRdv('${rdv.idPlanif}', 'vu')">✅</button>
+                        <button class="btn-status btn-nonvu ${rdv.statut === 'non-vu' ? 'active' : ''}" ${journeeEstVerrouillee ? 'disabled' : ''} onclick="changerStatutRdv('${rdv.idPlanif}', 'non-vu')">❌</button>
+                        <button class="btn-icon" ${journeeEstVerrouillee ? 'disabled' : ''} onclick="retirerDuPlanning('${rdv.idPlanif}')">🗑️</button>
                     </div>
                 `;
                 conteneur.appendChild(card);
             });
         }
 
+        // Fonction pour gérer le verrouillage ou le déverrouillage au clic
+        async function gererVerrouillageJour() {
+            const cleDate = getCleDate(datesSemaineEnCours[indiceJourActuel]);
+            const rdvDuJour = planningsParDate[cleDate] || [];
+
+            if (rdvDuJour.length === 0) {
+                alert("Impossible de verrouiller une journée vide.");
+                return;
+            }
+
+            if (!journeeEstVerrouillee) {
+                // Action de Verrouillage
+                if (confirm("Voulez-vous valider définitivement cette journée ? Les modifications seront bloquées.")) {
+                    if (supabaseClient) {
+                        const ids = rdvDuJour.map(r => r.idPlanif);
+                        await supabaseClient.from('plannings_dates').update({ journee_verrouillee: true }).in('id_planif', ids);
+                        chargerDonneesDepuisServeur();
+                    }
+                }
+            } else {
+                // Action de Déverrouillage (Demande de mot de passe)
+                const mdp = prompt("Entrez le mot de passe du cabinet pour modifier cette journée :");
+                if (mdp === MOT_DE_PASSE_CABINET) {
+                    if (supabaseClient) {
+                        const ids = rdvDuJour.map(r => r.idPlanif);
+                        await supabaseClient.from('plannings_dates').update({ journee_verrouillee: false }).in('id_planif', ids);
+                        chargerDonneesDepuisServeur();
+                    }
+                } else if (mdp !== null) {
+                    alert("Mot de passe incorrect. La journée reste verrouillée.");
+                }
+            }
+        }
+
         async function changerStatutRdv(idPlanif, statutBouton) {
+            if (journeeEstVerrouillee) return;
             const cleDate = getCleDate(datesSemaineEnCours[indiceJourActuel]);
             const rdv = planningsParDate[cleDate].find(r => r.idPlanif === idPlanif);
             if (!rdv) return;
@@ -490,6 +556,7 @@
         }
 
         async function ajouterAuPlanningMultiJours() {
+            if (journeeEstVerrouillee) return;
             const patientId = document.getElementById('select-patient').value;
             const heure = document.getElementById('planif-heure').value || "00:00";
             const checkboxes = document.querySelectorAll('input[name="jours-planif"]:checked');
@@ -504,7 +571,8 @@
                     patient_id: patientId,
                     date_cle: getCleDate(dateCible),
                     heure: heure,
-                    statut: null
+                    statut: null,
+                    journee_verrouillee: false
                 });
             });
 
@@ -516,7 +584,8 @@
             }
         }
 
-        async function retirerDuPlanning(idPlanif) {
+        async function retirarDuPlanning(idPlanif) {
+            if (journeeEstVerrouillee) return;
             if (confirm("Retirer ce rendez-vous ?")) {
                 if (supabaseClient) {
                     await supabaseClient.from('plannings_dates').delete().eq('id_planif', idPlanif);
@@ -526,6 +595,7 @@
         }
 
         async function reinitialiserJour() {
+            if (journeeEstVerrouillee) return;
             if (confirm("Réinitialiser les statuts du jour ?")) {
                 const cleDate = getCleDate(datesSemaineEnCours[indiceJourActuel]);
                 const ids = (planningsParDate[cleDate] || []).map(r => r.idPlanif);
@@ -595,6 +665,7 @@
         function fermerModal(id) { document.getElementById(id).style.display = 'none'; }
 
         function ouvrirPlanificateur() {
+            if (journeeEstVerrouillee) return;
             const select = document.getElementById('select-patient');
             if (!select) return;
             select.innerHTML = '';
