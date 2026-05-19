@@ -215,7 +215,7 @@
 
     <div id="login-screen">
         <div class="login-box">
-            <button class="btn-config-corner" onclick="basculerAffichageConfig()" title="Gérer le personnel">⚙️</button>
+            <button class="btn-config-corner" onclick="basculerAffichageConfig('login')" title="Gérer le personnel">⚙️</button>
 
             <h2 style="color: var(--primary); margin:0;">Accès Cabinet</h2>
             <p style="color: var(--neutral); font-size:0.9rem; margin:0;">Sélectionnez votre profil pour vous connecter.</p>
@@ -257,9 +257,13 @@
                 </div>
             </div>
 
-            <div id="zone-filtre-secretariat" style="display: none; background: #e5e5ea; padding: 10px; border-radius: 8px; margin-bottom: 12px; align-items: center; justify-content: space-between; gap: 10px;">
-                <span style="font-weight: bold; font-size: 0.85rem; color: var(--purple);">👀 Visualiser la tournée de :</span>
-                <select id="filtre-view-kine" style="flex: 1; padding: 6px; font-weight: bold;" onchange="changerFiltreVisionPraticien()"></select>
+            <div id="zone-filtre-secretariat" style="display: none; background: #e5e5ea; padding: 10px; border-radius: 8px; margin-bottom: 12px; flex-direction: column; gap: 10px;">
+                <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px; width: 100%;">
+                    <span style="font-weight: bold; font-size: 0.85rem; color: var(--purple);">👀 Tournée de :</span>
+                    <select id="filtre-view-kine" style="flex: 1; padding: 6px; font-weight: bold;" onchange="changerFiltreVisionPraticien()"></select>
+                    <button class="btn-purple" style="padding: 6px 12px; font-size: 0.8rem;" onclick="basculerAffichageConfig('interface')">Gérer le Personnel 👥</button>
+                </div>
+                <div id="integration-config-secretariat"></div>
             </div>
 
             <div style="margin-bottom: 12px;">
@@ -335,7 +339,7 @@
         
         let supabaseClient = null;
 
-        // Mot de passe superviseur pour ouvrir la boîte de configuration des comptes
+        // Mot de passe superviseur
         const MOT_DE_PASSE_CABINET = "kine2026"; 
         const nomsJours = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi'];
         
@@ -350,7 +354,7 @@
         
         let kineConnecte = ""; 
         let kineRole = "kine"; 
-        let kineVisionne = ""; // Permet au secrétariat de choisir qui regarder ('TOUS' ou nom du kiné)
+        let kineVisionne = ""; 
         let listeUtilisateursComplets = []; 
 
         function initialiserSupabase() {
@@ -386,11 +390,9 @@
             const conteneurAdmin = document.getElementById('liste-kines-admin');
             const filtreSec = document.getElementById('filtre-view-kine');
             
-            // 1. Liste écran de connexion
             if (selectLogin) {
                 selectLogin.innerHTML = listeUtilisateursComplets.map(u => `<option value="${u.nom}">${u.nom} (${u.role === 'secretariat' ? 'Secrétariat' : 'Kiné'})</option>`).join('');
             }
-            // 2. Liste panneau d'administration
             if (conteneurAdmin) {
                 conteneurAdmin.innerHTML = listeUtilisateursComplets.map(u => `
                     <div class="kine-list-item">
@@ -399,7 +401,6 @@
                     </div>
                 `).join('');
             }
-            // 3. Remplissage filtre Secrétariat
             if (filtreSec) {
                 const kinesUniquement = listeUtilisateursComplets.filter(u => u.role === 'kine').map(u => u.nom);
                 let optionsHTML = `<option value="TOUS">👥 Tous les praticiens</option>`;
@@ -410,8 +411,16 @@
             }
         }
 
-        function basculerAffichageConfig() {
+        function basculerAffichageConfig(provenance) {
             const panel = document.getElementById('config-panel');
+            
+            // Déplacement physique du bloc HTML dans le DOM selon d'où on l'appelle
+            if (provenance === 'login') {
+                document.querySelector('.login-box').appendChild(panel);
+            } else if (provenance === 'interface') {
+                document.getElementById('integration-config-secretariat').appendChild(panel);
+            }
+
             if (panel.style.display === 'flex') {
                 panel.style.display = 'none';
             } else {
@@ -534,7 +543,6 @@
             document.getElementById('main-app').style.display = 'block';
             document.getElementById('nom-kine-badge').innerText = `Session : ${kineConnecte} (${kineRole === 'secretariat' ? 'Secrétaire' : 'Kiné'})`;
             
-            // Affichage spécifique du bandeau Secrétariat
             if (kineRole === 'secretariat') {
                 document.getElementById('zone-filtre-secretariat').style.display = 'flex';
             } else {
@@ -684,24 +692,21 @@
             
             const tousRdvDuJour = planningsParDate[cleDate] || [];
             
-            // --- LOGIQUE FILTRE PRATICIEN VISU ---
             let rdvAAfficher = [];
             if (kineVisionne === "TOUS") {
-                rdvAAfficher = tousRdvDuJour; // Mode Global secrétariat
+                rdvAAfficher = tousRdvDuJour; 
             } else {
                 rdvAAfficher = tousRdvDuJour.filter(r => r.kineNom === kineVisionne);
             }
             
             rdvAAfficher.sort((a, b) => a.heure.localeCompare(b.heure));
 
-            // Si c'est en vision globale, on vérifie si l'un d'eux est verrouillé
             journeeEstVerrouillee = rdvAAfficher.some(r => r.verrouille === true);
 
             const btnVerrou = document.getElementById('btn-verrouiller-jour');
             if (btnVerrou) {
-                // Le secrétariat ou l'utilisateur peut déverrouiller s'il a le nom ciblé
                 if (kineVisionne === "TOUS") {
-                    btnVerrou.style.display = 'none'; // Pas de bouton verrouillage global direct ambigu
+                    btnVerrou.style.display = 'none'; 
                 } else {
                     btnVerrou.style.display = 'block';
                     if (journeeEstVerrouillee) {
@@ -714,7 +719,6 @@
                 }
             }
 
-            // Désactivation des contrôles selon le rôle et le verrouillage
             const estLectureSeuleSec = (kineRole === 'secretariat' && kineVisionne === 'TOUS');
             document.getElementById('btn-global-planifier').disabled = journeeEstVerrouillee || estLectureSeuleSec;
             document.getElementById('btn-global-reset').disabled = journeeEstVerrouillee || estLectureSeuleSec;
@@ -743,14 +747,13 @@
                 const card = document.createElement('div');
                 card.className = `patient-card ${rdv.statut || ''}`;
                 
-                // Masquer ou griser des actions si mode vision globale secrétariat
                 const desactiveBouton = (journeeEstVerrouillee || estLectureSeuleSec) ? 'disabled' : '';
 
                 card.innerHTML = `
                     <div class="patient-info">
                         <span class="patient-name">${patient.nom}</span>
                         <span style="font-size:0.85rem; font-weight:bold;">🕒 ${rdv.heure}</span>
-                        <a href="http://maps.google.com/?q=${encodeURIComponent(patient.adresse)}" target="_blank" class="patient-address">📍 ${patient.adresse}</a>
+                        <a href="http://googleusercontent.com/maps.google.com/3{encodeURIComponent(patient.adresse)}" target="_blank" class="patient-address">📍 ${patient.adresse}</a>
                         ${kineVisionne === "TOUS" ? `<span class="kine-tag">Praticien : ${rdv.kineNom}</span>` : ''}
                     </div>
                     <div class="btn-group">
@@ -921,6 +924,11 @@
         function ouvrirModal(id) { document.getElementById(id).style.display = 'flex'; }
         function fermerModal(id) { document.getElementById(id).style.display = 'none'; }
 
+        function abrirPlanificateur() {
+            // alias typo protect
+            ouvrirPlanificateur();
+        }
+
         function ouvrirPlanificateur() {
             const selectPatient = document.getElementById('select-patient');
             const selectKineAffecte = document.getElementById('planif-kine-affecte');
@@ -929,16 +937,13 @@
             selectPatient.innerHTML = '';
             if(cataloguePatients.length === 0) { alert("Le catalogue patient est vide."); return; }
 
-            // Remplir les patients
             cataloguePatients.sort((a,b) => a.nom.localeCompare(b.nom)).forEach(p => {
                 selectPatient.innerHTML += `<option value="${p.id}">${p.nom}</option>`;
             });
 
-            // Remplir la liste des kinés disponibles pour l'attribution
             const kinesDispos = listeUtilisateursComplets.filter(u => u.role === 'kine');
             selectKineAffecte.innerHTML = kinesDispos.map(u => `<option value="${u.nom}">${u.nom}</option>`).join('');
             
-            // Pré-sélectionner par défaut le kiné en cours de visionnage
             if (kineVisionne !== "TOUS") {
                 selectKineAffecte.value = kineVisionne;
             }
