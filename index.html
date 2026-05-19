@@ -110,7 +110,7 @@
             background: var(--card-bg);
             padding: 15px;
             border-radius: 12px;
-            box-shadow: 0 2px 8 rgba(0,0,0,0.05);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
             margin-bottom: 15px;
             position: sticky;
             top: 0;
@@ -180,7 +180,7 @@
         button { cursor: pointer; }
         button:disabled {
             opacity: 0.4 !important;
-            cursor: not-allowed !allowed !important;
+            cursor: not-allowed !important;
         }
         .btn-primary { background-color: var(--primary); color: white; flex: 1; }
         .btn-secondary { background-color: var(--neutral); color: white; }
@@ -260,15 +260,19 @@
             <button class="btn-primary" style="padding:12px; font-size:1rem;" onclick="verifierConnexion()">Se connecter 🔐</button>
             
             <div id="config-panel">
-                <h4 style="margin: 0 0 5px 0; color: var(--purple);">⚙️ Gestion des Comptes Personnel</h4>
+                <h4 id="titre-form-kine" style="margin: 0 0 5px 0; color: var(--purple);">⚙️ Gestion des Comptes Personnel</h4>
                 <div style="display: flex; flex-direction: column; gap: 5px; margin-bottom: 10px; background: #f4f6f9; padding: 8px; border-radius: 8px;">
+                    <input type="hidden" id="kine-id-edite">
                     <input type="text" id="nouveau-kine-input" placeholder="Nom de l'utilisateur" style="padding:6px; border:1px solid #ccc; background: white;">
                     <input type="password" id="nouveau-mdp-input" placeholder="Mot de passe dédié" style="padding:6px; border:1px solid #ccc; background: white;">
                     <select id="nouveau-role-input" style="padding:6px; border:1px solid #ccc; background: white; font-weight: bold;">
                         <option value="kine">Rôle : Kiné</option>
                         <option value="secretariat">Rôle : Secrétariat</option>
                     </select>
-                    <button class="btn-success" style="padding:8px;" onclick="ajouterNouveauKine()">Créer l'utilisateur</button>
+                    <div style="display: flex; gap: 5px; width: 100%;">
+                        <button id="btn-soumettre-kine" class="btn-success" style="padding:8px; flex: 1;" onclick="sauvegarderKine()">Créer l'utilisateur</button>
+                        <button id="btn-annuler-kine" class="btn-secondary" style="padding:8px; display: none;" onclick="reinitialiserFormulaireKine()">Annuler</button>
+                    </div>
                 </div>
                 <div id="liste-kines-admin" style="display: flex; flex-direction: column; gap: 5px; max-height: 120px; overflow-y: auto;">
                     </div>
@@ -457,8 +461,11 @@
             if (conteneurAdmin) {
                 conteneurAdmin.innerHTML = listeUtilisateursComplets.map(u => `
                     <div class="kine-list-item">
-                        <span>👤 <b>${u.nom}</b> [${u.role}]</span>
-                        <button class="btn-icon" style="color:var(--danger); font-size:0.85rem;" onclick="supprimerKine('${u.nom}')">🗑️</button>
+                        <span>👤 <b>${u.nom}</b> [${u.role === 'secretariat' ? 'Secrétariat' : 'Kiné'}]</span>
+                        <div style="display: flex; gap: 8px;">
+                            <button class="btn-icon" style="color:var(--primary); font-size:0.85rem;" onclick="ouvrirEditionKine('${u.id}')" title="Modifier">✏️</button>
+                            <button class="btn-icon" style="color:var(--danger); font-size:0.85rem;" onclick="supprimerKine('${u.nom}')" title="Supprimer">🗑️</button>
+                        </div>
                     </div>
                 `).join('');
             }
@@ -483,6 +490,7 @@
 
             if (panel.style.display === 'flex') {
                 panel.style.display = 'none';
+                reinitialiserFormulaireKine();
             } else {
                 const mdp = prompt("Entrez le mot de passe maître du cabinet pour administrer les accès :");
                 if (mdp === MOT_DE_PASSE_CABINET) {
@@ -493,7 +501,33 @@
             }
         }
 
-        async function ajouterNouveauKine() {
+        function ouvrirEditionKine(id) {
+            const u = listeUtilisateursComplets.find(item => String(item.id) === String(id));
+            if (!u) return;
+
+            document.getElementById('titre-form-kine').innerText = `⚙️ Modifier l'utilisateur : ${u.nom}`;
+            document.getElementById('kine-id-edite').value = u.id;
+            document.getElementById('nouveau-kine-input').value = u.nom;
+            document.getElementById('nouveau-mdp-input').value = u.mot_de_passe;
+            document.getElementById('nouveau-role-input').value = u.role;
+
+            document.getElementById('btn-soumettre-kine').innerText = "Enregistrer les modifications 💾";
+            document.getElementById('btn-annuler-kine').style.display = 'block';
+        }
+
+        function reinitialiserFormulaireKine() {
+            document.getElementById('titre-form-kine').innerText = "⚙️ Gestion des Comptes Personnel";
+            document.getElementById('kine-id-edite').value = '';
+            document.getElementById('nouveau-kine-input').value = '';
+            document.getElementById('nouveau-mdp-input').value = '';
+            document.getElementById('nouveau-role-input').value = 'kine';
+
+            document.getElementById('btn-soumettre-kine').innerText = "Créer l'utilisateur";
+            document.getElementById('btn-annuler-kine').style.display = 'none';
+        }
+
+        async function sauvegarderKine() {
+            const id = document.getElementById('kine-id-edite').value;
             const inputNom = document.getElementById('nouveau-kine-input');
             const inputMdp = document.getElementById('nouveau-mdp-input');
             const inputRole = document.getElementById('nouveau-role-input');
@@ -506,19 +540,34 @@
                 alert("Veuillez renseigner un nom et un mot de passe.");
                 return;
             }
-            if (listeUtilisateursComplets.some(u => u.nom.toLowerCase() === nom.toLowerCase())) {
-                alert("Cet utilisateur existe déjà.");
-                return;
-            }
 
-            if (initialiserSupabase()) {
-                const nouvelId = Math.floor(Math.random() * 1000000000).toString();
-                const { error } = await supabaseClient.from('practiciens').insert([{ id: nouvelId, nom: nom, mot_de_passe: mdp, role: role }]);
+            if (!initialiserSupabase()) return;
+
+            const payload = { nom: nom, mot_de_passe: mdp, role: role };
+
+            if (id) {
+                // Mode Modification
+                const { error } = await supabaseClient.from('practiciens').update(payload).eq('id', id);
                 if (error) {
-                    alert("Erreur création : " + error.message);
+                    alert("Erreur lors de la modification : " + error.message);
                 } else {
-                    inputNom.value = '';
-                    inputMdp.value = '';
+                    reinitialiserFormulaireKine();
+                    await chargerListeKines();
+                }
+            } else {
+                // Mode Création (vérification doublon sur le nom)
+                if (listeUtilisateursComplets.some(u => u.nom.toLowerCase() === nom.toLowerCase())) {
+                    alert("Cet utilisateur existe déjà.");
+                    return;
+                }
+                const nouvelId = Math.floor(Math.random() * 1000000000).toString();
+                payload.id = nouvelId;
+
+                const { error } = await supabaseClient.from('practiciens').insert([payload]);
+                if (error) {
+                    alert("Erreur lors de la création : " + error.message);
+                } else {
+                    reinitialiserFormulaireKine();
                     await chargerListeKines();
                 }
             }
@@ -531,6 +580,7 @@
                     if (error) {
                         alert("Erreur suppression : " + error.message);
                     } else {
+                        reinitialiserFormulaireKine();
                         await chargerListeKines();
                     }
                 }
@@ -669,7 +719,6 @@
             }
         }
 
-        // --- GESTION DU BANDEAU DES PATIENTS À PRÉVOIR ---
         function majBandeauAPrevoir() {
             const bandeau = document.getElementById('bandeau-a-prevoir');
             const texte = document.getElementById('texte-bandeau-prevoir');
@@ -971,7 +1020,6 @@
                 const { error } = await supabaseClient.from('plannings_dates').insert(lignesAInserer);
                 if(error) alert("Erreur lors de la planification : " + error.message);
                 
-                // Optionnel : Quand on planifie un patient "à prévoir", on décoche automatiquement son statut en attente
                 await supabaseClient.from('catalogue_patients').update({ a_prevoir: false }).eq('id', patientId);
                 
                 chargerDonneesDepuisServeur();
@@ -1101,7 +1149,6 @@
         }
 
         function ouvrirFormulairePatient(id = '') {
-            // Reset de l'affichage des téléphones secondaires
             document.getElementById('zone-tel-secondaire').style.display = 'none';
             document.getElementById('btn-add-tel2').style.display = 'block';
 
