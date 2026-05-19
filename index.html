@@ -245,7 +245,9 @@
     <script>
         const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
         const SUPABASE_KEY = "sb_publishable_472y-YwY-VyEsRz7nqaMJg_LC3W6gDJ";
-        let supabase = null;
+        
+        // CORRECTION : Changement de nom de la variable pour éviter la collision
+        let supabaseClient = null;
 
         const MOT_DE_PASSE_CABINET = "kine2026"; 
         const nomsJours = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi'];
@@ -258,11 +260,10 @@
         let cataloguePatients = [];
         let planningsParDate = {};
 
-        // SÉCURITÉ DE CHARGEMENT : On vérifie si l'outil est prêt avant de lancer la connexion
         function initialiserSupabase() {
-            if (supabase === null) {
-                if (typeof window.supabase !== 'undefined') {
-                    supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+            if (supabaseClient === null) {
+                if (typeof window.supabase !== 'undefined' && typeof window.supabase.createClient === 'function') {
+                    supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
                     return true;
                 }
                 return false;
@@ -274,7 +275,7 @@
             const mdp = document.getElementById('password-input').value;
             if (mdp === MOT_DE_PASSE_CABINET) {
                 if (!initialiserSupabase()) {
-                    alert("La brique réseau Supabase est en cours de téléchargement. Patientez 2 secondes et cliquez à nouveau.");
+                    alert("Connexion à la base de données impossible pour le moment. Veuillez réessayer.");
                     return;
                 }
                 localStorage.setItem('kine_connecte', 'true');
@@ -284,15 +285,12 @@
             }
         }
 
-        // Éviter le freeze automatique si la session était déjà active
         window.addEventListener('DOMContentLoaded', () => {
             if (localStorage.getItem('kine_connecte') === 'true') {
-                // On laisse un court répit pour laisser la librairie externe s'injecter
                 setTimeout(() => {
                     if (initialiserSupabase()) {
                         initialiserApplication();
                     } else {
-                        // Si pas prête, on nettoie pour forcer la reconnexion manuelle propre
                         localStorage.removeItem('kine_connecte');
                         window.location.reload();
                     }
@@ -329,11 +327,11 @@
         async function chargerDonneesDepuisServeur() {
             if (!initialiserSupabase()) return;
             try {
-                const { data: patients, error: errP } = await supabase.from('catalogue_patients').select('*');
+                const { data: patients, error: errP } = await supabaseClient.from('catalogue_patients').select('*');
                 if (errP) throw errP;
                 cataloguePatients = patients || [];
 
-                const { data: rdv, error: errR } = await supabase.from('plannings_dates').select('*');
+                const { data: rdv, error: errR } = await supabaseClient.from('plannings_dates').select('*');
                 if (errR) throw errR;
 
                 planningsParDate = {};
@@ -362,7 +360,7 @@
 
         function brancherTempsReel() {
             if (!initialiserSupabase()) return;
-            supabase.channel('custom-all-channel')
+            supabaseClient.channel('custom-all-channel')
             .on('postgres_changes', { event: '*', schema: 'public' }, () => {
                 chargerDonneesDepuisServeur();
             })
@@ -486,8 +484,8 @@
             rdv.statut = nouveauStatut;
             rafraichirAffichage();
 
-            if (supabase) {
-                await supabase.from('plannings_dates').update({ statut: nouveauStatut }).eq('id_planif', idPlanif);
+            if (supabaseClient) {
+                await supabaseClient.from('plannings_dates').update({ statut: nouveauStatut }).eq('id_planif', idPlanif);
             }
         }
 
@@ -511,8 +509,8 @@
             });
 
             fermerModal('modal-planifier');
-            if (supabase) {
-                const { error } = await supabase.from('plannings_dates').insert(lignesAInserer);
+            if (supabaseClient) {
+                const { error } = await supabaseClient.from('plannings_dates').insert(lignesAInserer);
                 if(error) alert("Erreur planning : " + error.message);
                 chargerDonneesDepuisServeur();
             }
@@ -520,8 +518,8 @@
 
         async function retirerDuPlanning(idPlanif) {
             if (confirm("Retirer ce rendez-vous ?")) {
-                if (supabase) {
-                    await supabase.from('plannings_dates').delete().eq('id_planif', idPlanif);
+                if (supabaseClient) {
+                    await supabaseClient.from('plannings_dates').delete().eq('id_planif', idPlanif);
                     chargerDonneesDepuisServeur();
                 }
             }
@@ -531,8 +529,8 @@
             if (confirm("Réinitialiser les statuts du jour ?")) {
                 const cleDate = getCleDate(datesSemaineEnCours[indiceJourActuel]);
                 const ids = (planningsParDate[cleDate] || []).map(r => r.idPlanif);
-                if(ids.length > 0 && supabase) {
-                    await supabase.from('plannings_dates').update({ statut: null }).in('id_planif', ids);
+                if(ids.length > 0 && supabaseClient) {
+                    await supabaseClient.from('plannings_dates').update({ statut: null }).in('id_planif', ids);
                     chargerDonneesDepuisServeur();
                 }
             }
@@ -569,16 +567,16 @@
             fermerModal('modal-patient');
 
             if (!initialiserSupabase()) { 
-                alert("La base de données n'est pas connectée. Réessayez dans 2 secondes."); 
+                alert("La base de données n'est pas connectée. Réessayez."); 
                 return; 
             }
 
             if (id) {
-                const { error } = await supabase.from('catalogue_patients').update({ nom, adresse }).eq('id', id);
+                const { error } = await supabaseClient.from('catalogue_patients').update({ nom, adresse }).eq('id', id);
                 if (error) alert("Erreur lors de la modification : " + error.message);
             } else {
                 const nouvelId = Math.floor(Math.random() * 1000000000).toString(); 
-                const { error } = await supabase.from('catalogue_patients').insert([{ id: nouvelId, nom, adresse }]);
+                const { error } = await supabaseClient.from('catalogue_patients').insert([{ id: nouvelId, nom, adresse }]);
                 if (error) alert("Erreur lors de la création : " + error.message);
             }
             chargerDonneesDepuisServeur();
@@ -586,17 +584,15 @@
 
         async function supprimerFichePatient() {
             const id = document.getElementById('patient-id').value;
-            if (id && confirm("Supprimer définitivement ce patient ?") && supabase) {
+            if (id && confirm("Supprimer définitivement ce patient ?") && supabaseClient) {
                 fermerModal('modal-patient');
-                await supabase.from('catalogue_patients').delete().eq('id', id);
+                await supabaseClient.from('catalogue_patients').delete().eq('id', id);
                 chargerDonneesDepuisServeur();
             }
         }
 
         function ouvrirModal(id) { document.getElementById(id).style.display = 'flex'; }
         function fermerModal(id) { document.getElementById(id).style.display = 'none'; }
-
-        function abrirModal(id) { ouvrirModal(id); }
 
         function ouvrirPlanificateur() {
             const select = document.getElementById('select-patient');
