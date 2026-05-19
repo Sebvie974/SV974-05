@@ -491,6 +491,7 @@
     </div>
     
     <div class="modal" id="modal-planifier"><div class="modal-content"><h3>Planifier un patient</h3><label>Praticien affecté</label><select id="planif-kine-affecte"></select><label>Choisir un patient</label><select id="select-patient"></select><label>Heure</label><input type="time" id="planif-heure"><label>Jours :</label><div class="days-checkbox-grid" id="conteneur-jours-checkbox"></div><div style="display: flex; gap: 10px; margin-top: 10px;"><button class="btn-primary" onclick="ajouterAuPlanningMultiJours()">Planifier</button><button class="btn-secondary" onclick="fermerModal('modal-planifier')">Annuler</button></div></div></div>
+    
     <div class="modal" id="modal-patient"><div class="modal-content"><h3 id="patient-modal-title">Fiche Patient</h3><input type="hidden" id="patient-id"><label>Nom</label><input type="text" id="patient-nom" required><label>Adresse</label><input type="text" id="patient-adresse" required><label>Tél 1</label><input type="tel" id="patient-telephone"><div id="zone-tel-secondaire" style="display:none; flex-direction:column; gap:4px;"><label>Tél 2</label><input type="tel" id="patient-telephone2"></div><button type="button" id="btn-add-tel2" class="btn-secondary" style="padding:5px; font-size:0.8rem; width:fit-content;" onclick="document.getElementById('zone-tel-secondaire').style.display='flex'; this.style.display='none';">➕ Ajouter un autre numéro</button><label>Informations</label><textarea id="patient-notes" rows="3"></textarea><label style="display: flex; align-items: center; gap: 10px; background: #ffe5e5; padding: 10px; border-radius: 8px; margin-top: 5px; font-weight: bold; color: #b30000; cursor: pointer;"><input type="checkbox" id="patient-aprevoir" style="width: auto;"> 🚨 Patient à prévoir</label><div style="display: flex; gap: 10px; margin-top: 10px;"><button class="btn-purple" onclick="sauvegarderFichePatient()">Enregistrer</button><button class="btn-danger" id="btn-supprimer-fiche" onclick="supprimerFichePatient()">Supprimer</button><button class="btn-secondary" onclick="fermerModal('modal-patient')">Annuler</button></div></div></div>
 
     <script>
@@ -780,9 +781,7 @@ async function chargerDonneesDepuisServeur() {
             else afficherCatalogue(); 
         }
 
-        function trierPlannings(a, b) {
-            return (a.ordre || 0) - (b.ordre || 0);
-        }
+        function trierPlannings(a, b) { return (a.ordre || 0) - (b.ordre || 0); }
 
         function afficherPlanning() {
             const tabsConteneur = document.getElementById('days-tabs');
@@ -799,219 +798,80 @@ async function chargerDonneesDepuisServeur() {
 
             const dateSelectionnee = datesSemaineEnCours[indiceJourActuel];
             const cleDate = getCleDate(dateSelectionnee);
-            
             const tousRdvDuJour = planningsParDate[cleDate] || [];
+            let rdvAAfficher = (kineVisionne === "TOUS") ? [...tousRdvDuJour] : tousRdvDuJour.filter(r => r.kineNom === kineVisionne);
             
-            let rdvAAfficher = [];
-            if (kineVisionne === "TOUS") {
-                rdvAAfficher = [...tousRdvDuJour]; 
-            } else {
-                rdvAAfficher = tousRdvDuJour.filter(r => r.kineNom === kineVisionne);
-            }
-            
-            if (typeof filtreTlaUniquementActif !== 'undefined' && filtreTlaUniquementActif) {
-                rdvAAfficher = rdvAAfficher.filter(r => r.tlaStatut === 'dans_tla' || r.tlaStatut === 'facture');
-            }
-
+            if (filtreTlaUniquementActif) rdvAAfficher = rdvAAfficher.filter(r => r.tlaStatut === 'dans_tla' || r.tlaStatut === 'facture');
             rdvAAfficher.sort(trierPlannings);
 
             const estSecretariat = (kineRole === 'secretariat');
-            
-            if(rdvAAfficher.length > 0) {
-                journeeEstVerrouillee = rdvAAfficher.every(r => r.verrouille === true);
-            } else {
-                journeeEstVerrouillee = false;
-            }
-
-            const btnVerrou = document.getElementById('btn-verrouiller-jour');
-            if (btnVerrou) {
-                if (kineVisionne === "TOUS") {
-                    btnVerrou.style.display = 'none'; 
-                } else {
-                    btnVerrou.style.display = 'block';
-                    const kineVerrouille = tousRdvDuJour.filter(r => r.kineNom === kineVisionne).some(r => r.verrouille === true);
-                    if (kineVerrouille) {
-                        btnVerrou.innerText = `Tournée de ${kineVisionne} Validée 🔒 (Déverrouiller)`;
-                        btnVerrou.className = "btn-secondary";
-                    } else {
-                        btnVerrou.innerText = `Valider la journée de ${kineVisionne} 🔐`;
-                        btnVerrou.className = "btn-orange";
-                    }
-                }
-            }
-
-            if (document.getElementById('btn-global-planifier')) document.getElementById('btn-global-planifier').disabled = !estSecretariat && journeeEstVerrouillee;
-            if (document.getElementById('btn-global-reset')) document.getElementById('btn-global-reset').disabled = kineVisionne === "TOUS" || (!estSecretariat && journeeEstVerrouillee);
-
-            const statsEl = document.getElementById('tournee-stats');
-            if (statsEl) {
-                let cibleTexte = kineVisionne === "TOUS" ? "Général cabinet" : kineVisionne;
-                let addFiltreTexte = (typeof filtreTlaUniquementActif !== 'undefined' && filtreTlaUniquementActif) ? " [Filtre TLA Actif]" : "";
-                let texteStats = `${cibleTexte} (${String(dateSelectionnee.getDate()).padStart(2,'0')}/${String(dateSelectionnee.getMonth()+1).padStart(2,'0')})${addFiltreTexte} : ${rdvAAfficher.filter(r => r.statut !== null && r.statut !== undefined && r.statut !== '').length} / ${rdvAAfficher.length} traités`;
-                statsEl.innerText = texteStats;
-            }
+            journeeEstVerrouillee = (rdvAAfficher.length > 0) ? rdvAAfficher.every(r => r.verrouille === true) : false;
 
             const conteneur = document.getElementById('view-planning');
-            if (!conteneur) return;
             conteneur.innerHTML = '';
 
             if (rdvAAfficher.length === 0) {
                 conteneur.innerHTML = `<p style="text-align:center; color:var(--neutral); margin-top:20px;">Aucun patient planifié ici.</p>`;
-                return;
+            } else {
+                rdvAAfficher.forEach((rdv, idx) => {
+                    const patient = cataloguePatients.find(p => String(p.id) === String(rdv.patientId));
+                    if(!patient) return;
+                    const card = document.createElement('div');
+                    card.className = `patient-card ${rdv.statut || ''}`;
+                    card.innerHTML = `
+                        <div class="patient-card-left">
+                            <div class="reorder-actions">
+                                <button class="btn-reorder" onclick="deplacerRdv('${rdv.idPlanif}', -1)" ${idx === 0 ? 'disabled' : ''}>🔼</button>
+                                <button class="btn-reorder" onclick="deplacerRdv('${rdv.idPlanif}', 1)" ${idx === rdvAAfficher.length - 1 ? 'disabled' : ''}>🔽</button>
+                            </div>
+                            <div class="patient-info">
+                                <span class="patient-name" style="cursor:pointer; color:var(--primary); text-decoration:underline;" onclick="ouvrirFormulairePatient('${patient.id}')">${patient.nom} ✏️</span>
+                                <span style="font-size:0.85rem; font-weight:bold;">${rdv.heure || "00:00"}</span>
+                                <a href="#" class="patient-address">📍 ${patient.adresse}</a>
+                                <span class="btn-note-declencheur" onclick="ouvrirNoteVolante('${patient.id}')">📝 Note</span>
+                            </div>
+                        </div>
+                        <div class="btn-group">
+                            <button class="btn-status btn-vu ${rdv.statut === 'vu' ? 'active' : ''}" onclick="changerStatutRdv('${rdv.idPlanif}', 'vu')">✅</button>
+                            <button class="btn-status btn-nonvu ${rdv.statut === 'non-vu' ? 'active' : ''}" onclick="changerStatutRdv('${rdv.idPlanif}', 'non-vu')">❌</button>
+                            <button class="btn-icon" onclick="retirerDuPlanning('${rdv.idPlanif}')">🗑️</button>
+                        </div>
+                    `;
+                    conteneur.appendChild(card);
+                });
             }
-
-            rdvAAfficher.forEach((rdv, idx) => {
-                const patient = cataloguePatients.find(p => String(p.id) === String(rdv.patientId));
-                if(!patient) return;
-
-                const card = document.createElement('div');
-                card.className = `patient-card ${rdv.statut || ''}`;
-                
-                const desactiveBouton = (rdv.verrouille && !estSecretariat) ? 'disabled' : '';
-
-                let chaineTels = patient.telephone ? `📞 ${patient.telephone}` : '';
-                if(patient.telephone_2) chaineTels += ` / ${patient.telephone_2}`;
-
-                const masquerFleches = kineVisionne === "TOUS" || (rdv.verrouille && !estSecretariat);
-                const affichageHeure = (rdv.heure && rdv.heure !== "00:00") ? `🕒 ${rdv.heure}` : "⏰ Non spécifié";
-
-                let htmlModuleTla = '';
-                if (estSecretariat) {
-                    if (rdv.tlaStatut === 'facture') {
-                        htmlModuleTla = `
-                            <div style="display:flex; flex-direction:column; gap:2px;">
-                                <span class="badge-tla-sec-facture">✅ Facturé (TLA traité)</span>
-                                <button class="btn-icon" style="font-size:0.75rem; color:var(--danger); text-align:left; padding:0; font-weight:bold;" onclick="basculerTlaStatut('${rdv.idPlanif}', 'secretariat_click')">🔄 Annuler la demande</button>
-                            </div>`;
-                    } else {
-                        const isCoché = rdv.tlaStatut === 'dans_tla' ? 'checked' : '';
-                        htmlModuleTla = `
-                            <label class="sec-tla-checkbox-container" onclick="event.stopPropagation();">
-                                <input type="checkbox" ${isCoché} onchange="basculerTlaStatut('${rdv.idPlanif}', 'secretariat_click')"> Facture au TLA
-                            </label>`;
-                    }
-                } else {
-                    if (rdv.tlaStatut === 'dans_tla') {
-                        htmlModuleTla = `<button class="badge-tla-kine" onclick="basculerTlaStatut('${rdv.idPlanif}', 'kine_click')">📱 TLA</button>`;
-                    } else if (rdv.tlaStatut === 'facture') {
-                        htmlModuleTla = `<button class="badge-tla-kine facture" onclick="basculerTlaStatut('${rdv.idPlanif}', 'kine_click')">✓ TLA</button>`;
-                    }
-                }
-
-                const aDesNotes = patient.notes && patient.notes.trim() !== '';
-                const opaciteNote = aDesNotes ? '1' : '0.5';
-                const texteNote = aDesNotes ? '📝 Note' : '📝 Note (vide)';
-
-                card.innerHTML = `
-                    <div class="patient-card-left">
-                        ${!masquerFleches ? `
-                        <div class="reorder-actions">
-                            <button class="btn-reorder" onclick="deplacerRdv('${rdv.idPlanif}', -1)" ${idx === 0 ? 'disabled' : ''} title="Monter">🔼</button>
-                            <button class="btn-reorder" onclick="deplacerRdv('${rdv.idPlanif}', 1)" ${idx === rdvAAfficher.length - 1 ? 'disabled' : ''} title="Descendre">🔽</button>
-                        </div>
-                        ` : ''}
-                        <div class="patient-info">
-                            <span class="patient-name" style="cursor:pointer; color:var(--primary); text-decoration:underline;" onclick="ouvrirFormulairePatient('${patient.id}')">${patient.nom} ✏️</span>
-                            <span style="font-size:0.85rem; font-weight:bold; color: ${rdv.heure && rdv.heure !== '00:00' ? 'var(--purple)' : 'var(--neutral)'};">${affichageHeure}</span>
-                            <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(patient.adresse)}" target="_blank" class="patient-address">📍 ${patient.adresse}</a>
-                            ${chaineTels ? `<a href="tel:${patient.telephone}" class="patient-phone">${chaineTels}</a>` : ''}
-                            ${patient.a_prevoir ? `<span class="badge-card-prevoir">🚨 À prévoir</span>` : ''}
-                            
-                            <span class="btn-note-declencheur" style="opacity: ${opaciteNote};" onclick="ouvrirNoteVolante('${patient.id}')">${texteNote}</span>
-                            
-                            ${kineVisionne === "TOUS" ? `<span class="kine-tag">Praticien : ${rdv.kineNom} ${rdv.verrouille ? '🔒' : ''}</span>` : ''}
-                            ${htmlModuleTla}
-                        </div>
-                    </div>
-                    <div class="btn-group">
-                        <button class="btn-status btn-vu ${rdv.statut === 'vu' ? 'active' : ''}" ${desactiveBouton} onclick="changerStatutRdv('${rdv.idPlanif}', 'vu')">✅</button>
-                        <button class="btn-status btn-nonvu ${rdv.statut === 'non-vu' ? 'active' : ''}" ${desactiveBouton} onclick="changerStatutRdv('${rdv.idPlanif}', 'non-vu')">❌</button>
-                        <button class="btn-icon" ${desactiveBouton} onclick="retirerDuPlanning('${rdv.idPlanif}')">🗑️</button>
-                    </div>
-                `;
-                conteneur.appendChild(card);
-            });
         }
 
         async function deplacerRdv(idPlanif, direction) {
             const dateSelectionnee = datesSemaineEnCours[indiceJourActuel];
             const cleDate = getCleDate(dateSelectionnee);
-            let rdvDuJour = planningsParDate[cleDate].filter(r => r.kineNom === kineVisionne);
-            rdvDuJour.sort(trierPlannings);
-            
+            let rdvDuJour = planningsParDate[cleDate].filter(r => r.kineNom === kineVisionne).sort(trierPlannings);
             const index = rdvDuJour.findIndex(r => String(r.idPlanif) === String(idPlanif));
-            if (index < 0) return;
-            
-            const cibleIndex = index + direction;
-            if (cibleIndex < 0 || cibleIndex >= rdvDuJour.length) return;
+            if (index < 0 || (index + direction < 0) || (index + direction >= rdvDuJour.length)) return;
 
             const rdvA = rdvDuJour[index];
-            const rdvB = rdvDuJour[cibleIndex];
-            const ordreA = rdvA.ordre || 0;
-            const ordreB = rdvB.ordre || 0;
+            const rdvB = rdvDuJour[index + direction];
+            const tempOrdre = rdvA.ordre;
+            rdvA.ordre = rdvB.ordre;
+            rdvB.ordre = tempOrdre;
 
-            rdvA.ordre = ordreB;
-            rdvB.ordre = ordreA;
-
-            rafraichirAffichage();
-
-            if (initialiserSupabase()) {
-                await supabaseClient.from('plannings_dates').update({ ordre: rdvA.ordre }).eq('id_planif', rdvA.idPlanif);
-                await supabaseClient.from('plannings_dates').update({ ordre: rdvB.ordre }).eq('id_planif', rdvB.idPlanif);
-                chargerDonneesDepuisServeur();
-            }
+            await supabaseClient.from('plannings_dates').update({ ordre: rdvA.ordre }).eq('id_planif', rdvA.idPlanif);
+            await supabaseClient.from('plannings_dates').update({ ordre: rdvB.ordre }).eq('id_planif', rdvB.idPlanif);
+            chargerDonneesDepuisServeur();
         }
 
         async function changerStatutRdv(idPlanif, nouveauStatut) {
-            if (!initialiserSupabase()) return;
-            
-            let statutFinal = nouveauStatut;
-            const dateSelectionnee = datesSemaineEnCours[indiceJourActuel];
-            const cleDate = getCleDate(dateSelectionnee);
-            const rdv = planningsParDate[cleDate]?.find(r => String(r.idPlanif) === String(idPlanif));
-            
-            if (rdv && rdv.statut === nouveauStatut) {
-                statutFinal = null;
-            }
-
-            try {
-                await supabaseClient.from('plannings_dates').update({ statut: statutFinal }).eq('id_planif', idPlanif);
-                chargerDonneesDepuisServeur();
-            } catch (err) { console.error(err); }
-        }
-
-        async function basculerTlaStatut(idPlanif, source) {
-            if (!initialiserSupabase()) return;
-            const dateSelectionnee = datesSemaineEnCours[indiceJourActuel];
-            const cleDate = getCleDate(dateSelectionnee);
-            const rdv = planningsParDate[cleDate]?.find(r => String(r.idPlanif) === String(idPlanif));
-            if(!rdv) return;
-
-            let nouveauStatut = null;
-            if (source === 'kine_click') {
-                nouveauStatut = (rdv.tlaStatut === 'dans_tla') ? null : 'dans_tla';
-            } else if (source === 'secretariat_click') {
-                nouveauStatut = (rdv.tlaStatut === 'dans_tla') ? 'facture' : (rdv.tlaStatut === 'facture' ? 'dans_tla' : 'dans_tla');
-            }
-
-            try {
-                await supabaseClient.from('plannings_dates').update({ tla_statut: nouveauStatut }).eq('id_planif', idPlanif);
-                chargerDonneesDepuisServeur();
-            } catch(e) { console.error(e); }
+            const rdv = planningsParDate[getCleDate(datesSemaineEnCours[indiceJourActuel])]?.find(r => String(r.idPlanif) === String(idPlanif));
+            await supabaseClient.from('plannings_dates').update({ statut: (rdv.statut === nouveauStatut ? null : nouveauStatut) }).eq('id_planif', idPlanif);
+            chargerDonneesDepuisServeur();
         }
 
         async function retirerDuPlanning(idPlanif) {
-            if (!confirm("Retirer ce patient du planning pour ce jour ?")) return;
-            if (!initialiserSupabase()) return;
-            try {
-                await supabaseClient.from('plannings_dates').delete().eq('id_planif', idPlanif);
-                chargerDonneesDepuisServeur();
-            } catch(e) { console.error(e); }
+            if (confirm("Retirer du planning ?")) { await supabaseClient.from('plannings_dates').delete().eq('id_planif', idPlanif); chargerDonneesDepuisServeur(); }
         }
 
         function ouvrirNoteVolante(patientId) {
             const patient = cataloguePatients.find(p => String(p.id) === String(patientId));
-            if (!patient) return;
             document.getElementById('note-volante-nom-patient').innerText = `Patient : ${patient.nom}`;
             document.getElementById('note-volante-patient-id').value = patient.id;
             document.getElementById('note-volante-corps').value = patient.notes || "";
@@ -1020,226 +880,78 @@ async function chargerDonneesDepuisServeur() {
 
         async function sauvegarderNoteVolante() {
             const patientId = document.getElementById('note-volante-patient-id').value;
-            const nouvellesNotes = document.getElementById('note-volante-corps').value;
-            
-            if (!initialiserSupabase()) return;
-
-            try {
-                await supabaseClient.from('catalogue_patients')
-                    .update({ notes: nouvellesNotes })
-                    .eq('id', patientId);
-                
-                fermerModal('modal-note-volante');
-                chargerDonneesDepuisServeur(); 
-            } catch(e) {
-                console.error("Erreur lors de la sauvegarde de la note", e);
-                alert("Erreur lors de la sauvegarde.");
-            }
+            const notes = document.getElementById('note-volante-corps').value;
+            await supabaseClient.from('catalogue_patients').update({ notes }).eq('id', patientId);
+            fermerModal('modal-note-volante');
+            chargerDonneesDepuisServeur();
         }
 
-        function ouvrirPlanificateur(preselectedPatientId = null) {
-            const selectKine = document.getElementById('planif-kine-affecte');
+        function ouvrirPlanificateur(preselectedId = null) {
             const selectPatient = document.getElementById('select-patient');
             const joursContainer = document.getElementById('conteneur-jours-checkbox');
-            
-            const praticiens = listeUtilisateursComplets.filter(u => u.role === 'kine' || u.role === 'remplacant').map(u => u.nom);
-            selectKine.innerHTML = praticiens.map(k => `<option value="${k}" ${k === kineVisionne ? 'selected' : ''}>${k}</option>`).join('');
-            
-            selectPatient.innerHTML = cataloguePatients
-                .sort((a,b) => a.nom.localeCompare(b.nom))
-                .map(p => `<option value="${p.id}" ${p.id === preselectedPatientId ? 'selected' : ''}>${p.nom}</option>`).join('');
-            
-            joursContainer.innerHTML = datesSemaineEnCours.map((d, i) => `
-                <label style="display:flex; gap:10px; cursor:pointer;">
-                    <input type="checkbox" value="${i}" ${i === indiceJourActuel ? 'checked' : ''}>
-                    ${getLabelDate(d)}
-                </label>
-            `).join('');
-
-            document.getElementById('planif-heure').value = '';
+            selectPatient.innerHTML = cataloguePatients.map(p => `<option value="${p.id}" ${p.id == preselectedId ? 'selected' : ''}>${p.nom}</option>`).join('');
+            joursContainer.innerHTML = datesSemaineEnCours.map((d, i) => `<label><input type="checkbox" value="${i}" ${i === indiceJourActuel ? 'checked' : ''}> ${getLabelDate(d)}</label>`).join('');
             ouvrirModal('modal-planifier');
         }
 
         async function ajouterAuPlanningMultiJours() {
             const patientId = document.getElementById('select-patient').value;
-            const kineAffecte = document.getElementById('planif-kine-affecte').value;
-            const heure = document.getElementById('planif-heure').value;
-            const checkboxes = document.querySelectorAll('#conteneur-jours-checkbox input[type="checkbox"]:checked');
-            
-            if (checkboxes.length === 0) {
-                alert("Veuillez sélectionner au moins un jour.");
-                return;
-            }
-
-            if (!initialiserSupabase()) return;
-
-            const insertions = Array.from(checkboxes).map(cb => {
-                const dateCible = datesSemaineEnCours[parseInt(cb.value)];
-                return {
-                    id_planif: Math.floor(Math.random() * 1000000000).toString(),
-                    patient_id: patientId,
-                    date_cle: getCleDate(dateCible),
-                    heure: heure || null,
-                    kine_nom: kineAffecte,
-                    statut: null,
-                    ordre: 99
-                };
-            });
-
-            try {
-                await supabaseClient.from('plannings_dates').insert(insertions);
-                fermerModal('modal-planifier');
-                chargerDonneesDepuisServeur();
-            } catch(e) { console.error("Erreur planif", e); }
-        }
-
-        async function gererVerrouillageJour() {
-            if (!initialiserSupabase()) return;
-            const dateSelectionnee = datesSemaineEnCours[indiceJourActuel];
-            const cleDate = getCleDate(dateSelectionnee);
-            const rdvDuJour = planningsParDate[cleDate]?.filter(r => r.kineNom === kineVisionne) || [];
-            
-            if(rdvDuJour.length === 0) return;
-
-            const estDejaVerrouille = rdvDuJour.some(r => r.verrouille === true);
-            const message = estDejaVerrouille ? "Déverrouiller cette journée ?" : "Verrouiller cette journée ? Plus aucune modification ne sera possible pour les kinés.";
-            
-            if (confirm(message)) {
-                try {
-                    const idsToUpdate = rdvDuJour.map(r => r.idPlanif);
-                    await supabaseClient.from('plannings_dates')
-                        .update({ journee_verrouillee: !estDejaVerrouille })
-                        .in('id_planif', idsToUpdate);
-                    chargerDonneesDepuisServeur();
-                } catch(e) { console.error(e); }
-            }
-        }
-
-        async function reinitialiserJour() {
-            if (!confirm(`Voulez-vous vraiment effacer TOUT le planning de ${kineVisionne} pour ce jour ?`)) return;
-            if (!initialiserSupabase()) return;
-            
-            const dateSelectionnee = datesSemaineEnCours[indiceJourActuel];
-            const cleDate = getCleDate(dateSelectionnee);
-            
-            try {
-                await supabaseClient.from('plannings_dates')
-                    .delete()
-                    .eq('date_cle', cleDate)
-                    .eq('kine_nom', kineVisionne);
-                chargerDonneesDepuisServeur();
-            } catch(e) { console.error(e); }
-        }
-
-        function basculerFiltreTlaUniquement() {
-            filtreTlaUniquementActif = !filtreTlaUniquementActif;
-            const btn = document.getElementById('btn-filtre-tla-uniquement');
-            if(filtreTlaUniquementActif) {
-                btn.classList.add('active');
-            } else {
-                btn.classList.remove('active');
-            }
-            rafraichirAffichage();
+            const kine = kineVisionne === "TOUS" ? listeUtilisateursComplets[0].nom : kineVisionne;
+            const checkboxes = document.querySelectorAll('#conteneur-jours-checkbox input:checked');
+            const insertions = Array.from(checkboxes).map(cb => ({
+                id_planif: Math.floor(Math.random()*1000000000).toString(),
+                patient_id: patientId,
+                date_cle: getCleDate(datesSemaineEnCours[cb.value]),
+                kine_nom: kine,
+                ordre: 99
+            }));
+            await supabaseClient.from('plannings_dates').insert(insertions);
+            fermerModal('modal-planifier');
+            chargerDonneesDepuisServeur();
         }
 
         function ouvrirModalAPrevoir() {
             const aPrevoir = cataloguePatients.filter(p => p.a_prevoir);
-            const conteneur = document.getElementById('conteneur-liste-prevoir');
-            
-            if (aPrevoir.length === 0) {
-                conteneur.innerHTML = '<p style="text-align:center;">Aucun patient à prévoir pour le moment.</p>';
-            } else {
-                conteneur.innerHTML = aPrevoir.map(p => `
-                    <div class="item-prevoir-modal" style="flex-direction: column; align-items: stretch; gap: 8px;">
-                        <div>
-                            <strong style="font-size:1.1rem;">${p.nom}</strong>
-                            <div style="font-size:0.85rem; color:var(--neutral); margin-top:4px;">${p.notes || 'Aucune note supplémentaire'}</div>
-                        </div>
-                        <div style="display: flex; gap: 6px;">
-                            <button class="btn-success" style="padding:6px; font-size:0.85rem; flex: 1;" onclick="fermerModal('modal-liste-prevoir'); ouvrirPlanificateur('${p.id}')">📅 Planifier</button>
-                            <button class="btn-primary" style="padding:6px; font-size:0.85rem; background-color: var(--purple); flex: 1;" onclick="fermerModal('modal-liste-prevoir'); ouvrirFormulairePatient('${p.id}')">✏️ Fiche</button>
-                        </div>
+            document.getElementById('conteneur-liste-prevoir').innerHTML = aPrevoir.map(p => `
+                <div class="item-prevoir-modal">
+                    <strong>${p.nom}</strong>
+                    <div style="display:flex; gap:5px;">
+                        <button class="btn-success" onclick="fermerModal('modal-liste-prevoir'); ouvrirPlanificateur('${p.id}')">📅</button>
+                        <button class="btn-purple" onclick="fermerModal('modal-liste-prevoir'); ouvrirFormulairePatient('${p.id}')">✏️</button>
                     </div>
-                `).join('');
-            }
+                </div>`).join('');
             ouvrirModal('modal-liste-prevoir');
         }
 
-        function filtrerFichierPatientsIntuitivement() {
-            afficherCatalogue();
-            const term = document.getElementById('recherche-patient-input').value.toLowerCase();
-            const nb = cataloguePatients.filter(p => p.nom.toLowerCase().includes(term) || p.adresse.toLowerCase().includes(term)).length;
-            document.getElementById('compteur-recherche').innerText = `${nb} patient(s) trouvé(s)`;
-        }
-
-        function exporterRapportJour() {
-            alert("La fonction d'export du jour sera générée ici.");
-        }
-
-        function exporterRapportSemaine() {
-            alert("La fonction d'export de la semaine sera générée ici.");
-        }
-
-        // --- FONCTIONS FICHIER PATIENT MISES À JOUR ---
-        
         function afficherCatalogue() {
             const conteneur = document.getElementById('view-fichier');
             const term = document.getElementById('recherche-patient-input').value.toLowerCase();
-            const patientsFiltres = cataloguePatients.filter(p => p.nom.toLowerCase().includes(term) || p.adresse.toLowerCase().includes(term)).sort((a,b) => a.nom.localeCompare(b.nom));
-            
-            document.getElementById('compteur-recherche').innerText = `${patientsFiltres.length} patient(s) enregistré(s)`;
-
-            // MISE À JOUR : Suppression du bouton modifier, le nom devient directement cliquable.
-            conteneur.innerHTML = patientsFiltres.map(p => `
-                <div class="patient-card" style="border-left-color:${p.a_prevoir ? 'var(--danger)' : 'var(--purple)'}; flex-direction: row; flex-wrap: wrap; align-items: center;">
-                    <div class="patient-info" style="flex: 1; width: 100%;">
-                        <span class="patient-name" style="cursor:pointer; color:var(--primary); text-decoration:underline;" onclick="ouvrirFormulairePatient('${p.id}')">${p.nom} ✏️ ${p.a_prevoir ? '<span class="badge-card-prevoir" style="margin-left: 8px;">🚨 À prévoir</span>' : ''}</span>
-                        <span style="margin-top: 4px;">📍 ${p.adresse}</span>
+            conteneur.innerHTML = cataloguePatients.filter(p => p.nom.toLowerCase().includes(term)).sort((a,b) => a.nom.localeCompare(b.nom)).map(p => `
+                <div class="patient-card" style="border-left-color:${p.a_prevoir ? 'var(--danger)' : 'var(--purple)'};">
+                    <div class="patient-info">
+                        <span class="patient-name" style="cursor:pointer; color:var(--primary);" onclick="ouvrirFormulairePatient('${p.id}')">${p.nom} ✏️</span>
+                        <span>📍 ${p.adresse}</span>
                     </div>
                 </div>`).join('');
         }
 
         function ouvrirFormulairePatient(id = '') {
             const p = id ? cataloguePatients.find(x => String(x.id) === String(id)) : null;
-            document.getElementById('patient-modal-title').innerText = id ? "Modifier la fiche" : "Nouveau patient";
             document.getElementById('patient-id').value = id ? p.id : '';
             document.getElementById('patient-nom').value = id ? p.nom : '';
             document.getElementById('patient-adresse').value = id ? p.adresse : '';
-            document.getElementById('patient-telephone').value = id ? (p.telephone || '') : '';
-            document.getElementById('patient-telephone2').value = id ? (p.telephone_2 || '') : '';
             document.getElementById('patient-notes').value = id ? (p.notes || '') : '';
             document.getElementById('patient-aprevoir').checked = id ? (p.a_prevoir || false) : false;
-            document.getElementById('btn-supprimer-fiche').style.display = id ? 'block' : 'none';
             ouvrirModal('modal-patient');
         }
 
         async function sauvegarderFichePatient() {
             const id = document.getElementById('patient-id').value;
-            const p = { 
-                nom: document.getElementById('patient-nom').value, 
-                adresse: document.getElementById('patient-adresse').value, 
-                telephone: document.getElementById('patient-telephone').value, 
-                telephone_2: document.getElementById('patient-telephone2').value, 
-                notes: document.getElementById('patient-notes').value, 
-                a_prevoir: document.getElementById('patient-aprevoir').checked 
-            };
-            
-            if (id) {
-                await supabaseClient.from('catalogue_patients').update(p).eq('id', id);
-            } else {
-                await supabaseClient.from('catalogue_patients').insert([{...p, id: Math.floor(Math.random()*1000000000).toString()}]);
-            }
+            const p = { nom: document.getElementById('patient-nom').value, adresse: document.getElementById('patient-adresse').value, notes: document.getElementById('patient-notes').value, a_prevoir: document.getElementById('patient-aprevoir').checked };
+            if (id) await supabaseClient.from('catalogue_patients').update(p).eq('id', id);
+            else await supabaseClient.from('catalogue_patients').insert([{...p, id: Math.floor(Math.random()*1000000000).toString()}]);
             fermerModal('modal-patient');
             chargerDonneesDepuisServeur();
-        }
-
-        async function supprimerFichePatient() {
-            const id = document.getElementById('patient-id').value;
-            if(confirm("Voulez-vous vraiment supprimer ce patient définitivement ?")) { 
-                await supabaseClient.from('catalogue_patients').delete().eq('id', id); 
-                fermerModal('modal-patient'); 
-                chargerDonneesDepuisServeur(); 
-            }
         }
 
         function ouvrirModal(id) { document.getElementById(id).style.display = 'flex'; }
