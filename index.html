@@ -404,10 +404,13 @@
                     <input type="hidden" id="kine-id-edite">
                     <input type="text" id="nouveau-kine-input" placeholder="Nom de l'utilisateur" style="padding:6px; border:1px solid #ccc; background: white;">
                     <input type="password" id="nouveau-mdp-input" placeholder="Mot de passe dédié" style="padding:6px; border:1px solid #ccc; background: white;">
+                    
                     <select id="nouveau-role-input" style="padding:6px; border:1px solid #ccc; background: white; font-weight: bold;">
                         <option value="kine">Rôle : Kiné</option>
+                        <option value="remplacant">Rôle : Remplaçant</option>
                         <option value="secretariat">Rôle : Secrétariat</option>
                     </select>
+                    
                     <div style="display: flex; gap: 5px; width: 100%;">
                         <button id="btn-soumettre-kine" class="btn-success" style="padding:8px; flex: 1;" onclick="sauvegarderKine()">Créer l'utilisateur</button>
                         <button id="btn-annuler-kine" class="btn-secondary" style="padding:8px; display: none;" onclick="reinitialiserFormulaireKine()">Annuler</button>
@@ -674,13 +677,20 @@
             const filtreSec = document.getElementById('filtre-view-kine');
             const selectDeclaration = document.getElementById('select-declaration-tla');
             
+            // Fonction d'aide pour afficher proprement le rôle
+            const getRoleLabel = (role) => {
+                if (role === 'secretariat') return 'Secrétariat';
+                if (role === 'remplacant') return 'Remplaçant';
+                return 'Kiné';
+            };
+
             if (selectLogin) {
-                selectLogin.innerHTML = listeUtilisateursComplets.map(u => `<option value="${u.nom}">${u.nom} (${u.role === 'secretariat' ? 'Secrétariat' : 'Kiné'})</option>`).join('');
+                selectLogin.innerHTML = listeUtilisateursComplets.map(u => `<option value="${u.nom}">${u.nom} (${getRoleLabel(u.role)})</option>`).join('');
             }
             if (conteneurAdmin) {
                 conteneurAdmin.innerHTML = listeUtilisateursComplets.map(u => `
                     <div class="kine-list-item">
-                        <span>👤 <b>${u.nom}</b> [${u.role === 'secretariat' ? 'Secrétariat' : 'Kiné'}]</span>
+                        <span>👤 <b>${u.nom}</b> [${getRoleLabel(u.role)}]</span>
                         <div style="display: flex; gap: 8px;">
                             <button class="btn-icon" style="color:var(--primary); font-size:0.85rem;" onclick="abrirEditionKine('${u.id}')" title="Modifier">✏️</button>
                             <button class="btn-icon" style="color:var(--danger); font-size:0.85rem;" onclick="supprimerKine('${u.nom}')" title="Supprimer">🗑️</button>
@@ -689,9 +699,10 @@
                 `).join('');
             }
             if (filtreSec) {
-                const kinesUniquement = listeUtilisateursComplets.filter(u => u.role === 'kine').map(u => u.nom);
+                // On affiche les Kinés ET les Remplaçants dans les filtres
+                const praticiensUniquement = listeUtilisateursComplets.filter(u => u.role === 'kine' || u.role === 'remplacant').map(u => u.nom);
                 let optionsHTML = `<option value="TOUS">👥 Tous les praticiens</option>`;
-                optionsHTML += kinesUniquement.map(k => `<option value="${k}">👤 ${k}</option>`).join('');
+                optionsHTML += praticiensUniquement.map(k => `<option value="${k}">👤 ${k}</option>`).join('');
                 filtreSec.innerHTML = optionsHTML;
                 if(!kineVisionne) kineVisionne = "TOUS";
                 filtreSec.value = kineVisionne;
@@ -874,7 +885,13 @@
         function initialiserApplication() {
             document.getElementById('login-screen').style.display = 'none';
             document.getElementById('main-app').style.display = 'block';
-            document.getElementById('nom-kine-badge').innerText = `Session : ${kineConnecte} (${kineRole === 'secretariat' ? 'Secrétaire' : 'Kiné'})`;
+            
+            // Adaptation du badge selon le rôle
+            let labelBadgeRole = "Kiné";
+            if(kineRole === 'secretariat') labelBadgeRole = "Secrétaire";
+            if(kineRole === 'remplacant') labelBadgeRole = "Remplaçant";
+            
+            document.getElementById('nom-kine-badge').innerText = `Session : ${kineConnecte} (${labelBadgeRole})`;
             
             if (kineRole === 'secretariat') {
                 document.getElementById('zone-filtre-secretariat').style.display = 'flex';
@@ -1559,8 +1576,9 @@
                 selectPatient.innerHTML += `<option value="${p.id}">${p.nom} ${p.a_prevoir ? '(🚨 À prévoir)' : ''}</option>`;
             });
 
-            const kinesDispos = listeUtilisateursComplets.filter(u => u.role === 'kine');
-            selectKineAffecte.innerHTML = kinesDispos.map(u => `<option value="${u.nom}">${u.nom}</option>`).join('');
+            // On permet d'affecter un rendez-vous aux Kinés ET aux Remplaçants
+            const praticiensDispos = listeUtilisateursComplets.filter(u => u.role === 'kine' || u.role === 'remplacant');
+            selectKineAffecte.innerHTML = praticiensDispos.map(u => `<option value="${u.nom}">${u.nom}</option>`).join('');
             
             if (kineVisionne !== "TOUS") {
                 selectKineAffecte.value = kineVisionne;
@@ -1580,7 +1598,6 @@
             ouvrirModal('modal-planifier');
         }
 
-        /* CORRECTION ICI : "abrirFormulairePatient" devient "ouvrirFormulairePatient" */
         function ouvrirFormulairePatient(id = '') {
             document.getElementById('zone-tel-secondaire').style.display = 'none';
             document.getElementById('btn-add-tel2').style.display = 'block';
