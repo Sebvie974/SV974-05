@@ -110,7 +110,7 @@
             background: var(--card-bg);
             padding: 15px;
             border-radius: 12px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            box-shadow: 0 2px 8 rgba(0,0,0,0.05);
             margin-bottom: 15px;
             position: sticky;
             top: 0;
@@ -180,7 +180,7 @@
         button { cursor: pointer; }
         button:disabled {
             opacity: 0.4 !important;
-            cursor: not-allowed !important;
+            cursor: not-allowed !allowed !important;
         }
         .btn-primary { background-color: var(--primary); color: white; flex: 1; }
         .btn-secondary { background-color: var(--neutral); color: white; }
@@ -240,6 +240,37 @@
             justify-content: space-between;
             align-items: center;
             gap: 10px;
+        }
+
+        /* Styles Zone de recherche */
+        .search-container {
+            background: var(--card-bg);
+            padding: 12px;
+            border-radius: 12px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.03);
+            margin-bottom: 5px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .search-input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            box-sizing: border-box;
+            font-size: 1rem;
+            background: #f9f9f9;
+        }
+        .search-input:focus {
+            outline: 2px solid var(--purple);
+            background: white;
+        }
+        .search-counter {
+            font-size: 0.8rem;
+            color: var(--neutral);
+            font-weight: bold;
+            padding-left: 4px;
         }
     </style>
 </head>
@@ -329,7 +360,12 @@
             </div>
 
             <div id="header-fichier" style="display: none;">
-                <button class="btn-success" style="width: 100%;" onclick="ouvrirFormulairePatient()">Créer un nouveau patient 👤➕</button>
+                <button class="btn-success" style="width: 100%; margin-bottom: 12px;" onclick="ouvrirFormulairePatient()">Créer un nouveau patient 👤➕</button>
+                
+                <div class="search-container">
+                    <input type="text" id="recherche-patient-input" class="search-input" placeholder="🔍 Rechercher un patient (Nom, adresse...)" oninput="filtrerFichierPatientsIntuitivement()">
+                    <span id="compteur-recherche" class="search-counter">0 patient enregistré</span>
+                </div>
             </div>
         </header>
 
@@ -819,6 +855,9 @@
                 document.getElementById('header-fichier').style.display = 'block';
                 document.getElementById('view-planning').classList.remove('active');
                 document.getElementById('view-fichier').classList.add('active');
+                
+                // Réinitialise la recherche à l'ouverture de la vue fichier
+                document.getElementById('recherche-patient-input').value = '';
             } else {
                 vueActuelle = 'planning';
                 document.getElementById('app-title').innerText = "Planning Tournées";
@@ -1049,12 +1088,45 @@
             }
         }
 
+        // Fonction de filtrage intuitive appelée à chaque saisie
+        function filtrerFichierPatientsIntuitivement() {
+            afficherCatalogue();
+        }
+
         function afficherCatalogue() {
             const conteneur = document.getElementById('view-fichier');
             if (!conteneur) return;
             conteneur.innerHTML = '';
 
-            cataloguePatients.sort((a,b) => a.nom.localeCompare(b.nom)).forEach(p => {
+            // Récupération de la valeur textuelle entrée dans la barre de recherche
+            const rechercheTerme = document.getElementById('recherche-patient-input').value.toLowerCase().trim();
+
+            // Filtrage intelligent (saisie intuitive)
+            const patientsFiltres = cataloguePatients.filter(p => {
+                if (!rechercheTerme) return true; // Si rien n'est tapé, on garde tout
+                
+                const nomMatch = p.nom && p.nom.toLowerCase().includes(rechercheTerme);
+                const adresseMatch = p.adresse && p.adresse.toLowerCase().includes(rechercheTerme);
+                
+                return nomMatch || adresseMatch;
+            });
+
+            // Mise à jour du compteur dynamique
+            const compteurEl = document.getElementById('compteur-recherche');
+            if (compteurEl) {
+                if (!rechercheTerme) {
+                    compteurEl.innerText = `${cataloguePatients.length} patient${cataloguePatients.length > 1 ? 's' : ''} enregistré${cataloguePatients.length > 1 ? 's' : ''}`;
+                } else {
+                    compteurEl.innerText = `${patientsFiltres.length} résultat${patientsFiltres.length > 1 ? 's' : ''} trouvé${patientsFiltres.length > 1 ? 's' : ''}`;
+                }
+            }
+
+            if (patientsFiltres.length === 0) {
+                conteneur.innerHTML = `<p style="text-align:center; color:var(--neutral); margin-top:20px;">Aucun patient ne correspond à votre recherche.</p>`;
+                return;
+            }
+
+            patientsFiltres.sort((a,b) => a.nom.localeCompare(b.nom)).forEach(p => {
                 const card = document.createElement('div');
                 card.className = 'patient-card';
                 card.style.borderLeftColor = p.a_prevoir ? 'var(--orange)' : 'var(--purple)';
