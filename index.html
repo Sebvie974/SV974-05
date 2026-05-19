@@ -923,21 +923,22 @@
             rafraichirAffichage();
         }
 
+        // CORRECTION DU BUG ICI : L'ordre manuel prévaut absolument sur l'heure
         function trierPlannings(a, b) {
-            const aHeureRenseignee = a.heure !== "00:00";
-            const bHeureRenseignee = b.heure !== "00:00";
+            if (a.ordre !== b.ordre) {
+                return a.ordre - b.ordre;
+            }
+            
+            // Si l'ordre est identique (ex: nouveaux ajouts non reclassés), on utilise l'heure
+            const aHeureRenseignee = a.heure && a.heure !== "00:00";
+            const bHeureRenseignee = b.heure && b.heure !== "00:00";
 
             if (aHeureRenseignee && !bHeureRenseignee) return -1;
             if (!aHeureRenseignee && bHeureRenseignee) return 1;
-
             if (aHeureRenseignee && bHeureRenseignee) {
-                if (a.heure !== b.heure) {
-                    return a.heure.localeCompare(b.heure);
-                }
-                return a.ordre - b.ordre;
+                return a.heure.localeCompare(b.heure);
             }
-
-            return a.ordre - b.ordre;
+            return 0;
         }
 
         function afficherPlanning() {
@@ -1068,10 +1069,12 @@
             const rdvA = rdvFiltrés[indexActuel];
             const rdvB = rdvFiltrés[cibleIndex];
 
+            // Inversion propre des deux valeurs d'ordre
             let tempOrdre = rdvA.ordre;
             rdvA.ordre = rdvB.ordre;
             rdvB.ordre = tempOrdre;
 
+            // Sécurité si deux éléments possédaient une valeur d'ordre identique à l'origine
             if (rdvA.ordre === rdvB.ordre) {
                 if (direction > 0) {
                     rdvA.ordre = rdvB.ordre + 1;
@@ -1320,6 +1323,10 @@
 
         function ouvrirModal(id) { document.getElementById(id).style.display = 'flex'; }
         function fermerModal(id) { document.getElementById(id).style.display = 'none'; }
+
+        function abrirPlanificateur() { // alias de secours
+            ouvrirPlanificateur();
+        }
 
         function ouvrirPlanificateur() {
             const selectPatient = document.getElementById('select-patient');
