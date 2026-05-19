@@ -719,13 +719,83 @@ async function chargerDonneesDepuisServeur() {
                 
                 const nbAPrevoir = cataloguePatients.filter(p => p.a_prevoir).length;
                 const bandeau = document.getElementById('bandeau-a-prevoir');
-                if (nbAPrevoir > 0) {
-                    bandeau.style.display = 'block';
-                    document.getElementById('texte-bandeau-prevoir').innerText = `${nbAPrevoir} patient(s) à prévoir en attente`;
-                } else {
-                    bandeau.style.display = 'none';
+                if (bandeau) {
+                    bandeau.style.display = nbAPrevoir > 0 ? 'block' : 'none';
+                    if(nbAPrevoir > 0) document.getElementById('texte-bandeau-prevoir').innerText = `${nbAPrevoir} patient(s) à prévoir en attente`;
                 }
 
+                rafraichirAffichage();
+            } catch (e) { 
+                modifierBadgeReseau(false); 
+                console.error("Erreur de chargement", e);
+            }
+        }
+
+        function afficherPlanning() {
+            const tabsConteneur = document.getElementById('days-tabs');
+            if (!tabsConteneur) return;
+            tabsConteneur.innerHTML = '';
+            
+            datesSemaineEnCours.forEach((dateObj, index) => {
+                const btn = document.createElement('button');
+                btn.className = `day-btn ${index === indiceJourActuel ? 'active' : ''}`;
+                btn.innerText = getLabelDate(dateObj);
+                btn.onclick = () => { indiceJourActuel = index; afficherPlanning(); };
+                tabsConteneur.appendChild(btn);
+            });
+
+            const dateSelectionnee = datesSemaineEnCours[indiceJourActuel];
+            const cleDate = getCleDate(dateSelectionnee);
+            const tousRdvDuJour = planningsParDate[cleDate] || [];
+            
+            let rdvAAfficher = (kineVisionne === "TOUS") ? [...tousRdvDuJour] : tousRdvDuJour.filter(r => r.kineNom === kineVisionne);
+            if (filtreTlaUniquementActif) rdvAAfficher = rdvAAfficher.filter(r => r.tlaStatut === 'dans_tla' || r.tlaStatut === 'facture');
+            rdvAAfficher.sort(trierPlannings);
+
+            const estSecretariat = (kineRole === 'secretariat');
+            journeeEstVerrouillee = (rdvAAfficher.length > 0) ? rdvAAfficher.every(r => r.verrouille === true) : false;
+
+            // Mise à jour des stats (c'est ce qui remplace le texte "chargement")
+            const statsEl = document.getElementById('tournee-stats');
+            if (statsEl) {
+                let texteStats = `${kineVisionne === "TOUS" ? "Général cabinet" : kineVisionne} (${String(dateSelectionnee.getDate()).padStart(2,'0')}/${String(dateSelectionnee.getMonth()+1).padStart(2,'0')}) : ${rdvAAfficher.filter(r => r.statut).length} / ${rdvAAfficher.length} traités`;
+                statsEl.innerText = texteStats;
+            }
+
+            const conteneur = document.getElementById('view-planning');
+            conteneur.innerHTML = '';
+
+            if (rdvAAfficher.length === 0) {
+                conteneur.innerHTML = `<p style="text-align:center; color:var(--neutral); margin-top:20px;">Aucun patient planifié ici.</p>`;
+            } else {
+                rdvAAfficher.forEach((rdv, idx) => {
+                    const patient = cataloguePatients.find(p => String(p.id) === String(rdv.patientId));
+                    if(!patient) return;
+                    const card = document.createElement('div');
+                    card.className = `patient-card ${rdv.statut || ''}`;
+                    card.innerHTML = `
+                        <div class="patient-card-left">
+                            <div class="reorder-actions">
+                                <button class="btn-reorder" onclick="deplacerRdv('${rdv.idPlanif}', -1)" ${idx === 0 ? 'disabled' : ''}>🔼</button>
+                                <button class="btn-reorder" onclick="deplacerRdv('${rdv.idPlanif}', 1)" ${idx === rdvAAfficher.length - 1 ? 'disabled' : ''}>🔽</button>
+                            </div>
+                            <div class="patient-info">
+                                <span class="patient-name" style="cursor:pointer; color:var(--primary); text-decoration:underline;" onclick="ouvrirFormulairePatient('${patient.id}')">${patient.nom} ✏️</span>
+                                <span style="font-size:0.85rem; font-weight:bold;">${rdv.heure || "00:00"}</span>
+                                <a href="#" class="patient-address">📍 ${patient.adresse}</a>
+                                <span class="btn-note-declencheur" onclick="ouvrirNoteVolante('${patient.id}')">📝 Note</span>
+                            </div>
+                        </div>
+                        <div class="btn-group">
+                            <button class="btn-status btn-vu ${rdv.statut === 'vu' ? 'active' : ''}" onclick="changerStatutRdv('${rdv.idPlanif}', 'vu')">✅</button>
+                            <button class="btn-status btn-nonvu ${rdv.statut === 'non-vu' ? 'active' : ''}" onclick="changerStatutRdv('${rdv.idPlanif}', 'non-vu')">❌</button>
+                            <button class="btn-icon" onclick="retirerDuPlanning('${rdv.idPlanif}')">🗑️</button>
+                        </div>
+                    `;
+                    conteneur.appendChild(card);
+                });
+            }
+        }
                 rafraichirAffichage();
             } catch (e) { 
                 modifierBadgeReseau(false); 
