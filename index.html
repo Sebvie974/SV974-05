@@ -697,12 +697,8 @@
             
             rdvAAfficher.sort((a, b) => a.heure.localeCompare(b.heure));
 
-            // --- MISE À JOUR SÉCURITÉ MODIFICATION SECRÉTARIAT ---
-            // On autorise globalement la planification et le reset si le secrétariat est connecté
             const estSecretariat = (kineRole === 'secretariat');
             
-            // La journée générale n'est considérée verrouillée en vue globale que si TOUS les rendez-vous affichés le sont.
-            // En vue par kiné individuel, elle dépend du verrou de ce dernier.
             if(rdvAAfficher.length > 0) {
                 journeeEstVerrouillee = rdvAAfficher.every(r => r.verrouille === true);
             } else {
@@ -715,7 +711,6 @@
                     btnVerrou.style.display = 'none'; 
                 } else {
                     btnVerrou.style.display = 'block';
-                    // On recalcule le verrou spécifique à ce kiné précis pour l'affichage du bouton
                     const kineVerrouille = tousRdvDuJour.filter(r => r.kineNom === kineVisionne).some(r => r.verrouille === true);
                     if (kineVerrouille) {
                         btnVerrou.innerText = `Tournée de ${kineVisionne} Validée 🔒 (Déverrouiller)`;
@@ -727,7 +722,6 @@
                 }
             }
 
-            // Autorisation d'ajouter ou reset : si secrétaire, le bouton est tjs actif (sauf si tout est verrouillé)
             document.getElementById('btn-global-planifier').disabled = !estSecretariat && journeeEstVerrouillee;
             document.getElementById('btn-global-reset').disabled = kineVisionne === "TOUS" || (!estSecretariat && journeeEstVerrouillee);
 
@@ -754,7 +748,6 @@
                 const card = document.createElement('div');
                 card.className = `patient-card ${rdv.statut || ''}`;
                 
-                // Un bouton individuel est désactivé si la ligne précise est verrouillée, SAUF si l'utilisateur est secrétaire (qui garde la main)
                 const desactiveBouton = (rdv.verrouille && !estSecretariat) ? 'disabled' : '';
 
                 card.innerHTML = `
@@ -810,8 +803,7 @@
         }
 
         async function changerStatutRdv(idPlanif, statutBouton) {
-            // Trouver le rdv peu importe la date
-            let rdv Trouve = null;
+            let rdvTrouve = null;
             Object.keys(planningsParDate).forEach(cle => {
                 const cible = planningsParDate[cle].find(r => r.idPlanif === idPlanif);
                 if(cible) rdvTrouve = cible;
