@@ -219,7 +219,9 @@
             <h2 style="color: var(--primary); margin:0;">Accès Cabinet</h2>
             <p style="color: var(--neutral); font-size:0.9rem; margin:0;">Sélectionnez votre profil et entrez le mot de passe.</p>
             
-            <select id="kine-select-login" style="padding:12px; font-size:1rem; border:1px solid #ccc; font-weight: bold;"></select>
+            <select id="kine-select-login" style="padding:12px; font-size:1rem; border:1px solid #ccc; font-weight: bold;">
+                <option value="">Chargement des praticiens...</option>
+            </select>
 
             <input type="password" id="password-input" placeholder="Mot de passe" style="padding:12px; border:1px solid #ccc; text-align:center; font-size:1.1rem;">
             <button class="btn-primary" style="padding:12px; font-size:1rem;" onclick="verifierConnexion()">Se connecter 🔐</button>
@@ -333,7 +335,7 @@
         let journeeEstVerrouillee = false; 
         
         let kineConnecte = ""; 
-        let listeKines = []; // Tableau dynamique géré en local
+        let assuranceKines = []; 
 
         function initialiserSupabase() {
             if (supabaseClient === null) {
@@ -346,17 +348,21 @@
             return true;
         }
 
-        // --- GESTION DYNAMIQUE DES KINÉS ---
-        function chargerListeKines() {
-            const cache = localStorage.getItem('liste_kines_cabinet');
-            if (cache) {
-                listeKines = JSON.parse(cache);
-            } else {
-                // Initialisation par défaut si vide
-                listeKines = ["Kiné A", "Kiné B"];
-                localStorage.setItem('liste_kines_cabinet', JSON.stringify(listeKines));
+        // --- GESTION CENTRALISÉE DES KINÉS (SUPABASE) ---
+        async function chargerListeKines() {
+            if (!initialiserSupabase()) return;
+            try {
+                const { data, error } = await supabaseClient.from('practiciens').select('nom').order('nom', { ascending: true });
+                if (error) throw error;
+                
+                assuranceKines = (data || []).map(k => k.nom);
+                localStorage.setItem('cache_kines', JSON.stringify(assuranceKines));
+                majSelecteursKine();
+            } catch (e) {
+                console.log("Lecture de la liste des kinés en cache local hors-ligne :", e);
+                assuranceKines = JSON.parse(localStorage.getItem('cache_kines')) || ["Kiné A", "Kiné B"];
+                majSelecteursKine();
             }
-            majSelecteursKine();
         }
 
         function majSelecteursKine() {
@@ -364,10 +370,14 @@
             const conteneurAdmin = document.getElementById('liste-kines-admin');
             
             if (selectLogin) {
-                selectLogin.innerHTML = listeKines.map(k => `<option value="${k}">${k}</option>`).join('');
+                if (assuranceKines.length === 0) {
+                    selectLogin.innerHTML = `<option value="">Aucun kiné configuré ⚙️</option>`;
+                } else {
+                    selectLogin.innerHTML = assuranceKines.map(k => `<option value="${k}">${k}</option>`).join('');
+                }
             }
             if (conteneurAdmin) {
-                conteneurAdmin.innerHTML = listeKines.map(k => `
+                conteneurAdmin.innerHTML = assuranceKines.map(k => `
                     <div class="kine-list-item">
                         <span>👤 ${k}</span>
                         <button class="btn-icon" style="color:var(--danger); font-size:0.85rem;" onclick="supprimerKine('${k}')">🗑️</button>
@@ -381,7 +391,7 @@
             if (panel.style.display === 'flex') {
                 panel.style.display = 'none';
             } else {
-                const mdp = prompt("Entrez le mot de passe cabinet pour gérer la configuration :");
+                const mdp = prompt("Entrez le mot de passe cabinet pour gérer la configuration globale :");
                 if (mdp === MOT_DE_PASSE_CABINET) {
                     panel.style.display = 'flex';
                 } else if (mdp !== null) {
@@ -390,25 +400,37 @@
             }
         }
 
-        function ajouterNouveauKine() {
+        async function ajouterNouveauKine() {
             const input = document.getElementById('nouveau-kine-input');
             const nom = input.value.trim();
             if (!nom) return;
-            if (listeKines.includes(nom)) {
-                alert("Ce nom existe déjà.");
+            if (assuranceKines.includes(nom)) {
+                alert("Ce praticien existe déjà.");
                 return;
             }
-            listeKines.push(nom);
-            localStorage.setItem('liste_kines_cabinet', JSON.stringify(listeKines));
-            input.value = '';
-            majSelecteursKine();
+
+            if (initialiserSupabase()) {
+                const nouvelId = Math.floor(Math.random() * 1000000000).toString();
+                const { error } = await supabaseClient.from('practiciens').insert([{ id: nouvelId, nom: nom }]);
+                if (error) {
+                    alert("Erreur base de données : " + error.message);
+                } else {
+                    input.value = '';
+                    await chargerListeKines();
+                }
+            }
         }
 
-        function supprimerKine(nom) {
-            if (confirm(`Supprimer le profil de ${nom} de cet appareil ? (Les données sur Supabase ne seront pas perdues)`)) {
-                listeKines = listeKines.filter(k => k !== nom);
-                localStorage.setItem('liste_kines_cabinet', JSON.stringify(listeKines));
-                majSelecteursKine();
+        async function supprimerKine(nom) {
+            if (confirm(`Supprimer définitivement ${nom} de la base de données ? (Les plannings existants ne seront pas effacés)`)) {
+                if (initialiserSupabase()) {
+                    const { error } = await supabaseClient.from('practiciens').delete().eq('nom', nom);
+                    if (error) {
+                        alert("Erreur suppression : " + error.message);
+                    } else {
+                        await chargerListeKines();
+                    }
+                }
             }
         }
         // ------------------------------------
@@ -418,13 +440,13 @@
             const kineSelectionne = document.getElementById('kine-select-login').value;
             
             if (!kineSelectionne) {
-                alert("Veuillez d'abord configurer au moins un utilisateur via le bouton ⚙️.");
+                alert("Veuillez d'abord ajouter un utilisateur via le bouton de configuration ⚙️.");
                 return;
             }
 
             if (mdp === MOT_DE_PASSE_CABINET) {
                 if (!initialiserSupabase()) {
-                    alert("Connexion à la base de données impossible pour le moment. Veuillez réessayer.");
+                    alert("Base de données inaccessible.");
                     return;
                 }
                 localStorage.setItem('kine_connecte', 'true');
@@ -442,11 +464,12 @@
             window.location.reload();
         }
 
-        window.addEventListener('DOMContentLoaded', () => {
-            chargerListeKines(); // Charge la liste dès le démarrage
+        window.addEventListener('DOMContentLoaded', async () => {
+            initialiserSupabase();
+            await chargerListeKines(); // Chargement initial des kinés depuis le serveur
             
             if (localStorage.getItem('kine_connecte') === 'true') {
-                kineConnecte = localStorage.getItem('kine_nom_actif') || listeKines[0] || "Kiné A";
+                kineConnecte = localStorage.getItem('kine_nom_actif') || assuranceKines[0] || "Kiné A";
                 setTimeout(() => {
                     if (initialiserSupabase()) {
                         initialiserApplication();
@@ -476,6 +499,7 @@
                 if (estEnLigne) {
                     badge.innerText = "Connecté 🟢";
                     badge.className = "sync-indicator sync-online";
+                    chargerListeKines();
                     chargerDonneesDepuisServeur();
                 } else {
                     badge.innerText = "Hors-ligne 🔴";
@@ -524,6 +548,7 @@
             if (!initialiserSupabase()) return;
             supabaseClient.channel('custom-all-channel')
             .on('postgres_changes', { event: '*', schema: 'public' }, () => {
+                chargerListeKines();
                 chargerDonneesDepuisServeur();
             })
             .subscribe();
@@ -574,8 +599,8 @@
                 btn.innerText = "Voir le Fichier Patients 🗂️";
                 document.getElementById('header-planning').style.display = 'block';
                 document.getElementById('header-fichier').style.display = 'none';
-                document.getElementById('view-planning').classList.remove('active');
-                document.getElementById('view-app').classList.add('active');
+                document.getElementById('view-fichier').classList.remove('active');
+                document.getElementById('view-planning').classList.add('active');
             }
             rafraichirAffichage();
         }
@@ -792,7 +817,7 @@
             fermerModal('modal-patient');
 
             if (!initialiserSupabase()) { 
-                alert("La base de données n'est pas connectée. Réessayez."); 
+                alert("La base de données n'est pas connectée."); 
                 return; 
             }
 
