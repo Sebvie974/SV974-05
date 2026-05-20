@@ -190,7 +190,8 @@
             font-size: 0.85rem;
         }
         button { cursor: pointer; }
-        button:disabled { opacity: 0.4 !important; cursor: not-allowed !important; }
+        button:disabled { opacity: 0.5 !important; cursor: not-allowed !important; pointer-events: none !important; }
+        
         .btn-primary { background-color: var(--primary); color: white; flex: 1; }
         .btn-secondary { background-color: var(--neutral); color: white; }
         .btn-success { background-color: var(--success); color: white; }
@@ -291,6 +292,13 @@
                     </div>
                 </div>
                 <div id="liste-kines-admin" style="display: flex; flex-direction: column; gap: 5px; max-height: 120px; overflow-y: auto;"></div>
+                
+                <h4 style="margin: 15px 0 5px 0; color: var(--purple);">💾 Sauvegarde & Restauration</h4>
+                <div style="display: flex; gap: 5px; background: #f4f6f9; padding: 8px; border-radius: 8px;">
+                    <button class="btn-primary" style="padding:8px; font-size:0.8rem; flex:1;" onclick="exporterToutesDonnees()">Exporter ⬇️</button>
+                    <button class="btn-orange" style="padding:8px; font-size:0.8rem; flex:1;" onclick="document.getElementById('import-file').click()">Importer ⬆️</button>
+                    <input type="file" id="import-file" style="display:none" accept=".json" onchange="importerToutesDonnees(event)">
+                </div>
             </div>
         </div>
     </div>
@@ -340,12 +348,13 @@
                 <div class="stats" id="tournee-stats">Chargement...</div>
                 
                 <div class="actions-bar">
-                    <button class="btn-primary" id="btn-rapport-jour" onclick="exporterRapportJour()" style="padding: 4px 8px; font-size: 0.75rem; flex: 0 0 auto;">Rapport Jour 📋</button>
-                    <button class="btn-purple" id="btn-rapport-semaine" onclick="exporterRapportSemaine()" style="padding: 4px 8px; font-size: 0.75rem; flex: 0 0 auto;">Rapport Hebdo 📅</button>
-                    <button class="btn-secondary" onclick="ouvrirVueGlobaleJour()" style="background-color: #64748b; color: white;">Vue Globale 📄</button>
-                    <button class="btn-success" id="btn-global-planifier" onclick="ouvrirPlanificateur()">Planifier ➕</button>
-                    <button class="btn-secondary" id="btn-global-reset" onclick="reinitialiserJour()">Reset 🔄</button>
-                    <button class="btn-filter-tla" id="btn-filtre-tla-uniquement" onclick="basculerFiltreTlaUniquement()" style="padding: 8px 12px; font-weight: bold; border-radius: 8px;">Filtre TLA 📱</button>
+                    <button class="btn-primary" id="btn-rapport-jour" onclick="exporterRapportJour()" style="padding: 4px 6px; font-size: 0.75rem; flex: none;">Jour 📋</button>
+                    <button class="btn-purple" id="btn-rapport-semaine" onclick="exporterRapportSemaine()" style="padding: 4px 6px; font-size: 0.75rem; flex: none;">Hebdo 📅</button>
+                    <button class="btn-secondary" onclick="ouvrirVueGlobaleJour()" style="background-color: #64748b; color: white; padding: 4px 6px; font-size: 0.75rem; flex: none;">Globale 📄</button>
+                    <button class="btn-filter-tla" id="btn-filtre-tla-uniquement" onclick="basculerFiltreTlaUniquement()" style="padding: 4px 6px; font-size: 0.75rem; font-weight: bold; border-radius: 8px; flex: none;">Filtre TLA 📱</button>
+                    
+                    <button class="btn-success" id="btn-global-planifier" onclick="ouvrirPlanificateur()" style="flex: 1;">Planifier ➕</button>
+                    <button class="btn-secondary" id="btn-global-reset" onclick="reinitialiserJour()" style="flex: none;">Reset 🔄</button>
                     <button class="btn-orange" style="width:100%; margin-top:4px;" id="btn-verrouiller-jour" onclick="gererVerrouillageJour()">Valider et Verrouiller 🔒</button>
                 </div>
             </div>
@@ -482,7 +491,7 @@
         let listeUtilisateursComplets = []; 
         let filtreTlaUniquementActif = false;
         
-        let currentAbsences = []; // Pour la gestion dans la modale patient
+        let currentAbsences = []; 
 
         function initialiserSupabase() {
             if (supabaseClient === null) {
@@ -670,6 +679,58 @@
             chargerDonneesDepuisServeur(); 
             brancherTempsReel();
         }
+
+        // --- FONCTIONS IMPORT / EXPORT DE DONNÉES ---
+        async function exporterToutesDonnees() {
+            if(!initialiserSupabase()) return;
+            try {
+                const resPatients = await supabaseClient.from('catalogue_patients').select('*');
+                const resPlanning = await supabaseClient.from('plannings_dates').select('*');
+                const resPrat = await supabaseClient.from('practiciens').select('*');
+                
+                const backup = {
+                    date: new Date().toISOString(),
+                    patients: resPatients.data || [],
+                    plannings: resPlanning.data || [],
+                    praticiens: resPrat.data || []
+                };
+                const blob = new Blob([JSON.stringify(backup, null, 2)], {type: 'application/json'});
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `backup_kine_${new Date().toISOString().split('T')[0]}.json`;
+                a.click();
+                URL.revokeObjectURL(url);
+            } catch(e) {
+                alert("Erreur lors de l'export: " + e.message);
+            }
+        }
+
+        async function importerToutesDonnees(event) {
+            const file = event.target.files[0];
+            if(!file) return;
+            const reader = new FileReader();
+            reader.onload = async (e) => {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    if(!confirm("⚠️ ATTENTION : L'importation va écraser les données existantes. Continuer ?")) {
+                        document.getElementById('import-file').value = "";
+                        return;
+                    }
+                    if(!initialiserSupabase()) return;
+                    
+                    if(data.praticiens && data.praticiens.length > 0) await supabaseClient.from('practiciens').upsert(data.praticiens);
+                    if(data.patients && data.patients.length > 0) await supabaseClient.from('catalogue_patients').upsert(data.patients);
+                    if(data.plannings && data.plannings.length > 0) await supabaseClient.from('plannings_dates').upsert(data.plannings);
+                    
+                    alert("✅ Importation terminée avec succès ! L'application va se recharger.");
+                    window.location.reload();
+                } catch(err) {
+                    alert("❌ Erreur lors de l'importation : " + err.message);
+                }
+            };
+            reader.readAsText(file);
+        }
 async function chargerDonneesDepuisServeur() {
             if (!initialiserSupabase()) return;
             try {
@@ -759,14 +820,13 @@ async function chargerDonneesDepuisServeur() {
             return (a.ordre || 0) - (b.ordre || 0);
         }
 
-        // Nouvelle fonction pour vérifier l'historique des absences à une date précise
         function estPatientAbsentA(dateIso, historiqueJsonStr) {
             if(!historiqueJsonStr) return null;
             try {
                 const abs = JSON.parse(historiqueJsonStr);
                 for(let a of abs) {
                     if(dateIso >= a.debut && (!a.fin || dateIso <= a.fin)) {
-                        return a; // Retourne l'objet {type, debut, fin}
+                        return a;
                     }
                 }
             } catch(e) { console.error("Erreur parsing historique"); }
@@ -867,26 +927,30 @@ async function chargerDonneesDepuisServeur() {
                 const masquerFleches = kineVisionne === "TOUS" || (rdv.verrouille && !estSecretariat);
                 const affichageHeure = (rdv.heure && rdv.heure !== "00:00") ? `🕒 ${rdv.heure}` : "⏰ Non spécifié";
 
+                // CHANGEMENT TLA SECRÉTARIAT ICI
                 let htmlModuleTla = '';
                 if (estSecretariat) {
                     if (rdv.tlaStatut === 'facture') {
                         htmlModuleTla = `
                             <div style="display:flex; flex-direction:column; gap:2px;">
                                 <span class="badge-tla-sec-facture">✅ Facturé (TLA traité)</span>
-                                <button class="btn-icon" style="font-size:0.75rem; color:var(--danger); text-align:left; padding:0; font-weight:bold;" onclick="basculerTlaStatut('${rdv.idPlanif}', 'secretariat_click')">🔄 Annuler la demande</button>
+                                <button class="btn-icon" style="font-size:0.75rem; color:var(--danger); text-align:left; padding:0; font-weight:bold;" onclick="basculerTlaStatut('${rdv.idPlanif}', 'annuler_facture')">🔄 Annuler la facturation</button>
                             </div>`;
                     } else {
                         const isCoché = rdv.tlaStatut === 'dans_tla' ? 'checked' : '';
                         htmlModuleTla = `
-                            <label class="sec-tla-checkbox-container" onclick="event.stopPropagation();">
-                                <input type="checkbox" ${isCoché} onchange="basculerTlaStatut('${rdv.idPlanif}', 'secretariat_click')"> Facture au TLA
-                            </label>`;
+                            <div style="display:flex; align-items:center; gap:8px;">
+                                <label class="sec-tla-checkbox-container" onclick="event.stopPropagation();">
+                                    <input type="checkbox" ${isCoché} onchange="basculerTlaStatut('${rdv.idPlanif}', 'toggle_tla')"> TLA
+                                </label>
+                                ${rdv.tlaStatut === 'dans_tla' ? `<button class="btn-success" style="font-size:0.7rem; padding:4px 6px; border-radius:4px;" onclick="basculerTlaStatut('${rdv.idPlanif}', 'valider_facture')">Facturer ✅</button>` : ''}
+                            </div>`;
                     }
                 } else {
                     if (rdv.tlaStatut === 'dans_tla') {
-                        htmlModuleTla = `<button class="badge-tla-kine" onclick="basculerTlaStatut('${rdv.idPlanif}', 'kine_click')">📱 TLA</button>`;
+                        htmlModuleTla = `<button class="badge-tla-kine" ${desactiveBouton} onclick="basculerTlaStatut('${rdv.idPlanif}', 'kine_click')">📱 TLA</button>`;
                     } else if (rdv.tlaStatut === 'facture') {
-                        htmlModuleTla = `<button class="badge-tla-kine facture" onclick="basculerTlaStatut('${rdv.idPlanif}', 'kine_click')">✓ TLA</button>`;
+                        htmlModuleTla = `<button class="badge-tla-kine facture" ${desactiveBouton} onclick="basculerTlaStatut('${rdv.idPlanif}', 'kine_click')">✓ TLA</button>`;
                     }
                 }
 
@@ -945,7 +1009,20 @@ async function chargerDonneesDepuisServeur() {
             });
         }
 
+        // VERIFICATION DE SECURITE AVANT MODIFICATION EN BASE DE DONNÉES
+        function verifierVerrouillageBackend(idPlanif) {
+            const dateSelectionnee = datesSemaineEnCours[indiceJourActuel];
+            const cleDate = getCleDate(dateSelectionnee);
+            const rdv = planningsParDate[cleDate]?.find(r => String(r.idPlanif) === String(idPlanif));
+            if (rdv && rdv.verrouille && kineRole !== 'secretariat') {
+                alert("Action impossible : la journée est verrouillée.");
+                return true; // est verrouillé
+            }
+            return false; // non verrouillé
+        }
+
         async function deplacerRdv(idPlanif, direction) {
+            if (verifierVerrouillageBackend(idPlanif)) return;
             const dateSelectionnee = datesSemaineEnCours[indiceJourActuel];
             const cleDate = getCleDate(dateSelectionnee);
             let rdvDuJour = planningsParDate[cleDate].filter(r => r.kineNom === kineVisionne);
@@ -975,6 +1052,7 @@ async function chargerDonneesDepuisServeur() {
         }
 
         async function changerStatutRdv(idPlanif, nouveauStatut) {
+            if (verifierVerrouillageBackend(idPlanif)) return;
             if (!initialiserSupabase()) return;
             
             let statutFinal = nouveauStatut;
@@ -993,6 +1071,7 @@ async function chargerDonneesDepuisServeur() {
         }
 
         async function basculerTlaStatut(idPlanif, source) {
+            if (verifierVerrouillageBackend(idPlanif)) return;
             if (!initialiserSupabase()) return;
             const dateSelectionnee = datesSemaineEnCours[indiceJourActuel];
             const cleDate = getCleDate(dateSelectionnee);
@@ -1002,8 +1081,12 @@ async function chargerDonneesDepuisServeur() {
             let nouveauStatut = null;
             if (source === 'kine_click') {
                 nouveauStatut = (rdv.tlaStatut === 'dans_tla') ? null : 'dans_tla';
-            } else if (source === 'secretariat_click') {
-                nouveauStatut = (rdv.tlaStatut === 'dans_tla') ? 'facture' : (rdv.tlaStatut === 'facture' ? 'dans_tla' : 'dans_tla');
+            } else if (source === 'toggle_tla') {
+                nouveauStatut = (rdv.tlaStatut === 'dans_tla') ? null : 'dans_tla';
+            } else if (source === 'valider_facture') {
+                nouveauStatut = 'facture';
+            } else if (source === 'annuler_facture') {
+                nouveauStatut = 'dans_tla';
             }
 
             try {
@@ -1013,6 +1096,7 @@ async function chargerDonneesDepuisServeur() {
         }
 
         async function retirerDuPlanning(idPlanif) {
+            if (verifierVerrouillageBackend(idPlanif)) return;
             if (!confirm("Retirer ce patient du planning pour ce jour ?")) return;
             if (!initialiserSupabase()) return;
             try {
@@ -1071,7 +1155,6 @@ async function chargerDonneesDepuisServeur() {
             }
         }
 
-        // MAJ Render Checkboxes Dynamique pour Planificateur
         function renderCheckboxesPlanificateur(patientId) {
             const patient = cataloguePatients.find(p => String(p.id) === String(patientId));
             const hist = patient ? patient.historique_absences : null;
@@ -1149,6 +1232,7 @@ async function chargerDonneesDepuisServeur() {
             }
         }
 
+        // MAJ DU VERROUILLAGE AVEC MOT DE PASSE
         async function gererVerrouillageJour() {
             if (!initialiserSupabase()) return;
             const dateSelectionnee = datesSemaineEnCours[indiceJourActuel];
@@ -1158,17 +1242,27 @@ async function chargerDonneesDepuisServeur() {
             if(rdvDuJour.length === 0) return;
 
             const estDejaVerrouille = rdvDuJour.some(r => r.verrouille === true);
-            const message = estDejaVerrouille ? "Déverrouiller cette journée ?" : "Verrouiller cette journée ? Plus aucune modification ne sera possible pour les kinés.";
             
-            if (confirm(message)) {
-                try {
-                    const idsToUpdate = rdvDuJour.map(r => r.idPlanif);
-                    await supabaseClient.from('plannings_dates')
-                        .update({ journee_verrouillee: !estDejaVerrouille })
-                        .in('id_planif', idsToUpdate);
-                    chargerDonneesDepuisServeur();
-                } catch(e) { console.error(e); }
+            if (estDejaVerrouille) {
+                const mdpSaisi = prompt("🔒 Cette tournée est verrouillée.\n\nVeuillez saisir votre mot de passe pour la déverrouiller :");
+                if (mdpSaisi === null) return; // L'utilisateur a cliqué sur Annuler
+                
+                const userActuel = listeUtilisateursComplets.find(u => u.nom === kineConnecte);
+                if (!userActuel || userActuel.mot_de_passe !== mdpSaisi) {
+                    alert("❌ Mot de passe incorrect. Déverrouillage annulé.");
+                    return;
+                }
+            } else {
+                if (!confirm("Verrouiller cette journée ? Plus aucune modification ne sera possible pour les kinés.")) return;
             }
+            
+            try {
+                const idsToUpdate = rdvDuJour.map(r => r.idPlanif);
+                await supabaseClient.from('plannings_dates')
+                    .update({ journee_verrouillee: !estDejaVerrouille })
+                    .in('id_planif', idsToUpdate);
+                chargerDonneesDepuisServeur();
+            } catch(e) { console.error(e); }
         }
 
         async function reinitialiserJour() {
@@ -1327,7 +1421,6 @@ async function chargerDonneesDepuisServeur() {
             }).join('');
         }
 
-        // --- GESTION DES ABSENCES DANS LA MODALE ---
         function renderAbsences() {
             const conteneur = document.getElementById('conteneur-liste-absences');
             if(currentAbsences.length === 0) {
@@ -1371,7 +1464,6 @@ async function chargerDonneesDepuisServeur() {
             document.getElementById('patient-notes').value = id ? (p.notes || '') : '';
             document.getElementById('patient-aprevoir').checked = id ? (p.a_prevoir || false) : false;
             
-            // Chargement Historique Absences
             try { currentAbsences = id && p.historique_absences ? JSON.parse(p.historique_absences) : []; } 
             catch(e) { currentAbsences = []; }
             renderAbsences();
