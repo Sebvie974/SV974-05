@@ -105,16 +105,16 @@
 
         header {
             background: var(--card-bg);
-            padding: 10px 12px; /* Marges réduites */
+            padding: 10px 12px;
             border-radius: 12px;
             box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-            margin-bottom: 10px; /* Espace réduit */
+            margin-bottom: 10px;
             position: sticky;
             top: 0;
             z-index: 10;
         }
 
-        h1 { margin: 0; font-size: 1.25rem; color: var(--primary); } /* Taille de police réduite */
+        h1 { margin: 0; font-size: 1.25rem; color: var(--primary); }
 
         .user-badge {
             font-size: 0.85rem;
@@ -184,16 +184,13 @@
 
         button, select, input, textarea {
             border: none;
-            padding: 8px 12px; /* Marges réduites pour affiner globalement */
+            padding: 8px 12px;
             border-radius: 8px;
             font-weight: bold;
             font-size: 0.85rem;
         }
         button { cursor: pointer; }
-        button:disabled {
-            opacity: 0.4 !important;
-            cursor: not-allowed !important;
-        }
+        button:disabled { opacity: 0.4 !important; cursor: not-allowed !important; }
         .btn-primary { background-color: var(--primary); color: white; flex: 1; }
         .btn-secondary { background-color: var(--neutral); color: white; }
         .btn-success { background-color: var(--success); color: white; }
@@ -202,11 +199,11 @@
         .btn-orange { background-color: var(--orange); color: white; }
 
         .app-view { display: none; }
-        .app-view.active { display: flex; flex-direction: column; gap: 6px; } /* Espace réduit entre les patients */
+        .app-view.active { display: flex; flex-direction: column; gap: 6px; }
         
         .patient-card {
             background: var(--card-bg);
-            padding: 8px 10px; /* Lignes compactées */
+            padding: 8px 10px;
             border-radius: 10px;
             box-shadow: 0 2px 5px rgba(0,0,0,0.03);
             display: flex;
@@ -221,40 +218,17 @@
         .patient-card-left { display: flex; align-items: center; gap: 8px; max-width: 68%; }
         
         .reorder-actions { display: flex; flex-direction: column; gap: 4px; }
-        .btn-reorder {
-            background: #e5e5ea;
-            padding: 4px 6px;
-            font-size: 0.75rem;
-            border-radius: 4px;
-            color: #555;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
+        .btn-reorder { background: #e5e5ea; padding: 4px 6px; font-size: 0.75rem; border-radius: 4px; color: #555; display: flex; align-items: center; justify-content: center; }
         .btn-reorder:active { background: #ccc; }
 
-        .patient-info { display: flex; flex-direction: column; gap: 2px; }
+        .patient-info { display: flex; flex-direction: column; gap: 2px; width: 100%; }
         .patient-name { font-weight: 600; font-size: 1rem; }
         .patient-address { font-size: 0.8rem; color: var(--neutral); text-decoration: none; }
         .patient-phone { font-size: 0.8rem; color: var(--primary); text-decoration: none; font-weight: bold; }
         .kine-tag { font-size: 0.75rem; background: #e5e5ea; color: #555; padding: 2px 6px; border-radius: 4px; font-weight: bold; width: fit-content; margin-top: 2px;}
         .badge-card-prevoir { font-size: 0.7rem; background: var(--danger); color: white; padding: 2px 6px; border-radius: 4px; font-weight: bold; width: fit-content; }
         
-        .badge-tla-kine {
-            font-size: 0.75rem;
-            background-color: var(--tla-color);
-            color: white;
-            padding: 4px 8px;
-            border-radius: 6px;
-            font-weight: bold;
-            cursor: pointer;
-            display: inline-flex;
-            align-items: center;
-            gap: 4px;
-            width: fit-content;
-            margin-top: 2px;
-            border: none;
-        }
+        .badge-tla-kine { font-size: 0.75rem; background-color: var(--tla-color); color: white; padding: 4px 8px; border-radius: 6px; font-weight: bold; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; width: fit-content; margin-top: 2px; border: none; }
         .badge-tla-kine.facture { background-color: #e5e5ea; color: #8e8e93; text-decoration: line-through; }
         .badge-tla-sec-facture { font-size: 0.7rem; background-color: var(--success); color: white; padding: 4px 6px; border-radius: 4px; font-weight: bold; width: fit-content; margin-top: 2px; }
         .sec-tla-checkbox-container { display: flex; align-items: center; gap: 6px; font-size: 0.8rem; color: #333; margin-top: 2px; cursor: pointer; background: #eefdfb; padding: 4px 8px; border-radius: 4px; width: fit-content; font-weight: bold; }
@@ -262,59 +236,24 @@
         .btn-filter-tla { background-color: #e5e5ea; color: #555; transition: all 0.2s ease; }
         .btn-filter-tla.active { background-color: #00c7b1; color: white; }
 
-        .btn-note-declencheur {
-            font-size: 0.75rem;
-            background: #fff3cd;
-            color: #856404;
-            padding: 4px 8px;
-            border-radius: 6px;
-            font-weight: bold;
-            width: fit-content;
-            margin-top: 2px;
-            cursor: pointer;
-            border: 1px solid #ffeeba;
-            display: inline-block;
-        }
+        .btn-note-declencheur { font-size: 0.75rem; background: #fff3cd; color: #856404; padding: 4px 8px; border-radius: 6px; font-weight: bold; width: fit-content; cursor: pointer; border: 1px solid #ffeeba; display: inline-block; }
+        
+        /* Nouveau style pour le bouton bilan */
+        .btn-bilan-declencheur { font-size: 0.75rem; background: #e0f2fe; color: #0284c7; padding: 4px 8px; border-radius: 6px; font-weight: bold; width: fit-content; cursor: pointer; border: 1px solid #bae6fd; display: inline-block; }
 
         .btn-group { display: flex; gap: 6px; align-items: center; }
-        /* Boutons de validation de séance rétrécis */
         .btn-status { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1rem; background: #f0f0f5; }
         .btn-vu.active { background-color: var(--success); color: white; }
         .btn-nonvu.active { background-color: var(--danger); color: white; }
         .btn-icon { background: transparent; font-size: 0.9rem; border: none; cursor: pointer; }
 
-        .modal {
-            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.5); z-index: 120; justify-content: center; align-items: center;
-        }
-        .modal-content {
-            background: white; padding: 20px; border-radius: 16px; width: 90%; max-width: 400px;
-            display: flex; flex-direction: column; gap: 12px; max-height: 90vh; overflow-y: auto;
-        }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 120; justify-content: center; align-items: center; padding: 10px; box-sizing: border-box; }
+        .modal-content { background: white; padding: 20px; border-radius: 16px; width: 100%; max-width: 400px; display: flex; flex-direction: column; gap: 12px; max-height: 90vh; overflow-y: auto; box-sizing: border-box;}
         .modal-content input, .modal-content select, .modal-content textarea { width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #ccc; box-sizing: border-box; }
         .days-checkbox-grid { display: flex; flex-direction: column; gap: 8px; background: #f4f6f9; padding: 10px; border-radius: 8px; }
         
-        .item-prevoir-modal {
-            background: #f4f6f9;
-            padding: 10px;
-            border-radius: 8px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 10px;
-            border-left: 4px solid var(--danger);
-        }
-
-        .search-container {
-            background: var(--card-bg);
-            padding: 10px;
-            border-radius: 12px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.03);
-            margin-bottom: 5px;
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-        }
+        .item-prevoir-modal { background: #f4f6f9; padding: 10px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; gap: 10px; border-left: 4px solid var(--danger); }
+        .search-container { background: var(--card-bg); padding: 10px; border-radius: 12px; box-shadow: 0 2px 5px rgba(0,0,0,0.03); margin-bottom: 5px; display: flex; flex-direction: column; gap: 6px; }
         .search-input { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; font-size: 0.95rem; background: #f9f9f9; }
         .search-input:focus { outline: 2px solid var(--purple); background: white; }
         .search-counter { font-size: 0.8rem; color: var(--neutral); font-weight: bold; padding-left: 4px; }
@@ -326,29 +265,23 @@
         <div class="login-box">
             <button class="btn-config-corner" onclick="basculerAffichageConfig('login')" title="Gérer le personnel">⚙️</button>
             <h2 style="color: var(--primary); margin:0;">Accès Cabinet</h2>
-            <p style="color: var(--neutral); font-size:0.9rem; margin:0;">Sélectionnez votre profil pour vous connecter.</p>
-            <select id="kine-select-login" style="padding:10px; font-size:1rem; border:1px solid #ccc; font-weight: bold;">
-                <option value="">Chargement des utilisateurs...</option>
-            </select>
-            <input type="password" id="password-input" placeholder="Votre mot de passe personnel" style="padding:10px; border:1px solid #ccc; text-align:center; font-size:1.1rem;">
+            <p style="color: var(--neutral); font-size:0.9rem; margin:0;">Sélectionnez votre profil.</p>
+            <select id="kine-select-login" style="padding:10px; font-size:1rem; border:1px solid #ccc; font-weight: bold;"><option value="">Chargement...</option></select>
+            <input type="password" id="password-input" placeholder="Mot de passe" style="padding:10px; border:1px solid #ccc; text-align:center; font-size:1.1rem;">
             <button class="btn-primary" style="padding:10px; font-size:1rem;" onclick="verifierConnexion()">Se connecter 🔐</button>
             
             <div id="config-panel">
-                <h4 id="titre-form-kine" style="margin: 0 0 5px 0; color: var(--purple);">⚙️ Gestion des Comptes Personnel</h4>
+                <h4 id="titre-form-kine" style="margin: 0 0 5px 0; color: var(--purple);">⚙️ Comptes</h4>
                 <div style="display: flex; flex-direction: column; gap: 5px; margin-bottom: 10px; background: #f4f6f9; padding: 8px; border-radius: 8px;">
                     <input type="hidden" id="kine-id-edite">
-                    <input type="text" id="nouveau-kine-input" placeholder="Nom de l'utilisateur" style="padding:6px; border:1px solid #ccc; background: white;">
-                    <input type="password" id="nouveau-mdp-input" placeholder="Mot de passe dédié" style="padding:6px; border:1px solid #ccc; background: white;">
+                    <input type="text" id="nouveau-kine-input" placeholder="Nom d'utilisateur" style="padding:6px; border:1px solid #ccc; background: white;">
+                    <input type="password" id="nouveau-mdp-input" placeholder="Mot de passe" style="padding:6px; border:1px solid #ccc; background: white;">
                     <select id="nouveau-role-input" style="padding:6px; border:1px solid #ccc; background: white; font-weight: bold;">
-                        <option value="kine">Rôle : Kiné</option>
-                        <option value="remplacant">Rôle : Remplaçant</option>
-                        <option value="secretariat">Rôle : Secrétariat</option>
+                        <option value="kine">Kiné</option><option value="remplacant">Remplaçant</option><option value="secretariat">Secrétariat</option>
                     </select>
-                    <select id="nouveau-kine-remplace-input" style="padding:6px; border:1px solid #ccc; background: white; font-weight: bold; display: none;">
-                        <option value="">-- Quel Kiné remplace-t-il ? --</option>
-                    </select>
+                    <select id="nouveau-kine-remplace-input" style="padding:6px; border:1px solid #ccc; background: white; font-weight: bold; display: none;"></select>
                     <div style="display: flex; gap: 5px; width: 100%;">
-                        <button id="btn-soumettre-kine" class="btn-success" style="padding:8px; flex: 1;" onclick="sauvegarderKine()">Créer l'utilisateur</button>
+                        <button id="btn-soumettre-kine" class="btn-success" style="padding:8px; flex: 1;" onclick="sauvegarderKine()">Créer</button>
                         <button id="btn-annuler-kine" class="btn-secondary" style="padding:8px; display: none;" onclick="reinitialiserFormulaireKine()">Annuler</button>
                     </div>
                 </div>
@@ -358,9 +291,7 @@
     </div>
 
     <div id="main-app">
-        <div id="bandeau-a-prevoir" onclick="ouvrirModalAPrevoir()">
-            🚀 <span id="texte-bandeau-prevoir">0 patient à prévoir en attente</span>
-        </div>
+        <div id="bandeau-a-prevoir" onclick="ouvrirModalAPrevoir()">🚀 <span id="texte-bandeau-prevoir">0 patient à prévoir en attente</span></div>
 
         <header>
             <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
@@ -397,7 +328,7 @@
             <div id="header-planning">
                 <div class="week-selector">
                     <button class="week-btn" onclick="changerSemaine(-1)">◀ Préc.</button>
-                    <span id="label-semaine">Semaine du ...</span>
+                    <span id="label-semaine">Semaine...</span>
                     <button class="week-btn" onclick="changerSemaine(1)">Suiv. ▶</button>
                 </div>
                 <div class="days-nav" id="days-tabs"></div>
@@ -408,14 +339,14 @@
                     <button class="btn-success" id="btn-global-planifier" onclick="ouvrirPlanificateur()">Planifier ➕</button>
                     <button class="btn-secondary" id="btn-global-reset" onclick="reinitialiserJour()">Reset 🔄</button>
                     <button class="btn-filter-tla" id="btn-filtre-tla-uniquement" onclick="basculerFiltreTlaUniquement()" style="padding: 8px 12px; font-weight: bold; border-radius: 8px;">Filtre TLA 📱</button>
-                    <button class="btn-orange" style="width:100%; margin-top:4px;" id="btn-verrouiller-jour" onclick="gererVerrouillageJour()">Valider et Verrouiller ma journée 🔒</button>
+                    <button class="btn-orange" style="width:100%; margin-top:4px;" id="btn-verrouiller-jour" onclick="gererVerrouillageJour()">Valider et Verrouiller 🔒</button>
                 </div>
             </div>
 
             <div id="header-fichier" style="display: none;">
-                <button class="btn-success" style="width: 100%; margin-bottom: 10px;" onclick="ouvrirFormulairePatient()">Créer un nouveau patient 👤➕</button>
+                <button class="btn-success" style="width: 100%; margin-bottom: 10px;" onclick="ouvrirFormulairePatient()">Nouveau patient 👤➕</button>
                 <div class="search-container">
-                    <input type="text" id="recherche-patient-input" class="search-input" placeholder="🔍 Rechercher un patient (Nom, adresse...)" oninput="filtrerFichierPatientsIntuitivement()">
+                    <input type="text" id="recherche-patient-input" class="search-input" placeholder="🔍 Rechercher (Nom, adresse...)" oninput="filtrerFichierPatientsIntuitivement()">
                     <span id="compteur-recherche" class="search-counter">0 patient enregistré</span>
                 </div>
             </div>
@@ -430,7 +361,7 @@
     <div class="modal" id="modal-liste-prevoir"><div class="modal-content" style="max-width: 500px;"><h3 style="color: var(--danger);">🚨 Patients à prévoir</h3><div id="conteneur-liste-prevoir" style="display: flex; flex-direction: column; gap: 10px; max-height: 50vh; overflow-y: auto;"></div><div style="margin-top: 10px; text-align: right;"><button class="btn-secondary" onclick="fermerModal('modal-liste-prevoir')">Fermer</button></div></div></div>
     
     <div class="modal" id="modal-note-volante" onclick="fermerModal('modal-note-volante')">
-        <div class="modal-content" style="max-width: 450px; width: 95%;" onclick="event.stopPropagation()">
+        <div class="modal-content" style="max-width: 500px;" onclick="event.stopPropagation()">
             <h3 style="margin: 0 0 5px 0; color: var(--purple);">📝 Notes & Infos</h3>
             <p id="note-volante-nom-patient" style="font-weight: bold; margin: 0 0 5px 0;"></p>
             <input type="hidden" id="note-volante-patient-id">
@@ -441,10 +372,23 @@
             </div>
         </div>
     </div>
+
+    <div class="modal" id="modal-bilan" onclick="fermerModal('modal-bilan')">
+        <div class="modal-content" style="max-width: 650px;" onclick="event.stopPropagation()">
+            <h3 style="margin: 0 0 5px 0; color: #0284c7;">📋 Bilan Kiné</h3>
+            <p id="bilan-nom-patient" style="font-weight: bold; margin: 0 0 5px 0;"></p>
+            <input type="hidden" id="bilan-patient-id">
+            <textarea id="bilan-corps" rows="15" placeholder="Saisissez le bilan du patient ici..." style="width: 100%; min-height: 300px; background: #fdfdfd; padding: 12px; border-radius: 8px; border: 1px solid #ccc; border-left: 4px solid #0284c7; box-sizing: border-box; font-family: inherit; font-size: 0.95rem; resize: vertical; line-height: 1.4;"></textarea>
+            <div style="display: flex; gap: 10px; margin-top:5px;">
+                <button class="btn-success" onclick="sauvegarderBilan()">Enregistrer le Bilan 💾</button>
+                <button class="btn-secondary" onclick="fermerModal('modal-bilan')">Fermer</button>
+            </div>
+        </div>
+    </div>
     
     <div class="modal" id="modal-planifier"><div class="modal-content"><h3>Planifier un patient</h3><label>Praticien affecté</label><select id="planif-kine-affecte"></select><label>Choisir un patient</label><select id="select-patient"></select><label>Heure</label><input type="time" id="planif-heure"><label>Jours :</label><div class="days-checkbox-grid" id="conteneur-jours-checkbox"></div><div style="display: flex; gap: 10px; margin-top: 10px;"><button class="btn-primary" onclick="ajouterAuPlanningMultiJours()">Planifier</button><button class="btn-secondary" onclick="fermerModal('modal-planifier')">Annuler</button></div></div></div>
     
-    <div class="modal" id="modal-patient"><div class="modal-content"><h3 id="patient-modal-title">Fiche Patient</h3><input type="hidden" id="patient-id"><label>Nom</label><input type="text" id="patient-nom" required><label>Adresse</label><input type="text" id="patient-adresse" required><label>Tél 1</label><input type="tel" id="patient-telephone"><div id="zone-tel-secondaire" style="display:none; flex-direction:column; gap:4px;"><label>Tél 2</label><input type="tel" id="patient-telephone2"></div><button type="button" id="btn-add-tel2" class="btn-secondary" style="padding:5px; font-size:0.8rem; width:fit-content;" onclick="document.getElementById('zone-tel-secondaire').style.display='flex'; this.style.display='none';">➕ Ajouter un autre numéro</button><label>Informations</label><textarea id="patient-notes" rows="3"></textarea><label style="display: flex; align-items: center; gap: 10px; background: #ffe5e5; padding: 10px; border-radius: 8px; margin-top: 5px; font-weight: bold; color: #b30000; cursor: pointer;"><input type="checkbox" id="patient-aprevoir" style="width: auto;"> 🚨 Patient à prévoir</label><div style="display: flex; gap: 10px; margin-top: 10px;"><button class="btn-purple" onclick="sauvegarderFichePatient()">Enregistrer</button><button class="btn-danger" id="btn-supprimer-fiche" onclick="supprimerFichePatient()">Supprimer</button><button class="btn-secondary" onclick="fermerModal('modal-patient')">Annuler</button></div></div></div>
+    <div class="modal" id="modal-patient"><div class="modal-content"><h3 id="patient-modal-title">Fiche Patient</h3><input type="hidden" id="patient-id"><label>Nom</label><input type="text" id="patient-nom" required><label>Adresse</label><input type="text" id="patient-adresse" required><label>Tél 1</label><input type="tel" id="patient-telephone"><div id="zone-tel-secondaire" style="display:none; flex-direction:column; gap:4px;"><label>Tél 2</label><input type="tel" id="patient-telephone2"></div><button type="button" id="btn-add-tel2" class="btn-secondary" style="padding:5px; font-size:0.8rem; width:fit-content;" onclick="document.getElementById('zone-tel-secondaire').style.display='flex'; this.style.display='none';">➕ Ajouter un autre numéro</button><label>Informations (Petite note)</label><textarea id="patient-notes" rows="2"></textarea><label style="display: flex; align-items: center; gap: 10px; background: #ffe5e5; padding: 10px; border-radius: 8px; margin-top: 5px; font-weight: bold; color: #b30000; cursor: pointer;"><input type="checkbox" id="patient-aprevoir" style="width: auto;"> 🚨 Patient à prévoir</label><div style="display: flex; gap: 10px; margin-top: 10px;"><button class="btn-purple" onclick="sauvegarderFichePatient()">Enregistrer</button><button class="btn-danger" id="btn-supprimer-fiche" onclick="supprimerFichePatient()">Supprimer</button><button class="btn-secondary" onclick="fermerModal('modal-patient')">Annuler</button></div></div></div>
 
     <script>
         const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
@@ -615,7 +559,7 @@
                 kineConnecte = cible.nom; kineRole = cible.role; kineRemplace = cible.kine_remplace || '';
                 kineVisionne = (cible.role === 'remplacant' && cible.kine_remplace) ? cible.kine_remplace : (cible.role === 'secretariat' ? 'TOUS' : cible.nom);
                 initialiserApplication();
-            } else alert("Erreur.");
+            } else alert("Erreur de mot de passe.");
         }
 
         function deconnexion() { localStorage.clear(); window.location.reload(); }
@@ -849,9 +793,14 @@ async function chargerDonneesDepuisServeur() {
                     }
                 }
 
+                // Affichage Note / Bilan
                 const aDesNotes = patient.notes && patient.notes.trim() !== '';
                 const opaciteNote = aDesNotes ? '1' : '0.5';
                 const texteNote = aDesNotes ? '📝 Note' : '📝 Note (vide)';
+
+                const aUnBilan = patient.bilan && patient.bilan.trim() !== '';
+                const opaciteBilan = aUnBilan ? '1' : '0.5';
+                const texteBilan = aUnBilan ? '📋 Bilan' : '📋 Bilan (vide)';
 
                 card.innerHTML = `
                     <div class="patient-card-left">
@@ -868,7 +817,10 @@ async function chargerDonneesDepuisServeur() {
                             ${chaineTels ? `<a href="tel:${patient.telephone}" class="patient-phone">${chaineTels}</a>` : ''}
                             ${patient.a_prevoir ? `<span class="badge-card-prevoir">🚨 À prévoir</span>` : ''}
                             
-                            <span class="btn-note-declencheur" style="opacity: ${opaciteNote};" onclick="ouvrirNoteVolante('${patient.id}')">${texteNote}</span>
+                            <div style="display:flex; gap:6px; margin-top:2px; flex-wrap: wrap;">
+                                <span class="btn-note-declencheur" style="opacity: ${opaciteNote}; margin-top:0;" onclick="ouvrirNoteVolante('${patient.id}')">${texteNote}</span>
+                                <span class="btn-bilan-declencheur" style="opacity: ${opaciteBilan}; margin-top:0;" onclick="ouvrirBilan('${patient.id}')">${texteBilan}</span>
+                            </div>
                             
                             ${kineVisionne === "TOUS" ? `<span class="kine-tag">Praticien : ${rdv.kineNom} ${rdv.verrouille ? '🔒' : ''}</span>` : ''}
                             ${htmlModuleTla}
@@ -976,15 +928,37 @@ async function chargerDonneesDepuisServeur() {
             if (!initialiserSupabase()) return;
 
             try {
-                await supabaseClient.from('catalogue_patients')
-                    .update({ notes: nouvellesNotes })
-                    .eq('id', patientId);
-                
+                await supabaseClient.from('catalogue_patients').update({ notes: nouvellesNotes }).eq('id', patientId);
                 fermerModal('modal-note-volante');
                 chargerDonneesDepuisServeur(); 
             } catch(e) {
-                console.error("Erreur lors de la sauvegarde de la note", e);
+                console.error("Erreur de sauvegarde de la note", e);
                 alert("Erreur lors de la sauvegarde.");
+            }
+        }
+
+        function ouvrirBilan(patientId) {
+            const patient = cataloguePatients.find(p => String(p.id) === String(patientId));
+            if (!patient) return;
+            document.getElementById('bilan-nom-patient').innerText = `Patient : ${patient.nom}`;
+            document.getElementById('bilan-patient-id').value = patient.id;
+            document.getElementById('bilan-corps').value = patient.bilan || "";
+            ouvrirModal('modal-bilan');
+        }
+
+        async function sauvegarderBilan() {
+            const patientId = document.getElementById('bilan-patient-id').value;
+            const nouveauBilan = document.getElementById('bilan-corps').value;
+            
+            if (!initialiserSupabase()) return;
+
+            try {
+                await supabaseClient.from('catalogue_patients').update({ bilan: nouveauBilan }).eq('id', patientId);
+                fermerModal('modal-bilan');
+                chargerDonneesDepuisServeur(); 
+            } catch(e) {
+                console.error("Erreur de sauvegarde du bilan", e);
+                alert("Erreur. Avez-vous bien créé la colonne 'bilan' dans Supabase ?");
             }
         }
 
@@ -1018,10 +992,7 @@ async function chargerDonneesDepuisServeur() {
             const heure = document.getElementById('planif-heure').value;
             const checkboxes = document.querySelectorAll('#conteneur-jours-checkbox input[type="checkbox"]:checked');
             
-            if (checkboxes.length === 0) {
-                alert("Veuillez sélectionner au moins un jour.");
-                return;
-            }
+            if (checkboxes.length === 0) { alert("Veuillez sélectionner au moins un jour."); return; }
 
             if (!initialiserSupabase()) return;
 
@@ -1134,13 +1105,8 @@ async function chargerDonneesDepuisServeur() {
             document.getElementById('compteur-recherche').innerText = `${nb} patient(s) trouvé(s)`;
         }
 
-        function exporterRapportJour() {
-            alert("La fonction d'export du jour sera générée ici.");
-        }
-
-        function exporterRapportSemaine() {
-            alert("La fonction d'export de la semaine sera générée ici.");
-        }
+        function exporterRapportJour() { alert("La fonction d'export du jour sera générée ici."); }
+        function exporterRapportSemaine() { alert("La fonction d'export de la semaine sera générée ici."); }
 
         function afficherCatalogue() {
             const conteneur = document.getElementById('view-fichier');
@@ -1149,13 +1115,25 @@ async function chargerDonneesDepuisServeur() {
             
             document.getElementById('compteur-recherche').innerText = `${patientsFiltres.length} patient(s) enregistré(s)`;
 
-            conteneur.innerHTML = patientsFiltres.map(p => `
+            conteneur.innerHTML = patientsFiltres.map(p => {
+                const aDesNotes = p.notes && p.notes.trim() !== '';
+                const texteNote = aDesNotes ? '📝 Note' : '📝 Note (vide)';
+                
+                const aUnBilan = p.bilan && p.bilan.trim() !== '';
+                const texteBilan = aUnBilan ? '📋 Bilan' : '📋 Bilan (vide)';
+                
+                return `
                 <div class="patient-card" style="border-left-color:${p.a_prevoir ? 'var(--danger)' : 'var(--purple)'}; flex-direction: row; flex-wrap: wrap; align-items: center;">
                     <div class="patient-info" style="flex: 1; width: 100%;">
                         <span class="patient-name" style="cursor:pointer; color:var(--primary); text-decoration:underline;" onclick="ouvrirFormulairePatient('${p.id}')">${p.nom} ✏️ ${p.a_prevoir ? '<span class="badge-card-prevoir" style="margin-left: 8px;">🚨 À prévoir</span>' : ''}</span>
                         <span style="margin-top: 4px;">📍 ${p.adresse}</span>
+                        <div style="display:flex; gap:6px; margin-top:6px; flex-wrap: wrap;">
+                            <span class="btn-note-declencheur" style="opacity: ${aDesNotes ? '1' : '0.5'}; margin-top:0;" onclick="ouvrirNoteVolante('${p.id}')">${texteNote}</span>
+                            <span class="btn-bilan-declencheur" style="opacity: ${aUnBilan ? '1' : '0.5'}; margin-top:0;" onclick="ouvrirBilan('${p.id}')">${texteBilan}</span>
+                        </div>
                     </div>
-                </div>`).join('');
+                </div>`;
+            }).join('');
         }
 
         function ouvrirFormulairePatient(id = '') {
