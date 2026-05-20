@@ -237,8 +237,6 @@
         .btn-filter-tla.active { background-color: #00c7b1; color: white; }
 
         .btn-note-declencheur { font-size: 0.75rem; background: #fff3cd; color: #856404; padding: 4px 8px; border-radius: 6px; font-weight: bold; width: fit-content; cursor: pointer; border: 1px solid #ffeeba; display: inline-block; }
-        
-        /* Nouveau style pour le bouton bilan */
         .btn-bilan-declencheur { font-size: 0.75rem; background: #e0f2fe; color: #0284c7; padding: 4px 8px; border-radius: 6px; font-weight: bold; width: fit-content; cursor: pointer; border: 1px solid #bae6fd; display: inline-block; }
 
         .btn-group { display: flex; gap: 6px; align-items: center; }
@@ -333,9 +331,11 @@
                 </div>
                 <div class="days-nav" id="days-tabs"></div>
                 <div class="stats" id="tournee-stats">Chargement...</div>
+                
                 <div class="actions-bar">
                     <button class="btn-primary" id="btn-rapport-jour" onclick="exporterRapportJour()">Rapport Jour 📋</button>
                     <button class="btn-purple" id="btn-rapport-semaine" onclick="exporterRapportSemaine()">Rapport Hebdo 📅</button>
+                    <button class="btn-secondary" onclick="ouvrirVueGlobaleJour()" style="background-color: #64748b; color: white;">Vue Globale 📄</button>
                     <button class="btn-success" id="btn-global-planifier" onclick="ouvrirPlanificateur()">Planifier ➕</button>
                     <button class="btn-secondary" id="btn-global-reset" onclick="reinitialiserJour()">Reset 🔄</button>
                     <button class="btn-filter-tla" id="btn-filtre-tla-uniquement" onclick="basculerFiltreTlaUniquement()" style="padding: 8px 12px; font-weight: bold; border-radius: 8px;">Filtre TLA 📱</button>
@@ -386,6 +386,17 @@
         </div>
     </div>
     
+    <div class="modal" id="modal-vue-globale" onclick="fermerModal('modal-vue-globale')">
+        <div class="modal-content" style="max-width: 500px; width: 95%;" onclick="event.stopPropagation()">
+            <h3 style="margin: 0 0 10px 0; color: #475569;" id="titre-vue-globale">📄 Vue Globale</h3>
+            <div id="conteneur-vue-globale" style="display: flex; flex-direction: column; gap: 8px; max-height: 60vh; overflow-y: auto; background: #f1f5f9; padding: 10px; border-radius: 8px; border: 1px solid #cbd5e1;">
+                </div>
+            <div style="display: flex; justify-content: flex-end; margin-top:10px;">
+                <button class="btn-secondary" onclick="fermerModal('modal-vue-globale')">Fermer</button>
+            </div>
+        </div>
+    </div>
+
     <div class="modal" id="modal-planifier"><div class="modal-content"><h3>Planifier un patient</h3><label>Praticien affecté</label><select id="planif-kine-affecte"></select><label>Choisir un patient</label><select id="select-patient"></select><label>Heure</label><input type="time" id="planif-heure"><label>Jours :</label><div class="days-checkbox-grid" id="conteneur-jours-checkbox"></div><div style="display: flex; gap: 10px; margin-top: 10px;"><button class="btn-primary" onclick="ajouterAuPlanningMultiJours()">Planifier</button><button class="btn-secondary" onclick="fermerModal('modal-planifier')">Annuler</button></div></div></div>
     
     <div class="modal" id="modal-patient"><div class="modal-content"><h3 id="patient-modal-title">Fiche Patient</h3><input type="hidden" id="patient-id"><label>Nom</label><input type="text" id="patient-nom" required><label>Adresse</label><input type="text" id="patient-adresse" required><label>Tél 1</label><input type="tel" id="patient-telephone"><div id="zone-tel-secondaire" style="display:none; flex-direction:column; gap:4px;"><label>Tél 2</label><input type="tel" id="patient-telephone2"></div><button type="button" id="btn-add-tel2" class="btn-secondary" style="padding:5px; font-size:0.8rem; width:fit-content;" onclick="document.getElementById('zone-tel-secondaire').style.display='flex'; this.style.display='none';">➕ Ajouter un autre numéro</button><label>Informations (Petite note)</label><textarea id="patient-notes" rows="2"></textarea><label style="display: flex; align-items: center; gap: 10px; background: #ffe5e5; padding: 10px; border-radius: 8px; margin-top: 5px; font-weight: bold; color: #b30000; cursor: pointer;"><input type="checkbox" id="patient-aprevoir" style="width: auto;"> 🚨 Patient à prévoir</label><div style="display: flex; gap: 10px; margin-top: 10px;"><button class="btn-purple" onclick="sauvegarderFichePatient()">Enregistrer</button><button class="btn-danger" id="btn-supprimer-fiche" onclick="supprimerFichePatient()">Supprimer</button><button class="btn-secondary" onclick="fermerModal('modal-patient')">Annuler</button></div></div></div>
@@ -1107,6 +1118,53 @@ async function chargerDonneesDepuisServeur() {
 
         function exporterRapportJour() { alert("La fonction d'export du jour sera générée ici."); }
         function exporterRapportSemaine() { alert("La fonction d'export de la semaine sera générée ici."); }
+
+        // NOUVELLE FONCTION POUR LA VUE GLOBALE
+        function ouvrirVueGlobaleJour() {
+            const dateSelectionnee = datesSemaineEnCours[indiceJourActuel];
+            const cleDate = getCleDate(dateSelectionnee);
+            const tousRdvDuJour = planningsParDate[cleDate] || [];
+            
+            let rdvAAfficher = [];
+            if (kineVisionne === "TOUS") {
+                rdvAAfficher = [...tousRdvDuJour]; 
+            } else {
+                rdvAAfficher = tousRdvDuJour.filter(r => r.kineNom === kineVisionne);
+            }
+            
+            if (typeof filtreTlaUniquementActif !== 'undefined' && filtreTlaUniquementActif) {
+                rdvAAfficher = rdvAAfficher.filter(r => r.tlaStatut === 'dans_tla' || r.tlaStatut === 'facture');
+            }
+
+            rdvAAfficher.sort(trierPlannings);
+
+            const conteneur = document.getElementById('conteneur-vue-globale');
+            document.getElementById('titre-vue-globale').innerText = `📄 Vue Globale - ${getLabelDate(dateSelectionnee)} (${kineVisionne})`;
+
+            if (rdvAAfficher.length === 0) {
+                conteneur.innerHTML = '<p style="text-align:center; color:var(--neutral); margin-top:20px;">Aucun patient planifié.</p>';
+            } else {
+                conteneur.innerHTML = rdvAAfficher.map((rdv) => {
+                    const patient = cataloguePatients.find(p => String(p.id) === String(rdv.patientId));
+                    if (!patient) return '';
+                    
+                    const affichageHeure = (rdv.heure && rdv.heure !== "00:00") ? rdv.heure : "--:--";
+                    const kineInfo = kineVisionne === "TOUS" ? `<br><small style="color:var(--neutral);">👤 ${rdv.kineNom}</small>` : '';
+                    
+                    return `
+                        <div style="background: white; padding: 10px; border-radius: 6px; border-left: 4px solid var(--primary); display: flex; align-items: flex-start; gap: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+                            <strong style="color: var(--primary); min-width: 45px; margin-top: 2px;">${affichageHeure}</strong>
+                            <div>
+                                <div style="font-weight: bold;">${patient.nom}</div>
+                                <div style="font-size: 0.85rem; color: var(--neutral); margin-top: 2px;">${patient.adresse}${kineInfo}</div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            }
+
+            ouvrirModal('modal-vue-globale');
+        }
 
         function afficherCatalogue() {
             const conteneur = document.getElementById('view-fichier');
