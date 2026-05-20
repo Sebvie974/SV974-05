@@ -216,8 +216,8 @@
         .patient-card.vu { border-left-color: var(--success); }
         .patient-card.non-vu { border-left-color: var(--danger); }
         .patient-card.absent {
-            opacity: 0.65;
-            background-image: repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(0,0,0,0.02) 10px, rgba(0,0,0,0.02) 20px);
+            opacity: 0.60;
+            background-image: repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(0,0,0,0.03) 10px, rgba(0,0,0,0.03) 20px);
         }
         
         .patient-card-left { display: flex; align-items: center; gap: 8px; max-width: 68%; }
@@ -260,6 +260,8 @@
         .search-input { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; font-size: 0.95rem; background: #f9f9f9; }
         .search-input:focus { outline: 2px solid var(--purple); background: white; }
         .search-counter { font-size: 0.8rem; color: var(--neutral); font-weight: bold; padding-left: 4px; }
+        
+        .absence-item { display: flex; justify-content: space-between; align-items: center; background: white; padding: 6px 8px; border: 1px solid #cbd5e1; border-radius: 6px; margin-bottom: 6px; font-size: 0.8rem; }
     </style>
 </head>
 <body>
@@ -338,8 +340,8 @@
                 <div class="stats" id="tournee-stats">Chargement...</div>
                 
                 <div class="actions-bar">
-                    <button class="btn-primary" id="btn-rapport-jour" onclick="exporterRapportJour()">Rapport Jour 📋</button>
-                    <button class="btn-purple" id="btn-rapport-semaine" onclick="exporterRapportSemaine()">Rapport Hebdo 📅</button>
+                    <button class="btn-primary" id="btn-rapport-jour" onclick="exporterRapportJour()" style="padding: 4px 8px; font-size: 0.75rem; flex: 0 0 auto;">Rapport Jour 📋</button>
+                    <button class="btn-purple" id="btn-rapport-semaine" onclick="exporterRapportSemaine()" style="padding: 4px 8px; font-size: 0.75rem; flex: 0 0 auto;">Rapport Hebdo 📅</button>
                     <button class="btn-secondary" onclick="ouvrirVueGlobaleJour()" style="background-color: #64748b; color: white;">Vue Globale 📄</button>
                     <button class="btn-success" id="btn-global-planifier" onclick="ouvrirPlanificateur()">Planifier ➕</button>
                     <button class="btn-secondary" id="btn-global-reset" onclick="reinitialiserJour()">Reset 🔄</button>
@@ -394,15 +396,27 @@
     <div class="modal" id="modal-vue-globale" onclick="fermerModal('modal-vue-globale')">
         <div class="modal-content" style="max-width: 500px; width: 95%;" onclick="event.stopPropagation()">
             <h3 style="margin: 0 0 10px 0; color: #475569;" id="titre-vue-globale">📄 Vue Globale</h3>
-            <div id="conteneur-vue-globale" style="display: flex; flex-direction: column; gap: 8px; max-height: 60vh; overflow-y: auto; background: #f1f5f9; padding: 10px; border-radius: 8px; border: 1px solid #cbd5e1;">
-                </div>
+            <div id="conteneur-vue-globale" style="display: flex; flex-direction: column; gap: 8px; max-height: 60vh; overflow-y: auto; background: #f1f5f9; padding: 10px; border-radius: 8px; border: 1px solid #cbd5e1;"></div>
             <div style="display: flex; justify-content: flex-end; margin-top:10px;">
                 <button class="btn-secondary" onclick="fermerModal('modal-vue-globale')">Fermer</button>
             </div>
         </div>
     </div>
 
-    <div class="modal" id="modal-planifier"><div class="modal-content"><h3>Planifier un patient</h3><label>Praticien affecté</label><select id="planif-kine-affecte"></select><label>Choisir un patient</label><select id="select-patient"></select><label>Heure</label><input type="time" id="planif-heure"><label>Jours :</label><div class="days-checkbox-grid" id="conteneur-jours-checkbox"></div><div style="display: flex; gap: 10px; margin-top: 10px;"><button class="btn-primary" onclick="ajouterAuPlanningMultiJours()">Planifier</button><button class="btn-secondary" onclick="fermerModal('modal-planifier')">Annuler</button></div></div></div>
+    <div class="modal" id="modal-planifier">
+        <div class="modal-content">
+            <h3>Planifier un patient</h3>
+            <label>Praticien affecté</label><select id="planif-kine-affecte"></select>
+            <label>Choisir un patient</label><select id="select-patient" onchange="renderCheckboxesPlanificateur(this.value)"></select>
+            <label>Heure</label><input type="time" id="planif-heure">
+            <label>Jours :</label>
+            <div class="days-checkbox-grid" id="conteneur-jours-checkbox"></div>
+            <div style="display: flex; gap: 10px; margin-top: 10px;">
+                <button class="btn-primary" onclick="ajouterAuPlanningMultiJours()">Planifier</button>
+                <button class="btn-secondary" onclick="fermerModal('modal-planifier')">Annuler</button>
+            </div>
+        </div>
+    </div>
     
     <div class="modal" id="modal-patient">
         <div class="modal-content">
@@ -421,18 +435,19 @@
                 <input type="checkbox" id="patient-aprevoir" style="width: auto;"> 🚨 Patient à prévoir
             </label>
 
-            <label style="display: flex; align-items: center; gap: 10px; background: #f1f5f9; padding: 10px; border-radius: 8px; margin-top: 5px; font-weight: bold; color: #475569; cursor: pointer;">
-                <input type="checkbox" id="patient-absent" style="width: auto;" onchange="document.getElementById('zone-dates-absence').style.display = this.checked ? 'flex' : 'none';"> 🏥 Hospitalisé / Absent
-            </label>
-            <div id="zone-dates-absence" style="display:none; flex-direction:column; gap:4px; background: #f8fafc; padding: 10px; border-radius: 8px; border: 1px dashed #cbd5e1; margin-top: 5px;">
-                <div style="display: flex; gap: 10px; align-items: center;">
-                    <label style="flex: 1; font-size: 0.85rem; margin:0;">Du :</label>
-                    <input type="date" id="patient-absence-debut" style="flex: 2; padding: 6px;">
+            <div style="background: #f1f5f9; padding: 10px; border-radius: 8px; margin-top: 5px; border: 1px dashed #cbd5e1;">
+                <label style="font-weight: bold; color: #475569; margin-bottom: 5px; display: block;">🏥 Historique Absences / Hospit.</label>
+                <div style="display:flex; gap:5px; margin-bottom:10px;">
+                    <select id="abs-type" style="padding:4px; font-size:0.8rem; flex:1;">
+                        <option value="Absence">Absence simple</option>
+                        <option value="Hospitalisation">Hospitalisation</option>
+                    </select>
+                    <input type="date" id="abs-debut" style="padding:4px; font-size:0.8rem; flex:1;" title="Date de début">
+                    <input type="date" id="abs-fin" style="padding:4px; font-size:0.8rem; flex:1;" title="Date de fin (optionnel)">
+                    <button type="button" class="btn-success" style="padding:4px 8px; font-size:0.8rem;" onclick="ajouterEvenementAbsence()">➕</button>
                 </div>
-                <div style="display: flex; gap: 10px; align-items: center;">
-                    <label style="flex: 1; font-size: 0.85rem; margin:0;">Au (inclus) :</label>
-                    <input type="date" id="patient-absence-fin" style="flex: 2; padding: 6px;">
-                </div>
+                <div id="conteneur-liste-absences" style="max-height: 100px; overflow-y: auto;"></div>
+                <input type="hidden" id="patient-historique-absences">
             </div>
             
             <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 10px;">
@@ -466,6 +481,8 @@
         let kineVisionne = ""; 
         let listeUtilisateursComplets = []; 
         let filtreTlaUniquementActif = false;
+        
+        let currentAbsences = []; // Pour la gestion dans la modale patient
 
         function initialiserSupabase() {
             if (supabaseClient === null) {
@@ -742,6 +759,20 @@ async function chargerDonneesDepuisServeur() {
             return (a.ordre || 0) - (b.ordre || 0);
         }
 
+        // Nouvelle fonction pour vérifier l'historique des absences à une date précise
+        function estPatientAbsentA(dateIso, historiqueJsonStr) {
+            if(!historiqueJsonStr) return null;
+            try {
+                const abs = JSON.parse(historiqueJsonStr);
+                for(let a of abs) {
+                    if(dateIso >= a.debut && (!a.fin || dateIso <= a.fin)) {
+                        return a; // Retourne l'objet {type, debut, fin}
+                    }
+                }
+            } catch(e) { console.error("Erreur parsing historique"); }
+            return null;
+        }
+
         function afficherPlanning() {
             const tabsConteneur = document.getElementById('days-tabs');
             if (!tabsConteneur) return;
@@ -822,7 +853,8 @@ async function chargerDonneesDepuisServeur() {
                 const patient = cataloguePatients.find(p => String(p.id) === String(rdv.patientId));
                 if(!patient) return;
 
-                const estAbsent = patient.est_absent || false;
+                const evtAbs = estPatientAbsentA(cleDate, patient.historique_absences);
+                const estAbsent = evtAbs !== null;
                 
                 const card = document.createElement('div');
                 card.className = `patient-card ${rdv.statut || ''} ${estAbsent ? 'absent' : ''}`;
@@ -868,13 +900,11 @@ async function chargerDonneesDepuisServeur() {
 
                 let badgeAbsentHtml = '';
                 if (estAbsent) {
-                    let texteDates = '';
-                    if (patient.date_debut_absence || patient.date_fin_absence) {
-                        let d = patient.date_debut_absence ? `du ${patient.date_debut_absence.split('-').reverse().join('/')}` : '';
-                        let f = patient.date_fin_absence ? ` au ${patient.date_fin_absence.split('-').reverse().join('/')}` : '';
-                        texteDates = ` ${d}${f}`;
-                    }
-                    badgeAbsentHtml = `<span style="font-size: 0.75rem; background: #64748b; color: white; padding: 2px 6px; border-radius: 4px; font-weight: bold; margin-left: 5px;">🏥 Absent${texteDates}</span>`;
+                    let typeLabel = evtAbs.type === 'Hospitalisation' ? '🏥 Hosp.' : '⛔ Absent';
+                    let bgCol = evtAbs.type === 'Hospitalisation' ? '#dc2626' : '#64748b';
+                    let d = evtAbs.debut ? ` du ${evtAbs.debut.split('-').reverse().join('/')}` : '';
+                    let f = evtAbs.fin ? ` au ${evtAbs.fin.split('-').reverse().join('/')}` : '';
+                    badgeAbsentHtml = `<span style="font-size: 0.75rem; background: ${bgCol}; color: white; padding: 2px 6px; border-radius: 4px; font-weight: bold; margin-left: 5px;" title="${evtAbs.type}${d}${f}">${typeLabel}</span>`;
                 }
 
                 card.innerHTML = `
@@ -1041,25 +1071,39 @@ async function chargerDonneesDepuisServeur() {
             }
         }
 
+        // MAJ Render Checkboxes Dynamique pour Planificateur
+        function renderCheckboxesPlanificateur(patientId) {
+            const patient = cataloguePatients.find(p => String(p.id) === String(patientId));
+            const hist = patient ? patient.historique_absences : null;
+            const joursContainer = document.getElementById('conteneur-jours-checkbox');
+            
+            joursContainer.innerHTML = datesSemaineEnCours.map((d, i) => {
+                const dIso = getCleDate(d);
+                const evtAbs = estPatientAbsentA(dIso, hist);
+                let styling = evtAbs ? 'text-decoration: line-through; opacity: 0.5; color: var(--danger);' : '';
+                let lbl = evtAbs ? ` (<em>${evtAbs.type}</em>)` : '';
+                return `<label style="display:flex; gap:10px; cursor:pointer; ${styling}">
+                    <input type="checkbox" value="${i}" ${i === indiceJourActuel && !evtAbs ? 'checked' : ''} ${evtAbs ? 'disabled' : ''}>
+                    ${getLabelDate(d)}${lbl}
+                </label>`;
+            }).join('');
+        }
+
         function ouvrirPlanificateur(preselectedPatientId = null) {
             const selectKine = document.getElementById('planif-kine-affecte');
             const selectPatient = document.getElementById('select-patient');
-            const joursContainer = document.getElementById('conteneur-jours-checkbox');
             
             const praticiens = listeUtilisateursComplets.filter(u => u.role === 'kine' || u.role === 'remplacant').map(u => u.nom);
             selectKine.innerHTML = praticiens.map(k => `<option value="${k}" ${k === kineVisionne ? 'selected' : ''}>${k}</option>`).join('');
             if (kineVisionne === "TOUS" && praticiens.length > 0) { selectKine.value = praticiens[0]; }
             
-            selectPatient.innerHTML = cataloguePatients
-                .sort((a,b) => a.nom.localeCompare(b.nom))
-                .map(p => `<option value="${p.id}" ${p.id === preselectedPatientId ? 'selected' : ''}>${p.nom}</option>`).join('');
+            const sortedPatients = cataloguePatients.sort((a,b) => a.nom.localeCompare(b.nom));
+            let chosenId = preselectedPatientId || (sortedPatients.length > 0 ? sortedPatients[0].id : null);
             
-            joursContainer.innerHTML = datesSemaineEnCours.map((d, i) => `
-                <label style="display:flex; gap:10px; cursor:pointer;">
-                    <input type="checkbox" value="${i}" ${i === indiceJourActuel ? 'checked' : ''}>
-                    ${getLabelDate(d)}
-                </label>
-            `).join('');
+            selectPatient.innerHTML = sortedPatients.map(p => `<option value="${p.id}">${p.nom}</option>`).join('');
+            selectPatient.value = chosenId;
+            
+            renderCheckboxesPlanificateur(chosenId);
 
             document.getElementById('planif-heure').value = '';
             ouvrirModal('modal-planifier');
@@ -1071,7 +1115,7 @@ async function chargerDonneesDepuisServeur() {
             const heure = document.getElementById('planif-heure').value;
             const checkboxes = document.querySelectorAll('#conteneur-jours-checkbox input[type="checkbox"]:checked');
             
-            if (checkboxes.length === 0) { alert("Veuillez sélectionner au moins un jour."); return; }
+            if (checkboxes.length === 0) { alert("Veuillez sélectionner au moins un jour valide."); return; }
 
             if (!initialiserSupabase()) return;
 
@@ -1215,13 +1259,12 @@ async function chargerDonneesDepuisServeur() {
                     const patient = cataloguePatients.find(p => String(p.id) === String(rdv.patientId));
                     if (!patient) return '';
                     
+                    const evtAbs = estPatientAbsentA(cleDate, patient.historique_absences);
                     const affichageHeure = (rdv.heure && rdv.heure !== "00:00") ? rdv.heure : "--:--";
                     const kineInfo = kineVisionne === "TOUS" ? `<br><small style="color:var(--neutral);">👤 ${rdv.kineNom}</small>` : '';
                     
-                    // Ajout info absence dans vue globale
-                    const estAbsent = patient.est_absent || false;
-                    let styleLigne = estAbsent ? 'opacity: 0.6; background: #f8fafc;' : 'background: white;';
-                    let infoAbs = estAbsent ? `<br><span style="color:var(--danger); font-size:0.8rem; font-weight:bold;">🏥 Absent/Hosp.</span>` : '';
+                    let styleLigne = evtAbs ? 'opacity: 0.6; background: #f8fafc; text-decoration: line-through;' : 'background: white;';
+                    let infoAbs = evtAbs ? `<br><span style="color:${evtAbs.type==='Hospitalisation'?'var(--danger)':'var(--neutral)'}; font-size:0.8rem; font-weight:bold;">${evtAbs.type === 'Hospitalisation' ? '🏥 Hospit.' : '⛔ Absent'}</span>` : '';
 
                     return `
                         <div style="${styleLigne} padding: 10px; border-radius: 6px; border-left: 4px solid var(--primary); display: flex; align-items: flex-start; gap: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
@@ -1245,6 +1288,8 @@ async function chargerDonneesDepuisServeur() {
             
             document.getElementById('compteur-recherche').innerText = `${patientsFiltres.length} patient(s) enregistré(s)`;
 
+            const cleAujourdhui = getCleDate(new Date());
+
             conteneur.innerHTML = patientsFiltres.map(p => {
                 const aDesNotes = p.notes && p.notes.trim() !== '';
                 const texteNote = aDesNotes ? '📝 Note' : '📝 Note (vide)';
@@ -1252,20 +1297,18 @@ async function chargerDonneesDepuisServeur() {
                 const aUnBilan = p.bilan && p.bilan.trim() !== '';
                 const texteBilan = aUnBilan ? '📋 Bilan' : '📋 Bilan (vide)';
 
-                const estAbsent = p.est_absent || false;
+                const evtAbs = estPatientAbsentA(cleAujourdhui, p.historique_absences);
                 let badgeAbsentHtml = '';
-                if (estAbsent) {
-                    let texteDates = '';
-                    if (p.date_debut_absence || p.date_fin_absence) {
-                        let d = p.date_debut_absence ? `du ${p.date_debut_absence.split('-').reverse().join('/')}` : '';
-                        let f = p.date_fin_absence ? ` au ${p.date_fin_absence.split('-').reverse().join('/')}` : '';
-                        texteDates = ` ${d}${f}`;
-                    }
-                    badgeAbsentHtml = `<span style="font-size: 0.75rem; background: #64748b; color: white; padding: 2px 6px; border-radius: 4px; font-weight: bold; margin-left: 5px;">🏥 Absent${texteDates}</span>`;
+                if (evtAbs) {
+                    let typeLabel = evtAbs.type === 'Hospitalisation' ? '🏥 Hosp.' : '⛔ Absent';
+                    let bgCol = evtAbs.type === 'Hospitalisation' ? '#dc2626' : '#64748b';
+                    let d = evtAbs.debut ? ` du ${evtAbs.debut.split('-').reverse().join('/')}` : '';
+                    let f = evtAbs.fin ? ` au ${evtAbs.fin.split('-').reverse().join('/')}` : '';
+                    badgeAbsentHtml = `<span style="font-size: 0.75rem; background: ${bgCol}; color: white; padding: 2px 6px; border-radius: 4px; font-weight: bold; margin-left: 5px;" title="${evtAbs.type}${d}${f}">${typeLabel}</span>`;
                 }
                 
                 return `
-                <div class="patient-card ${estAbsent ? 'absent' : ''}" style="border-left-color:${p.a_prevoir ? 'var(--danger)' : 'var(--purple)'}; flex-direction: row; flex-wrap: wrap; align-items: center;">
+                <div class="patient-card ${evtAbs ? 'absent' : ''}" style="border-left-color:${p.a_prevoir ? 'var(--danger)' : 'var(--purple)'}; flex-direction: row; flex-wrap: wrap; align-items: center;">
                     <div class="patient-info" style="flex: 1; width: 100%;">
                         <span class="patient-name" style="cursor:pointer; color:var(--primary); text-decoration:underline;" onclick="ouvrirFormulairePatient('${p.id}')">${p.nom} ✏️</span>
                         <span style="margin-top: 4px;">📍 ${p.adresse}</span>
@@ -1284,6 +1327,39 @@ async function chargerDonneesDepuisServeur() {
             }).join('');
         }
 
+        // --- GESTION DES ABSENCES DANS LA MODALE ---
+        function renderAbsences() {
+            const conteneur = document.getElementById('conteneur-liste-absences');
+            if(currentAbsences.length === 0) {
+                conteneur.innerHTML = '<p style="font-size:0.8rem; color:var(--neutral); text-align:center;">Aucun événement enregistré.</p>';
+            } else {
+                conteneur.innerHTML = currentAbsences.map((abs, idx) => {
+                    let texte = `<b>${abs.type}</b> du ${abs.debut.split('-').reverse().join('/')}`;
+                    if (abs.fin) texte += ` au ${abs.fin.split('-').reverse().join('/')}`;
+                    return `<div class="absence-item"><span>${texte}</span><button type="button" class="btn-icon" style="color:var(--danger);" onclick="supprimerEvenementAbsence(${idx})">🗑️</button></div>`;
+                }).join('');
+            }
+            document.getElementById('patient-historique-absences').value = JSON.stringify(currentAbsences);
+        }
+
+        function ajouterEvenementAbsence() {
+            const type = document.getElementById('abs-type').value;
+            const debut = document.getElementById('abs-debut').value;
+            const fin = document.getElementById('abs-fin').value;
+            if(!debut) { alert('La date de début est obligatoire'); return; }
+            if(fin && debut > fin) { alert('La date de fin ne peut pas être avant la date de début'); return; }
+            
+            currentAbsences.push({ type, debut, fin });
+            document.getElementById('abs-debut').value = '';
+            document.getElementById('abs-fin').value = '';
+            renderAbsences();
+        }
+
+        function supprimerEvenementAbsence(idx) {
+            currentAbsences.splice(idx, 1);
+            renderAbsences();
+        }
+
         function ouvrirFormulairePatient(id = '') {
             const p = id ? cataloguePatients.find(x => String(x.id) === String(id)) : null;
             document.getElementById('patient-modal-title').innerText = id ? "Modifier la fiche" : "Nouveau patient";
@@ -1295,11 +1371,10 @@ async function chargerDonneesDepuisServeur() {
             document.getElementById('patient-notes').value = id ? (p.notes || '') : '';
             document.getElementById('patient-aprevoir').checked = id ? (p.a_prevoir || false) : false;
             
-            // Chargement Absences
-            document.getElementById('patient-absent').checked = id ? (p.est_absent || false) : false;
-            document.getElementById('patient-absence-debut').value = id ? (p.date_debut_absence || '') : '';
-            document.getElementById('patient-absence-fin').value = id ? (p.date_fin_absence || '') : '';
-            document.getElementById('zone-dates-absence').style.display = document.getElementById('patient-absent').checked ? 'flex' : 'none';
+            // Chargement Historique Absences
+            try { currentAbsences = id && p.historique_absences ? JSON.parse(p.historique_absences) : []; } 
+            catch(e) { currentAbsences = []; }
+            renderAbsences();
 
             document.getElementById('btn-supprimer-fiche').style.display = id ? 'block' : 'none';
             document.getElementById('btn-save-new').style.display = id ? 'none' : 'block'; 
@@ -1326,9 +1401,7 @@ async function chargerDonneesDepuisServeur() {
                 telephone_2: document.getElementById('patient-telephone2').value, 
                 notes: document.getElementById('patient-notes').value, 
                 a_prevoir: document.getElementById('patient-aprevoir').checked,
-                est_absent: document.getElementById('patient-absent').checked,
-                date_debut_absence: document.getElementById('patient-absence-debut').value,
-                date_fin_absence: document.getElementById('patient-absence-fin').value
+                historique_absences: document.getElementById('patient-historique-absences').value
             };
             
             if (id) {
@@ -1348,10 +1421,8 @@ async function chargerDonneesDepuisServeur() {
                 document.getElementById('patient-notes').value = '';
                 document.getElementById('patient-aprevoir').checked = false;
                 
-                document.getElementById('patient-absent').checked = false;
-                document.getElementById('patient-absence-debut').value = '';
-                document.getElementById('patient-absence-fin').value = '';
-                document.getElementById('zone-dates-absence').style.display = 'none';
+                currentAbsences = [];
+                renderAbsences();
                 
                 nomInput.focus();
                 
