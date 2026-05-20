@@ -236,7 +236,7 @@
         .kine-tag { font-size: 0.75rem; background: #e5e5ea; color: #555; padding: 2px 6px; border-radius: 4px; font-weight: bold; width: fit-content; margin-top: 2px;}
         .badge-card-prevoir { font-size: 0.7rem; background: var(--danger); color: white; padding: 2px 6px; border-radius: 4px; font-weight: bold; width: fit-content; }
         
-        .badge-tla-kine { font-size: 0.75rem; background-color: var(--tla-color); color: white; padding: 4px 8px; border-radius: 6px; font-weight: cursor: pointer; display: inline-flex; align-items: center; gap: 4px; width: fit-content; margin-top: 2px; border: none; }
+        .badge-tla-kine { font-size: 0.75rem; background-color: var(--tla-color); color: white; padding: 4px 8px; border-radius: 6px; font-weight: bold; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; width: fit-content; margin-top: 2px; border: none; }
         .badge-tla-kine.facture { background-color: #e5e5ea; color: #8e8e93; text-decoration: line-through; }
         .badge-tla-sec-facture { font-size: 0.7rem; background-color: var(--success); color: white; padding: 4px 6px; border-radius: 4px; font-weight: bold; width: fit-content; margin-top: 2px; }
         .sec-tla-checkbox-container { display: flex; align-items: center; gap: 6px; font-size: 0.8rem; color: #333; margin-top: 2px; cursor: pointer; background: #eefdfb; padding: 4px 8px; border-radius: 4px; width: fit-content; font-weight: bold; }
@@ -835,17 +835,46 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
             return (a.ordre || 0) - (b.ordre || 0);
         }
 
+        // Fonction pour griser le planning un jour spécifique
         function estPatientAbsentA(dateIso, historiqueJsonStr) {
             if(!historiqueJsonStr) return null;
             try {
                 const abs = JSON.parse(historiqueJsonStr);
                 for(let a of abs) {
-                    if(dateIso >= a.debut && (!a.fin || dateIso <= a.fin)) {
-                        return a;
+                    if(dateIso >= a.debut && (!a.fin || dateIso <= a.fin)) return a;
+                }
+            } catch(e) {}
+            return null;
+        }
+
+        // NOUVEAU : Fonction globale pour le badge d'alerte (en cours ou à venir)
+        function getAbsencePertinente(historiqueJsonStr) {
+            if(!historiqueJsonStr) return null;
+            try {
+                const abs = JSON.parse(historiqueJsonStr);
+                const aujourdhui = getCleDate(new Date());
+                let best = null;
+                for(let a of abs) {
+                    const dateFinEffective = a.fin || a.debut;
+                    // L'absence est soit en cours, soit dans le futur
+                    if(dateFinEffective >= aujourdhui) {
+                        if (!best || a.debut < best.debut) best = a;
                     }
                 }
-            } catch(e) { console.error("Erreur parsing historique"); }
+                return best;
+            } catch(e) {}
             return null;
+        }
+
+        // Fonction d'aide pour générer le HTML du badge
+        function genererBadgeAbsenceGlobalHtml(historiqueJsonStr) {
+            const evt = getAbsencePertinente(historiqueJsonStr);
+            if (!evt) return '';
+            let typeLabel = evt.type === 'Hospitalisation' ? '🏥 Hosp.' : '⛔ Absent';
+            let bgCol = evt.type === 'Hospitalisation' ? '#dc2626' : '#64748b';
+            let d = evt.debut ? ` du ${evt.debut.split('-').reverse().join('/')}` : '';
+            let f = evt.fin ? ` au ${evt.fin.split('-').reverse().join('/')}` : '';
+            return `<span style="font-size: 0.75rem; background: ${bgCol}; color: white; padding: 2px 6px; border-radius: 4px; font-weight: bold; margin-left: 5px;" title="${evt.type}${d}${f}">${typeLabel}${d}${f}</span>`;
         }
 
         function afficherPlanning() {
@@ -917,7 +946,6 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
                 }
             }
 
-            // LE VERROUILLAGE S'APPLIQUE A TOUT LE MONDE DESORMAIS
             if (document.getElementById('btn-global-planifier')) document.getElementById('btn-global-planifier').disabled = journeeEstVerrouillee;
             if (document.getElementById('btn-global-reset')) document.getElementById('btn-global-reset').disabled = kineVisionne === "TOUS" || journeeEstVerrouillee;
 
@@ -943,14 +971,14 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
                 const patient = cataloguePatients.find(p => String(p.id) === String(rdv.patientId));
                 if(!patient) return;
 
-                const evtAbs = estPatientAbsentA(cleDate, patient.historique_absences);
-                const estAbsent = evtAbs !== null;
+                const evtAbsCeJour = estPatientAbsentA(cleDate, patient.historique_absences);
+                const badgeAbsentHtml = genererBadgeAbsenceGlobalHtml(patient.historique_absences);
                 
                 const card = document.createElement('div');
-                card.className = `patient-card ${rdv.statut || ''} ${estAbsent ? 'absent' : ''}`;
+                card.className = `patient-card ${rdv.statut || ''} ${evtAbsCeJour ? 'absent' : ''}`;
                 
-                // Le bouton est désactivé si la journée est verrouillée, pour tout le monde (y compris secrétariat)
                 const desactiveBouton = rdv.verrouille ? 'disabled' : '';
+                const desactiveTla = ''; // TLA est explicitement TOUJOURS libre
 
                 let chaineTels = patient.telephone ? `📞 ${patient.telephone}` : '';
                 if(patient.telephone_2) chaineTels += ` / ${patient.telephone_2}`;
@@ -964,23 +992,23 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
                         htmlModuleTla = `
                             <div style="display:flex; flex-direction:column; gap:2px;">
                                 <span class="badge-tla-sec-facture">✅ Facturé (TLA traité)</span>
-                                <button class="btn-icon" style="font-size:0.75rem; color:var(--danger); text-align:left; padding:0; font-weight:bold;" ${desactiveBouton} onclick="basculerTlaStatut('${rdv.idPlanif}', 'annuler_facture')">🔄 Annuler la facturation</button>
+                                <button class="btn-icon" style="font-size:0.75rem; color:var(--danger); text-align:left; padding:0; font-weight:bold;" ${desactiveTla} onclick="basculerTlaStatut('${rdv.idPlanif}', 'annuler_facture')">🔄 Annuler la facturation</button>
                             </div>`;
                     } else {
                         const isCoché = rdv.tlaStatut === 'dans_tla' ? 'checked' : '';
                         htmlModuleTla = `
                             <div style="display:flex; align-items:center; gap:8px;">
                                 <label class="sec-tla-checkbox-container" onclick="event.stopPropagation();">
-                                    <input type="checkbox" ${isCoché} ${desactiveBouton} onchange="basculerTlaStatut('${rdv.idPlanif}', 'toggle_tla')"> TLA
+                                    <input type="checkbox" ${isCoché} ${desactiveTla} onchange="basculerTlaStatut('${rdv.idPlanif}', 'toggle_tla')"> TLA
                                 </label>
-                                ${rdv.tlaStatut === 'dans_tla' ? `<button class="btn-success" style="font-size:0.7rem; padding:4px 6px; border-radius:4px;" ${desactiveBouton} onclick="basculerTlaStatut('${rdv.idPlanif}', 'valider_facture')">Facturer ✅</button>` : ''}
+                                ${rdv.tlaStatut === 'dans_tla' ? `<button class="btn-success" style="font-size:0.7rem; padding:4px 6px; border-radius:4px;" ${desactiveTla} onclick="basculerTlaStatut('${rdv.idPlanif}', 'valider_facture')">Facturer ✅</button>` : ''}
                             </div>`;
                     }
                 } else {
                     if (rdv.tlaStatut === 'dans_tla') {
-                        htmlModuleTla = `<button class="badge-tla-kine" ${desactiveBouton} onclick="basculerTlaStatut('${rdv.idPlanif}', 'kine_click')">📱 TLA</button>`;
+                        htmlModuleTla = `<button class="badge-tla-kine" ${desactiveTla} onclick="basculerTlaStatut('${rdv.idPlanif}', 'kine_click')">📱 TLA</button>`;
                     } else if (rdv.tlaStatut === 'facture') {
-                        htmlModuleTla = `<button class="badge-tla-kine facture" ${desactiveBouton} onclick="basculerTlaStatut('${rdv.idPlanif}', 'kine_click')">✓ TLA</button>`;
+                        htmlModuleTla = `<button class="badge-tla-kine facture" ${desactiveTla} onclick="basculerTlaStatut('${rdv.idPlanif}', 'kine_click')">✓ TLA</button>`;
                     }
                 }
 
@@ -992,15 +1020,6 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
                 const opaciteBilan = aUnBilan ? '1' : '0.5';
                 const texteBilan = aUnBilan ? '📋 Bilan' : '📋 Bilan (vide)';
 
-                let badgeAbsentHtml = '';
-                if (estAbsent) {
-                    let typeLabel = evtAbs.type === 'Hospitalisation' ? '🏥 Hosp.' : '⛔ Absent';
-                    let bgCol = evtAbs.type === 'Hospitalisation' ? '#dc2626' : '#64748b';
-                    let d = evtAbs.debut ? ` du ${evtAbs.debut.split('-').reverse().join('/')}` : '';
-                    let f = evtAbs.fin ? ` au ${evtAbs.fin.split('-').reverse().join('/')}` : '';
-                    badgeAbsentHtml = `<span style="font-size: 0.75rem; background: ${bgCol}; color: white; padding: 2px 6px; border-radius: 4px; font-weight: bold; margin-left: 5px;" title="${evtAbs.type}${d}${f}">${typeLabel}</span>`;
-                }
-
                 card.innerHTML = `
                     <div class="patient-card-left">
                         ${!masquerFleches ? `
@@ -1010,14 +1029,16 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
                         </div>
                         ` : ''}
                         <div class="patient-info">
-                            <span class="patient-name" style="cursor:pointer; color:var(--primary); text-decoration:underline;" onclick="ouvrirFormulairePatient('${patient.id}')">${patient.nom} ✏️</span>
+                            <span style="display:flex; align-items:center; flex-wrap:wrap;">
+                                <span class="patient-name" style="cursor:pointer; color:var(--primary); text-decoration:underline;" onclick="ouvrirFormulairePatient('${patient.id}')">${patient.nom} ✏️</span>
+                                ${badgeAbsentHtml}
+                            </span>
                             <span style="font-size:0.85rem; font-weight:bold; color: ${rdv.heure && rdv.heure !== '00:00' ? 'var(--purple)' : 'var(--neutral)'};">${affichageHeure}</span>
                             <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(patient.adresse)}" target="_blank" class="patient-address">📍 ${patient.adresse}</a>
                             ${chaineTels ? `<a href="tel:${patient.telephone}" class="patient-phone">${chaineTels}</a>` : ''}
                             
                             <div style="display: flex; flex-wrap: wrap; gap: 4px; margin-top: 2px;">
                                 ${patient.a_prevoir ? `<span class="badge-card-prevoir">🚨 À prévoir</span>` : ''}
-                                ${badgeAbsentHtml}
                             </div>
                             
                             <div style="display:flex; gap:6px; margin-top:2px; flex-wrap: wrap;">
@@ -1039,7 +1060,7 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
             });
         }
 
-        // GENERATION RAPPORTS PDF AMELIORÉE
+        // GENERATION RAPPORTS PDF AMELIORÉE (Groupe par Kine si "TOUS")
         function exporterRapportJour() {
             if (!window.jspdf || !window.jspdf.jsPDF) { alert("Outil PDF en cours de chargement, veuillez patienter..."); return; }
             
@@ -1199,7 +1220,7 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
                         currentY = doc.lastAutoTable.finalY + 8;
                         if (currentY > 260) { doc.addPage(); currentY = 20; }
                     });
-                    currentY += 4; // Espace entre les jours
+                    currentY += 4; 
                 }
             });
 
@@ -1273,8 +1294,8 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
             } catch (err) { console.error(err); }
         }
 
+        // TLA N'EST PAS BLOQUÉ PAR LE VERROUILLAGE
         async function basculerTlaStatut(idPlanif, source) {
-            if (verifierVerrouillageBackend(idPlanif)) return;
             if (!initialiserSupabase()) return;
             const dateSelectionnee = datesSemaineEnCours[indiceJourActuel];
             const cleDate = getCleDate(dateSelectionnee);
@@ -1504,7 +1525,10 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
                 conteneur.innerHTML = aPrevoir.map(p => `
                     <div class="item-prevoir-modal" style="flex-direction: column; align-items: stretch; gap: 8px;">
                         <div>
-                            <strong style="font-size:1.1rem;">${p.nom}</strong>
+                            <span style="display:flex; align-items:center; flex-wrap:wrap;">
+                                <strong style="font-size:1.1rem;">${p.nom}</strong>
+                                ${genererBadgeAbsenceGlobalHtml(p.historique_absences)}
+                            </span>
                             <div style="font-size:0.9rem; color:#333; background-color:#fffcf3; border-left:3px solid var(--orange); padding:8px; margin-top:6px; border-radius:4px; max-height:120px; overflow-y:auto; white-space:pre-wrap;">${p.notes || 'Aucune note supplémentaire'}</div>
                         </div>
                         <div style="display: flex; gap: 6px;">
@@ -1552,18 +1576,21 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
                     const patient = cataloguePatients.find(p => String(p.id) === String(rdv.patientId));
                     if (!patient) return '';
                     
-                    const evtAbs = estPatientAbsentA(cleDate, patient.historique_absences);
+                    const evtAbsCeJour = estPatientAbsentA(cleDate, patient.historique_absences);
+                    const badgeAbsentHtml = genererBadgeAbsenceGlobalHtml(patient.historique_absences);
+                    
                     const affichageHeure = (rdv.heure && rdv.heure !== "00:00") ? rdv.heure : "--:--";
                     const kineInfo = kineVisionne === "TOUS" ? `<br><small style="color:var(--neutral);">👤 ${rdv.kineNom}</small>` : '';
                     
-                    let styleLigne = evtAbs ? 'opacity: 0.6; background: #f8fafc; text-decoration: line-through;' : 'background: white;';
-                    let infoAbs = evtAbs ? `<br><span style="color:${evtAbs.type==='Hospitalisation'?'var(--danger)':'var(--neutral)'}; font-size:0.8rem; font-weight:bold;">${evtAbs.type === 'Hospitalisation' ? '🏥 Hospit.' : '⛔ Absent'}</span>` : '';
-
+                    let styleLigne = evtAbsCeJour ? 'opacity: 0.6; background: #f8fafc; text-decoration: line-through;' : 'background: white;';
+                    
                     return `
                         <div style="${styleLigne} padding: 10px; border-radius: 6px; border-left: 4px solid var(--primary); display: flex; align-items: flex-start; gap: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
                             <strong style="color: var(--primary); min-width: 45px; margin-top: 2px;">${affichageHeure}</strong>
                             <div>
-                                <div style="font-weight: bold;">${patient.nom} ${infoAbs}</div>
+                                <div style="font-weight: bold; display:flex; align-items:center; flex-wrap:wrap;">
+                                    ${patient.nom} ${badgeAbsentHtml}
+                                </div>
                                 <div style="font-size: 0.85rem; color: var(--neutral); margin-top: 2px;">${patient.adresse}${kineInfo}</div>
                             </div>
                         </div>
@@ -1590,25 +1617,20 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
                 const aUnBilan = p.bilan && p.bilan.trim() !== '';
                 const texteBilan = aUnBilan ? '📋 Bilan' : '📋 Bilan (vide)';
 
-                const evtAbs = estPatientAbsentA(cleAujourdhui, p.historique_absences);
-                let badgeAbsentHtml = '';
-                if (evtAbs) {
-                    let typeLabel = evtAbs.type === 'Hospitalisation' ? '🏥 Hosp.' : '⛔ Absent';
-                    let bgCol = evtAbs.type === 'Hospitalisation' ? '#dc2626' : '#64748b';
-                    let d = evtAbs.debut ? ` du ${evtAbs.debut.split('-').reverse().join('/')}` : '';
-                    let f = evtAbs.fin ? ` au ${evtAbs.fin.split('-').reverse().join('/')}` : '';
-                    badgeAbsentHtml = `<span style="font-size: 0.75rem; background: ${bgCol}; color: white; padding: 2px 6px; border-radius: 4px; font-weight: bold; margin-left: 5px;" title="${evtAbs.type}${d}${f}">${typeLabel}</span>`;
-                }
+                const evtAbsAujourdhui = estPatientAbsentA(cleAujourdhui, p.historique_absences);
+                const badgeAbsentHtml = genererBadgeAbsenceGlobalHtml(p.historique_absences);
                 
                 return `
-                <div class="patient-card ${evtAbs ? 'absent' : ''}" style="border-left-color:${p.a_prevoir ? 'var(--danger)' : 'var(--purple)'}; flex-direction: row; flex-wrap: wrap; align-items: center;">
+                <div class="patient-card ${evtAbsAujourdhui ? 'absent' : ''}" style="border-left-color:${p.a_prevoir ? 'var(--danger)' : 'var(--purple)'}; flex-direction: row; flex-wrap: wrap; align-items: center;">
                     <div class="patient-info" style="flex: 1; width: 100%;">
-                        <span class="patient-name" style="cursor:pointer; color:var(--primary); text-decoration:underline;" onclick="ouvrirFormulairePatient('${p.id}')">${p.nom} ✏️</span>
+                        <span style="display:flex; align-items:center; flex-wrap:wrap;">
+                            <span class="patient-name" style="cursor:pointer; color:var(--primary); text-decoration:underline;" onclick="ouvrirFormulairePatient('${p.id}')">${p.nom} ✏️</span>
+                            ${badgeAbsentHtml}
+                        </span>
                         <span style="margin-top: 4px;">📍 ${p.adresse}</span>
                         
                         <div style="display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px;">
                             ${p.a_prevoir ? `<span class="badge-card-prevoir">🚨 À prévoir</span>` : ''}
-                            ${badgeAbsentHtml}
                         </div>
 
                         <div style="display:flex; gap:6px; margin-top:6px; flex-wrap: wrap;">
