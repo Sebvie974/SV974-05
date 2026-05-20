@@ -236,7 +236,7 @@
         .kine-tag { font-size: 0.75rem; background: #e5e5ea; color: #555; padding: 2px 6px; border-radius: 4px; font-weight: bold; width: fit-content; margin-top: 2px;}
         .badge-card-prevoir { font-size: 0.7rem; background: var(--danger); color: white; padding: 2px 6px; border-radius: 4px; font-weight: bold; width: fit-content; }
         
-        .badge-tla-kine { font-size: 0.75rem; background-color: var(--tla-color); color: white; padding: 4px 8px; border-radius: 6px; font-weight: bold; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; width: fit-content; margin-top: 2px; border: none; }
+        .badge-tla-kine { font-size: 0.75rem; background-color: var(--tla-color); color: white; padding: 4px 8px; border-radius: 6px; font-weight: cursor: pointer; display: inline-flex; align-items: center; gap: 4px; width: fit-content; margin-top: 2px; border: none; }
         .badge-tla-kine.facture { background-color: #e5e5ea; color: #8e8e93; text-decoration: line-through; }
         .badge-tla-sec-facture { font-size: 0.7rem; background-color: var(--success); color: white; padding: 4px 6px; border-radius: 4px; font-weight: bold; width: fit-content; margin-top: 2px; }
         .sec-tla-checkbox-container { display: flex; align-items: center; gap: 6px; font-size: 0.8rem; color: #333; margin-top: 2px; cursor: pointer; background: #eefdfb; padding: 4px 8px; border-radius: 4px; width: fit-content; font-weight: bold; }
@@ -806,7 +806,7 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
             dateAncre.setDate(dateAncre.getDate() + (d * 7)); 
             calculerSemaine(); 
             const searchInput = document.getElementById('recherche-planning-input');
-            if(searchInput) searchInput.value = ''; // Reset recherche au changement de semaine
+            if(searchInput) searchInput.value = ''; 
             chargerDonneesDepuisServeur(); 
         }
 
@@ -860,7 +860,7 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
                 btn.onclick = () => { 
                     indiceJourActuel = index; 
                     const searchInput = document.getElementById('recherche-planning-input');
-                    if(searchInput) searchInput.value = ''; // Reset recherche au changement de jour
+                    if(searchInput) searchInput.value = ''; 
                     afficherPlanning(); 
                 };
                 tabsConteneur.appendChild(btn);
@@ -882,7 +882,6 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
                 rdvAAfficher = rdvAAfficher.filter(r => r.tlaStatut === 'dans_tla' || r.tlaStatut === 'facture');
             }
 
-            // GESTION RECHERCHE PLANNING
             const searchInput = document.getElementById('recherche-planning-input');
             const termPlanning = searchInput ? searchInput.value.toLowerCase() : '';
             if (termPlanning) {
@@ -894,8 +893,6 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
             }
 
             rdvAAfficher.sort(trierPlannings);
-
-            const estSecretariat = (kineRole === 'secretariat');
             
             if(rdvAAfficher.length > 0) {
                 journeeEstVerrouillee = rdvAAfficher.every(r => r.verrouille === true);
@@ -920,8 +917,9 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
                 }
             }
 
-            if (document.getElementById('btn-global-planifier')) document.getElementById('btn-global-planifier').disabled = !estSecretariat && journeeEstVerrouillee;
-            if (document.getElementById('btn-global-reset')) document.getElementById('btn-global-reset').disabled = kineVisionne === "TOUS" || (!estSecretariat && journeeEstVerrouillee);
+            // LE VERROUILLAGE S'APPLIQUE A TOUT LE MONDE DESORMAIS
+            if (document.getElementById('btn-global-planifier')) document.getElementById('btn-global-planifier').disabled = journeeEstVerrouillee;
+            if (document.getElementById('btn-global-reset')) document.getElementById('btn-global-reset').disabled = kineVisionne === "TOUS" || journeeEstVerrouillee;
 
             const statsEl = document.getElementById('tournee-stats');
             if (statsEl) {
@@ -951,30 +949,31 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
                 const card = document.createElement('div');
                 card.className = `patient-card ${rdv.statut || ''} ${estAbsent ? 'absent' : ''}`;
                 
-                const desactiveBouton = (rdv.verrouille && !estSecretariat) ? 'disabled' : '';
+                // Le bouton est désactivé si la journée est verrouillée, pour tout le monde (y compris secrétariat)
+                const desactiveBouton = rdv.verrouille ? 'disabled' : '';
 
                 let chaineTels = patient.telephone ? `📞 ${patient.telephone}` : '';
                 if(patient.telephone_2) chaineTels += ` / ${patient.telephone_2}`;
 
-                const masquerFleches = kineVisionne === "TOUS" || (rdv.verrouille && !estSecretariat) || termPlanning !== '';
+                const masquerFleches = kineVisionne === "TOUS" || rdv.verrouille || termPlanning !== '';
                 const affichageHeure = (rdv.heure && rdv.heure !== "00:00") ? `🕒 ${rdv.heure}` : "⏰ Non spécifié";
 
                 let htmlModuleTla = '';
-                if (estSecretariat) {
+                if (kineRole === 'secretariat') {
                     if (rdv.tlaStatut === 'facture') {
                         htmlModuleTla = `
                             <div style="display:flex; flex-direction:column; gap:2px;">
                                 <span class="badge-tla-sec-facture">✅ Facturé (TLA traité)</span>
-                                <button class="btn-icon" style="font-size:0.75rem; color:var(--danger); text-align:left; padding:0; font-weight:bold;" onclick="basculerTlaStatut('${rdv.idPlanif}', 'annuler_facture')">🔄 Annuler la facturation</button>
+                                <button class="btn-icon" style="font-size:0.75rem; color:var(--danger); text-align:left; padding:0; font-weight:bold;" ${desactiveBouton} onclick="basculerTlaStatut('${rdv.idPlanif}', 'annuler_facture')">🔄 Annuler la facturation</button>
                             </div>`;
                     } else {
                         const isCoché = rdv.tlaStatut === 'dans_tla' ? 'checked' : '';
                         htmlModuleTla = `
                             <div style="display:flex; align-items:center; gap:8px;">
                                 <label class="sec-tla-checkbox-container" onclick="event.stopPropagation();">
-                                    <input type="checkbox" ${isCoché} onchange="basculerTlaStatut('${rdv.idPlanif}', 'toggle_tla')"> TLA
+                                    <input type="checkbox" ${isCoché} ${desactiveBouton} onchange="basculerTlaStatut('${rdv.idPlanif}', 'toggle_tla')"> TLA
                                 </label>
-                                ${rdv.tlaStatut === 'dans_tla' ? `<button class="btn-success" style="font-size:0.7rem; padding:4px 6px; border-radius:4px;" onclick="basculerTlaStatut('${rdv.idPlanif}', 'valider_facture')">Facturer ✅</button>` : ''}
+                                ${rdv.tlaStatut === 'dans_tla' ? `<button class="btn-success" style="font-size:0.7rem; padding:4px 6px; border-radius:4px;" ${desactiveBouton} onclick="basculerTlaStatut('${rdv.idPlanif}', 'valider_facture')">Facturer ✅</button>` : ''}
                             </div>`;
                     }
                 } else {
@@ -1040,9 +1039,9 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
             });
         }
 
-        // GENERATION RAPPORTS PDF
+        // GENERATION RAPPORTS PDF AMELIORÉE
         function exporterRapportJour() {
-            if (!window.jspdf || !window.jspdf.jsPDF) { alert("Outil PDF en cours de chargement, veuillez patienter quelques secondes..."); return; }
+            if (!window.jspdf || !window.jspdf.jsPDF) { alert("Outil PDF en cours de chargement, veuillez patienter..."); return; }
             
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF();
@@ -1051,49 +1050,67 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
             const cleDate = getCleDate(dateSelectionnee);
             const tousRdvDuJour = planningsParDate[cleDate] || [];
             
-            let rdvAAfficher = kineVisionne === "TOUS" ? [...tousRdvDuJour] : tousRdvDuJour.filter(r => r.kineNom === kineVisionne);
+            let rdvFiltres = [];
             if (typeof filtreTlaUniquementActif !== 'undefined' && filtreTlaUniquementActif) {
-                rdvAAfficher = rdvAAfficher.filter(r => r.tlaStatut === 'dans_tla' || r.tlaStatut === 'facture');
+                rdvFiltres = tousRdvDuJour.filter(r => r.tlaStatut === 'dans_tla' || r.tlaStatut === 'facture');
+            } else {
+                rdvFiltres = [...tousRdvDuJour];
             }
-            rdvAAfficher.sort(trierPlannings);
 
-            if(rdvAAfficher.length === 0) {
+            let kinesAExporter = kineVisionne === "TOUS" ? [...new Set(rdvFiltres.map(r => r.kineNom))] : [kineVisionne];
+
+            if (kinesAExporter.length === 0 || rdvFiltres.length === 0) {
                 alert("Aucun patient à exporter pour ce jour.");
                 return;
             }
 
             doc.setFontSize(16);
             doc.text(`Planning de Tournée - ${getLabelDate(dateSelectionnee)}`, 14, 15);
-            doc.setFontSize(11);
-            doc.text(`Praticien : ${kineVisionne}`, 14, 22);
             
-            const tableData = rdvAAfficher.map(r => {
-                const p = cataloguePatients.find(x => String(x.id) === String(r.patientId));
-                if(!p) return ["-", "Inconnu", "-", "-", "-"];
-                
-                const evtAbs = estPatientAbsentA(cleDate, p.historique_absences);
-                const nomAffichage = evtAbs ? `[ABSENT] ${p.nom}` : p.nom;
-                const heure = (r.heure && r.heure !== "00:00") ? r.heure : "--:--";
-                let tels = p.telephone || "";
-                if(p.telephone_2) tels += `\n${p.telephone_2}`;
-                
-                return [heure, nomAffichage, p.adresse || "", tels, p.notes || ""];
-            });
+            let currentY = 25;
 
-            doc.autoTable({
-                startY: 28,
-                head: [['Heure', 'Patient', 'Adresse', 'Téléphone', 'Infos']],
-                body: tableData,
-                theme: 'striped',
-                headStyles: { fillColor: [0, 122, 255] },
-                styles: { fontSize: 9, cellPadding: 3 },
-                columnStyles: { 
-                    0: { cellWidth: 15 },
-                    1: { cellWidth: 35 },
-                    2: { cellWidth: 50 },
-                    3: { cellWidth: 25 },
-                    4: { cellWidth: 'auto' }
-                }
+            kinesAExporter.forEach(kine => {
+                let rdvKine = rdvFiltres.filter(r => r.kineNom === kine);
+                rdvKine.sort(trierPlannings);
+                
+                if(rdvKine.length === 0) return;
+
+                doc.setFontSize(12);
+                doc.setFont("helvetica", "bold");
+                doc.text(`Praticien : ${kine}`, 14, currentY);
+                
+                const tableData = rdvKine.map(r => {
+                    const p = cataloguePatients.find(x => String(x.id) === String(r.patientId));
+                    if(!p) return ["-", "Inconnu", "-"];
+                    
+                    const evtAbs = estPatientAbsentA(cleDate, p.historique_absences);
+                    let prefix = "";
+                    if (evtAbs) {
+                        prefix = evtAbs.type === 'Hospitalisation' ? "[HOSPIT.] " : "[ABSENT] ";
+                    }
+                    const nomAffichage = prefix + p.nom;
+                    const heure = (r.heure && r.heure !== "00:00") ? r.heure : "--:--";
+                    
+                    let pointage = "-";
+                    if(r.statut === 'vu') pointage = "Vu";
+                    else if(r.statut === 'non-vu') pointage = "Non vu";
+                    
+                    return [heure, nomAffichage, pointage];
+                });
+
+                doc.autoTable({
+                    startY: currentY + 4,
+                    head: [['Heure', 'Patient', 'Pointage']],
+                    body: tableData,
+                    theme: 'striped',
+                    headStyles: { fillColor: [0, 122, 255] },
+                    styles: { fontSize: 10, cellPadding: 3 },
+                    columnStyles: { 0: { cellWidth: 25 }, 1: { cellWidth: 'auto' }, 2: { cellWidth: 35 } }
+                });
+                
+                currentY = doc.lastAutoTable.finalY + 12;
+                
+                if (currentY > 260) { doc.addPage(); currentY = 20; }
             });
 
             doc.save(`Planning_${cleDate}_${kineVisionne}.pdf`);
@@ -1116,49 +1133,73 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
             datesSemaineEnCours.forEach((dateObj) => {
                 const cleDate = getCleDate(dateObj);
                 const tousRdv = planningsParDate[cleDate] || [];
-                let rdvDuJour = kineVisionne === "TOUS" ? [...tousRdv] : tousRdv.filter(r => r.kineNom === kineVisionne);
                 
+                let rdvFiltres = [];
                 if (typeof filtreTlaUniquementActif !== 'undefined' && filtreTlaUniquementActif) {
-                    rdvDuJour = rdvDuJour.filter(r => r.tlaStatut === 'dans_tla' || r.tlaStatut === 'facture');
+                    rdvFiltres = tousRdv.filter(r => r.tlaStatut === 'dans_tla' || r.tlaStatut === 'facture');
+                } else {
+                    rdvFiltres = [...tousRdv];
                 }
-                rdvDuJour.sort(trierPlannings);
+
+                let kinesAExporter = kineVisionne === "TOUS" ? [...new Set(rdvFiltres.map(r => r.kineNom))] : [kineVisionne];
+                let rdvsDuJourGlobaux = rdvFiltres.filter(r => kinesAExporter.includes(r.kineNom));
                 
-                if (rdvDuJour.length > 0) {
+                if (rdvsDuJourGlobaux.length > 0) {
                     aDesDonnees = true;
                     doc.setFontSize(12);
                     doc.setFont("helvetica", "bold");
+                    doc.setTextColor(0, 122, 255);
                     doc.text(getLabelDate(dateObj), 14, currentY);
-                    
-                    const tableData = rdvDuJour.map(r => {
-                        const p = cataloguePatients.find(x => String(x.id) === String(r.patientId));
-                        if(!p) return ["-", "Inconnu", "-", "-"];
+                    doc.setTextColor(0, 0, 0);
+                    currentY += 6;
+
+                    kinesAExporter.forEach(kine => {
+                        let rdvKine = rdvsDuJourGlobaux.filter(r => r.kineNom === kine);
+                        rdvKine.sort(trierPlannings);
                         
-                        const evtAbs = estPatientAbsentA(cleDate, p.historique_absences);
-                        const nomAffichage = evtAbs ? `[ABSENT] ${p.nom}` : p.nom;
-                        const heure = (r.heure && r.heure !== "00:00") ? r.heure : "--:--";
-                        let tels = p.telephone || "";
-                        if(p.telephone_2) tels += `\n${p.telephone_2}`;
+                        if(rdvKine.length === 0) return;
+
+                        if (kineVisionne === "TOUS") {
+                            doc.setFontSize(10);
+                            doc.setFont("helvetica", "italic");
+                            doc.text(`Praticien : ${kine}`, 14, currentY);
+                            currentY += 4;
+                        }
+
+                        const tableData = rdvKine.map(r => {
+                            const p = cataloguePatients.find(x => String(x.id) === String(r.patientId));
+                            if(!p) return ["-", "Inconnu", "-"];
+                            
+                            const evtAbs = estPatientAbsentA(cleDate, p.historique_absences);
+                            let prefix = "";
+                            if (evtAbs) {
+                                prefix = evtAbs.type === 'Hospitalisation' ? "[HOSPIT.] " : "[ABSENT] ";
+                            }
+                            const nomAffichage = prefix + p.nom;
+                            const heure = (r.heure && r.heure !== "00:00") ? r.heure : "--:--";
+                            
+                            let pointage = "-";
+                            if(r.statut === 'vu') pointage = "Vu";
+                            else if(r.statut === 'non-vu') pointage = "Non vu";
+                            
+                            return [heure, nomAffichage, pointage];
+                        });
                         
-                        return [heure, nomAffichage, p.adresse || "", tels];
+                        doc.autoTable({
+                            startY: currentY,
+                            head: [['Heure', 'Patient', 'Pointage']],
+                            body: tableData,
+                            theme: 'grid',
+                            styles: { fontSize: 9, cellPadding: 2 },
+                            headStyles: { fillColor: [88, 86, 214] },
+                            margin: { bottom: 15 },
+                            columnStyles: { 0: { cellWidth: 25 }, 1: { cellWidth: 'auto' }, 2: { cellWidth: 35 } }
+                        });
+                        
+                        currentY = doc.lastAutoTable.finalY + 8;
+                        if (currentY > 260) { doc.addPage(); currentY = 20; }
                     });
-                    
-                    doc.autoTable({
-                        startY: currentY + 4,
-                        head: [['Heure', 'Patient', 'Adresse', 'Téléphone']],
-                        body: tableData,
-                        theme: 'grid',
-                        styles: { fontSize: 8, cellPadding: 2 },
-                        headStyles: { fillColor: [88, 86, 214] },
-                        margin: { bottom: 15 },
-                        columnStyles: { 0: { cellWidth: 15 }, 1: { cellWidth: 40 }, 2: { cellWidth: 65 }, 3: { cellWidth: 'auto' } }
-                    });
-                    
-                    currentY = doc.lastAutoTable.finalY + 12;
-                    
-                    if (currentY > 260) {
-                        doc.addPage();
-                        currentY = 20;
-                    }
+                    currentY += 4; // Espace entre les jours
                 }
             });
 
@@ -1170,12 +1211,14 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
             doc.save(`Rapport_Hebdo_${getCleDate(datesSemaineEnCours[0])}_${kineVisionne}.pdf`);
         }
 
+        // VERIFICATION DE SECURITE AVANT MODIFICATION EN BASE DE DONNÉES
         function verifierVerrouillageBackend(idPlanif) {
             const dateSelectionnee = datesSemaineEnCours[indiceJourActuel];
             const cleDate = getCleDate(dateSelectionnee);
             const rdv = planningsParDate[cleDate]?.find(r => String(r.idPlanif) === String(idPlanif));
-            if (rdv && rdv.verrouille && kineRole !== 'secretariat') {
-                alert("Action impossible : la journée est verrouillée.");
+            // Le verrouillage s'applique maintenant à tout le monde
+            if (rdv && rdv.verrouille) {
+                alert("Action impossible : la journée est verrouillée. Veuillez déverrouiller pour faire des modifications.");
                 return true; 
             }
             return false; 
@@ -1412,7 +1455,7 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
                     return;
                 }
             } else {
-                if (!confirm("Verrouiller cette journée ? Plus aucune modification ne sera possible pour les kinés.")) return;
+                if (!confirm("Verrouiller cette journée ? Plus aucune modification ne sera possible pour les kinés et le secrétariat.")) return;
             }
             
             try {
