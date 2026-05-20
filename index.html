@@ -211,9 +211,14 @@
             align-items: center;
             border-left: 5px solid var(--neutral);
             gap: 8px;
+            transition: opacity 0.2s;
         }
         .patient-card.vu { border-left-color: var(--success); }
         .patient-card.non-vu { border-left-color: var(--danger); }
+        .patient-card.absent {
+            opacity: 0.65;
+            background-image: repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(0,0,0,0.02) 10px, rgba(0,0,0,0.02) 20px);
+        }
         
         .patient-card-left { display: flex; align-items: center; gap: 8px; max-width: 68%; }
         
@@ -411,9 +416,24 @@
             </div>
             <button type="button" id="btn-add-tel2" class="btn-secondary" style="padding:5px; font-size:0.8rem; width:fit-content;" onclick="document.getElementById('zone-tel-secondaire').style.display='flex'; this.style.display='none';">➕ Ajouter un autre numéro</button>
             <label>Informations (Petite note)</label><textarea id="patient-notes" rows="2"></textarea>
+            
             <label style="display: flex; align-items: center; gap: 10px; background: #ffe5e5; padding: 10px; border-radius: 8px; margin-top: 5px; font-weight: bold; color: #b30000; cursor: pointer;">
                 <input type="checkbox" id="patient-aprevoir" style="width: auto;"> 🚨 Patient à prévoir
             </label>
+
+            <label style="display: flex; align-items: center; gap: 10px; background: #f1f5f9; padding: 10px; border-radius: 8px; margin-top: 5px; font-weight: bold; color: #475569; cursor: pointer;">
+                <input type="checkbox" id="patient-absent" style="width: auto;" onchange="document.getElementById('zone-dates-absence').style.display = this.checked ? 'flex' : 'none';"> 🏥 Hospitalisé / Absent
+            </label>
+            <div id="zone-dates-absence" style="display:none; flex-direction:column; gap:4px; background: #f8fafc; padding: 10px; border-radius: 8px; border: 1px dashed #cbd5e1; margin-top: 5px;">
+                <div style="display: flex; gap: 10px; align-items: center;">
+                    <label style="flex: 1; font-size: 0.85rem; margin:0;">Du :</label>
+                    <input type="date" id="patient-absence-debut" style="flex: 2; padding: 6px;">
+                </div>
+                <div style="display: flex; gap: 10px; align-items: center;">
+                    <label style="flex: 1; font-size: 0.85rem; margin:0;">Au (inclus) :</label>
+                    <input type="date" id="patient-absence-fin" style="flex: 2; padding: 6px;">
+                </div>
+            </div>
             
             <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 10px;">
                 <button class="btn-success" id="btn-save-new" onclick="sauvegarderFichePatient(true)" style="padding: 10px;">Enregistrer et Nouveau 🔁</button>
@@ -622,12 +642,11 @@
             document.getElementById('nom-kine-badge').innerText = `Session : ${kineConnecte} (${labelBadgeRole})`;
             document.getElementById('zone-filtre-secretariat').style.display = (kineRole === 'secretariat') ? 'flex' : 'none';
             
-            // AUTOMATISATION DU JOUR ACTUEL ICI
             let today = new Date().getDay();
             if (today >= 1 && today <= 5) {
-                indiceJourActuel = today - 1; // 1 (Lundi) -> index 0, 5 (Vendredi) -> index 4
+                indiceJourActuel = today - 1; 
             } else {
-                indiceJourActuel = 0; // Par défaut Lundi si on est le week-end
+                indiceJourActuel = 0; 
             }
             
             calculerSemaine(); 
@@ -803,8 +822,10 @@ async function chargerDonneesDepuisServeur() {
                 const patient = cataloguePatients.find(p => String(p.id) === String(rdv.patientId));
                 if(!patient) return;
 
+                const estAbsent = patient.est_absent || false;
+                
                 const card = document.createElement('div');
-                card.className = `patient-card ${rdv.statut || ''}`;
+                card.className = `patient-card ${rdv.statut || ''} ${estAbsent ? 'absent' : ''}`;
                 
                 const desactiveBouton = (rdv.verrouille && !estSecretariat) ? 'disabled' : '';
 
@@ -845,6 +866,17 @@ async function chargerDonneesDepuisServeur() {
                 const opaciteBilan = aUnBilan ? '1' : '0.5';
                 const texteBilan = aUnBilan ? '📋 Bilan' : '📋 Bilan (vide)';
 
+                let badgeAbsentHtml = '';
+                if (estAbsent) {
+                    let texteDates = '';
+                    if (patient.date_debut_absence || patient.date_fin_absence) {
+                        let d = patient.date_debut_absence ? `du ${patient.date_debut_absence.split('-').reverse().join('/')}` : '';
+                        let f = patient.date_fin_absence ? ` au ${patient.date_fin_absence.split('-').reverse().join('/')}` : '';
+                        texteDates = ` ${d}${f}`;
+                    }
+                    badgeAbsentHtml = `<span style="font-size: 0.75rem; background: #64748b; color: white; padding: 2px 6px; border-radius: 4px; font-weight: bold; margin-left: 5px;">🏥 Absent${texteDates}</span>`;
+                }
+
                 card.innerHTML = `
                     <div class="patient-card-left">
                         ${!masquerFleches ? `
@@ -858,7 +890,11 @@ async function chargerDonneesDepuisServeur() {
                             <span style="font-size:0.85rem; font-weight:bold; color: ${rdv.heure && rdv.heure !== '00:00' ? 'var(--purple)' : 'var(--neutral)'};">${affichageHeure}</span>
                             <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(patient.adresse)}" target="_blank" class="patient-address">📍 ${patient.adresse}</a>
                             ${chaineTels ? `<a href="tel:${patient.telephone}" class="patient-phone">${chaineTels}</a>` : ''}
-                            ${patient.a_prevoir ? `<span class="badge-card-prevoir">🚨 À prévoir</span>` : ''}
+                            
+                            <div style="display: flex; flex-wrap: wrap; gap: 4px; margin-top: 2px;">
+                                ${patient.a_prevoir ? `<span class="badge-card-prevoir">🚨 À prévoir</span>` : ''}
+                                ${badgeAbsentHtml}
+                            </div>
                             
                             <div style="display:flex; gap:6px; margin-top:2px; flex-wrap: wrap;">
                                 <span class="btn-note-declencheur" style="opacity: ${opaciteNote}; margin-top:0;" onclick="ouvrirNoteVolante('${patient.id}')">${texteNote}</span>
@@ -1182,11 +1218,16 @@ async function chargerDonneesDepuisServeur() {
                     const affichageHeure = (rdv.heure && rdv.heure !== "00:00") ? rdv.heure : "--:--";
                     const kineInfo = kineVisionne === "TOUS" ? `<br><small style="color:var(--neutral);">👤 ${rdv.kineNom}</small>` : '';
                     
+                    // Ajout info absence dans vue globale
+                    const estAbsent = patient.est_absent || false;
+                    let styleLigne = estAbsent ? 'opacity: 0.6; background: #f8fafc;' : 'background: white;';
+                    let infoAbs = estAbsent ? `<br><span style="color:var(--danger); font-size:0.8rem; font-weight:bold;">🏥 Absent/Hosp.</span>` : '';
+
                     return `
-                        <div style="background: white; padding: 10px; border-radius: 6px; border-left: 4px solid var(--primary); display: flex; align-items: flex-start; gap: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+                        <div style="${styleLigne} padding: 10px; border-radius: 6px; border-left: 4px solid var(--primary); display: flex; align-items: flex-start; gap: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
                             <strong style="color: var(--primary); min-width: 45px; margin-top: 2px;">${affichageHeure}</strong>
                             <div>
-                                <div style="font-weight: bold;">${patient.nom}</div>
+                                <div style="font-weight: bold;">${patient.nom} ${infoAbs}</div>
                                 <div style="font-size: 0.85rem; color: var(--neutral); margin-top: 2px;">${patient.adresse}${kineInfo}</div>
                             </div>
                         </div>
@@ -1210,12 +1251,30 @@ async function chargerDonneesDepuisServeur() {
                 
                 const aUnBilan = p.bilan && p.bilan.trim() !== '';
                 const texteBilan = aUnBilan ? '📋 Bilan' : '📋 Bilan (vide)';
+
+                const estAbsent = p.est_absent || false;
+                let badgeAbsentHtml = '';
+                if (estAbsent) {
+                    let texteDates = '';
+                    if (p.date_debut_absence || p.date_fin_absence) {
+                        let d = p.date_debut_absence ? `du ${p.date_debut_absence.split('-').reverse().join('/')}` : '';
+                        let f = p.date_fin_absence ? ` au ${p.date_fin_absence.split('-').reverse().join('/')}` : '';
+                        texteDates = ` ${d}${f}`;
+                    }
+                    badgeAbsentHtml = `<span style="font-size: 0.75rem; background: #64748b; color: white; padding: 2px 6px; border-radius: 4px; font-weight: bold; margin-left: 5px;">🏥 Absent${texteDates}</span>`;
+                }
                 
                 return `
-                <div class="patient-card" style="border-left-color:${p.a_prevoir ? 'var(--danger)' : 'var(--purple)'}; flex-direction: row; flex-wrap: wrap; align-items: center;">
+                <div class="patient-card ${estAbsent ? 'absent' : ''}" style="border-left-color:${p.a_prevoir ? 'var(--danger)' : 'var(--purple)'}; flex-direction: row; flex-wrap: wrap; align-items: center;">
                     <div class="patient-info" style="flex: 1; width: 100%;">
-                        <span class="patient-name" style="cursor:pointer; color:var(--primary); text-decoration:underline;" onclick="ouvrirFormulairePatient('${p.id}')">${p.nom} ✏️ ${p.a_prevoir ? '<span class="badge-card-prevoir" style="margin-left: 8px;">🚨 À prévoir</span>' : ''}</span>
+                        <span class="patient-name" style="cursor:pointer; color:var(--primary); text-decoration:underline;" onclick="ouvrirFormulairePatient('${p.id}')">${p.nom} ✏️</span>
                         <span style="margin-top: 4px;">📍 ${p.adresse}</span>
+                        
+                        <div style="display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px;">
+                            ${p.a_prevoir ? `<span class="badge-card-prevoir">🚨 À prévoir</span>` : ''}
+                            ${badgeAbsentHtml}
+                        </div>
+
                         <div style="display:flex; gap:6px; margin-top:6px; flex-wrap: wrap;">
                             <span class="btn-note-declencheur" style="opacity: ${aDesNotes ? '1' : '0.5'}; margin-top:0;" onclick="ouvrirNoteVolante('${p.id}')">${texteNote}</span>
                             <span class="btn-bilan-declencheur" style="opacity: ${aUnBilan ? '1' : '0.5'}; margin-top:0;" onclick="ouvrirBilan('${p.id}')">${texteBilan}</span>
@@ -1225,7 +1284,6 @@ async function chargerDonneesDepuisServeur() {
             }).join('');
         }
 
-        // FOCUS AUTOMATIQUE ET GESTION DU BOUTON "NOUVEAU"
         function ouvrirFormulairePatient(id = '') {
             const p = id ? cataloguePatients.find(x => String(x.id) === String(id)) : null;
             document.getElementById('patient-modal-title').innerText = id ? "Modifier la fiche" : "Nouveau patient";
@@ -1237,16 +1295,20 @@ async function chargerDonneesDepuisServeur() {
             document.getElementById('patient-notes').value = id ? (p.notes || '') : '';
             document.getElementById('patient-aprevoir').checked = id ? (p.a_prevoir || false) : false;
             
+            // Chargement Absences
+            document.getElementById('patient-absent').checked = id ? (p.est_absent || false) : false;
+            document.getElementById('patient-absence-debut').value = id ? (p.date_debut_absence || '') : '';
+            document.getElementById('patient-absence-fin').value = id ? (p.date_fin_absence || '') : '';
+            document.getElementById('zone-dates-absence').style.display = document.getElementById('patient-absent').checked ? 'flex' : 'none';
+
             document.getElementById('btn-supprimer-fiche').style.display = id ? 'block' : 'none';
-            document.getElementById('btn-save-new').style.display = id ? 'none' : 'block'; // Cache le bouton si on modifie
+            document.getElementById('btn-save-new').style.display = id ? 'none' : 'block'; 
             
             ouvrirModal('modal-patient');
             
-            // FOCUS AUTOMATIQUE (léger délai pour que la fenêtre soit bien affichée)
             setTimeout(() => document.getElementById('patient-nom').focus(), 100);
         }
 
-        // FONCTION SAUVEGARDE AMELIOREE
         async function sauvegarderFichePatient(garderOuvert = false) {
             const id = document.getElementById('patient-id').value;
             const nomInput = document.getElementById('patient-nom');
@@ -1263,7 +1325,10 @@ async function chargerDonneesDepuisServeur() {
                 telephone: document.getElementById('patient-telephone').value, 
                 telephone_2: document.getElementById('patient-telephone2').value, 
                 notes: document.getElementById('patient-notes').value, 
-                a_prevoir: document.getElementById('patient-aprevoir').checked 
+                a_prevoir: document.getElementById('patient-aprevoir').checked,
+                est_absent: document.getElementById('patient-absent').checked,
+                date_debut_absence: document.getElementById('patient-absence-debut').value,
+                date_fin_absence: document.getElementById('patient-absence-fin').value
             };
             
             if (id) {
@@ -1274,7 +1339,6 @@ async function chargerDonneesDepuisServeur() {
             
             chargerDonneesDepuisServeur();
 
-            // Gestion "Enregistrer et Nouveau"
             if (garderOuvert) {
                 document.getElementById('patient-id').value = '';
                 nomInput.value = '';
@@ -1284,9 +1348,13 @@ async function chargerDonneesDepuisServeur() {
                 document.getElementById('patient-notes').value = '';
                 document.getElementById('patient-aprevoir').checked = false;
                 
+                document.getElementById('patient-absent').checked = false;
+                document.getElementById('patient-absence-debut').value = '';
+                document.getElementById('patient-absence-fin').value = '';
+                document.getElementById('zone-dates-absence').style.display = 'none';
+                
                 nomInput.focus();
                 
-                // Petit effet visuel
                 const btn = document.getElementById('btn-save-new');
                 const textInit = btn.innerText;
                 btn.innerText = "✅ Enregistré !";
