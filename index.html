@@ -6,6 +6,8 @@
     <title>Planning Tournées Cabinet</title>
     <link rel="manifest" href="manifest.json">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
     <style>
         :root {
             --bg-color: #f4f6f9;
@@ -356,6 +358,10 @@
                     <button class="btn-success" id="btn-global-planifier" onclick="ouvrirPlanificateur()" style="flex: 1;">Planifier ➕</button>
                     <button class="btn-secondary" id="btn-global-reset" onclick="reinitialiserJour()" style="flex: none;">Reset 🔄</button>
                     <button class="btn-orange" style="width:100%; margin-top:4px;" id="btn-verrouiller-jour" onclick="gererVerrouillageJour()">Valider et Verrouiller 🔒</button>
+                </div>
+                
+                <div class="search-container" style="margin-top: 10px;">
+                    <input type="text" id="recherche-planning-input" class="search-input" placeholder="🔍 Rechercher un patient ce jour (Nom, adresse)..." oninput="afficherPlanning()">
                 </div>
             </div>
 
@@ -799,6 +805,8 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
         function changerSemaine(d) { 
             dateAncre.setDate(dateAncre.getDate() + (d * 7)); 
             calculerSemaine(); 
+            const searchInput = document.getElementById('recherche-planning-input');
+            if(searchInput) searchInput.value = ''; // Reset recherche au changement de semaine
             chargerDonneesDepuisServeur(); 
         }
 
@@ -810,6 +818,11 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
             document.getElementById('header-fichier').style.display = (vueActuelle === 'planning') ? 'none' : 'block';
             document.getElementById('view-planning').className = (vueActuelle === 'planning') ? 'app-view active' : 'app-view';
             document.getElementById('view-fichier').className = (vueActuelle === 'planning') ? 'app-view' : 'app-view active';
+            
+            if(vueActuelle === 'planning') {
+                const searchInput = document.getElementById('recherche-planning-input');
+                if(searchInput) searchInput.value = '';
+            }
             rafraichirAffichage();
         }
 
@@ -844,7 +857,12 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
                 const btn = document.createElement('button');
                 btn.className = `day-btn ${index === indiceJourActuel ? 'active' : ''}`;
                 btn.innerText = getLabelDate(dateObj);
-                btn.onclick = () => { indiceJourActuel = index; afficherPlanning(); };
+                btn.onclick = () => { 
+                    indiceJourActuel = index; 
+                    const searchInput = document.getElementById('recherche-planning-input');
+                    if(searchInput) searchInput.value = ''; // Reset recherche au changement de jour
+                    afficherPlanning(); 
+                };
                 tabsConteneur.appendChild(btn);
             });
 
@@ -862,6 +880,17 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
             
             if (typeof filtreTlaUniquementActif !== 'undefined' && filtreTlaUniquementActif) {
                 rdvAAfficher = rdvAAfficher.filter(r => r.tlaStatut === 'dans_tla' || r.tlaStatut === 'facture');
+            }
+
+            // GESTION RECHERCHE PLANNING
+            const searchInput = document.getElementById('recherche-planning-input');
+            const termPlanning = searchInput ? searchInput.value.toLowerCase() : '';
+            if (termPlanning) {
+                rdvAAfficher = rdvAAfficher.filter(r => {
+                    const p = cataloguePatients.find(x => String(x.id) === String(r.patientId));
+                    if (!p) return false;
+                    return p.nom.toLowerCase().includes(termPlanning) || p.adresse.toLowerCase().includes(termPlanning);
+                });
             }
 
             rdvAAfficher.sort(trierPlannings);
@@ -907,7 +936,8 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
             conteneur.innerHTML = '';
 
             if (rdvAAfficher.length === 0) {
-                conteneur.innerHTML = `<p style="text-align:center; color:var(--neutral); margin-top:20px;">Aucun patient planifié ici.</p>`;
+                if(termPlanning) conteneur.innerHTML = `<p style="text-align:center; color:var(--neutral); margin-top:20px;">Aucun résultat pour cette recherche.</p>`;
+                else conteneur.innerHTML = `<p style="text-align:center; color:var(--neutral); margin-top:20px;">Aucun patient planifié ici.</p>`;
                 return;
             }
 
@@ -926,7 +956,7 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
                 let chaineTels = patient.telephone ? `📞 ${patient.telephone}` : '';
                 if(patient.telephone_2) chaineTels += ` / ${patient.telephone_2}`;
 
-                const masquerFleches = kineVisionne === "TOUS" || (rdv.verrouille && !estSecretariat);
+                const masquerFleches = kineVisionne === "TOUS" || (rdv.verrouille && !estSecretariat) || termPlanning !== '';
                 const affichageHeure = (rdv.heure && rdv.heure !== "00:00") ? `🕒 ${rdv.heure}` : "⏰ Non spécifié";
 
                 let htmlModuleTla = '';
@@ -1008,6 +1038,136 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
                 `;
                 conteneur.appendChild(card);
             });
+        }
+
+        // GENERATION RAPPORTS PDF
+        function exporterRapportJour() {
+            if (!window.jspdf || !window.jspdf.jsPDF) { alert("Outil PDF en cours de chargement, veuillez patienter quelques secondes..."); return; }
+            
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            
+            const dateSelectionnee = datesSemaineEnCours[indiceJourActuel];
+            const cleDate = getCleDate(dateSelectionnee);
+            const tousRdvDuJour = planningsParDate[cleDate] || [];
+            
+            let rdvAAfficher = kineVisionne === "TOUS" ? [...tousRdvDuJour] : tousRdvDuJour.filter(r => r.kineNom === kineVisionne);
+            if (typeof filtreTlaUniquementActif !== 'undefined' && filtreTlaUniquementActif) {
+                rdvAAfficher = rdvAAfficher.filter(r => r.tlaStatut === 'dans_tla' || r.tlaStatut === 'facture');
+            }
+            rdvAAfficher.sort(trierPlannings);
+
+            if(rdvAAfficher.length === 0) {
+                alert("Aucun patient à exporter pour ce jour.");
+                return;
+            }
+
+            doc.setFontSize(16);
+            doc.text(`Planning de Tournée - ${getLabelDate(dateSelectionnee)}`, 14, 15);
+            doc.setFontSize(11);
+            doc.text(`Praticien : ${kineVisionne}`, 14, 22);
+            
+            const tableData = rdvAAfficher.map(r => {
+                const p = cataloguePatients.find(x => String(x.id) === String(r.patientId));
+                if(!p) return ["-", "Inconnu", "-", "-", "-"];
+                
+                const evtAbs = estPatientAbsentA(cleDate, p.historique_absences);
+                const nomAffichage = evtAbs ? `[ABSENT] ${p.nom}` : p.nom;
+                const heure = (r.heure && r.heure !== "00:00") ? r.heure : "--:--";
+                let tels = p.telephone || "";
+                if(p.telephone_2) tels += `\n${p.telephone_2}`;
+                
+                return [heure, nomAffichage, p.adresse || "", tels, p.notes || ""];
+            });
+
+            doc.autoTable({
+                startY: 28,
+                head: [['Heure', 'Patient', 'Adresse', 'Téléphone', 'Infos']],
+                body: tableData,
+                theme: 'striped',
+                headStyles: { fillColor: [0, 122, 255] },
+                styles: { fontSize: 9, cellPadding: 3 },
+                columnStyles: { 
+                    0: { cellWidth: 15 },
+                    1: { cellWidth: 35 },
+                    2: { cellWidth: 50 },
+                    3: { cellWidth: 25 },
+                    4: { cellWidth: 'auto' }
+                }
+            });
+
+            doc.save(`Planning_${cleDate}_${kineVisionne}.pdf`);
+        }
+
+        function exporterRapportSemaine() {
+            if (!window.jspdf || !window.jspdf.jsPDF) { alert("Outil PDF en cours de chargement..."); return; }
+            
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            
+            doc.setFontSize(16);
+            doc.text(`Rapport Hebdomadaire de Tournée`, 14, 15);
+            doc.setFontSize(11);
+            doc.text(`Praticien : ${kineVisionne} | Semaine du ${datesSemaineEnCours[0].toLocaleDateString('fr-FR')} au ${datesSemaineEnCours[4].toLocaleDateString('fr-FR')}`, 14, 22);
+            
+            let currentY = 32;
+            let aDesDonnees = false;
+
+            datesSemaineEnCours.forEach((dateObj) => {
+                const cleDate = getCleDate(dateObj);
+                const tousRdv = planningsParDate[cleDate] || [];
+                let rdvDuJour = kineVisionne === "TOUS" ? [...tousRdv] : tousRdv.filter(r => r.kineNom === kineVisionne);
+                
+                if (typeof filtreTlaUniquementActif !== 'undefined' && filtreTlaUniquementActif) {
+                    rdvDuJour = rdvDuJour.filter(r => r.tlaStatut === 'dans_tla' || r.tlaStatut === 'facture');
+                }
+                rdvDuJour.sort(trierPlannings);
+                
+                if (rdvDuJour.length > 0) {
+                    aDesDonnees = true;
+                    doc.setFontSize(12);
+                    doc.setFont("helvetica", "bold");
+                    doc.text(getLabelDate(dateObj), 14, currentY);
+                    
+                    const tableData = rdvDuJour.map(r => {
+                        const p = cataloguePatients.find(x => String(x.id) === String(r.patientId));
+                        if(!p) return ["-", "Inconnu", "-", "-"];
+                        
+                        const evtAbs = estPatientAbsentA(cleDate, p.historique_absences);
+                        const nomAffichage = evtAbs ? `[ABSENT] ${p.nom}` : p.nom;
+                        const heure = (r.heure && r.heure !== "00:00") ? r.heure : "--:--";
+                        let tels = p.telephone || "";
+                        if(p.telephone_2) tels += `\n${p.telephone_2}`;
+                        
+                        return [heure, nomAffichage, p.adresse || "", tels];
+                    });
+                    
+                    doc.autoTable({
+                        startY: currentY + 4,
+                        head: [['Heure', 'Patient', 'Adresse', 'Téléphone']],
+                        body: tableData,
+                        theme: 'grid',
+                        styles: { fontSize: 8, cellPadding: 2 },
+                        headStyles: { fillColor: [88, 86, 214] },
+                        margin: { bottom: 15 },
+                        columnStyles: { 0: { cellWidth: 15 }, 1: { cellWidth: 40 }, 2: { cellWidth: 65 }, 3: { cellWidth: 'auto' } }
+                    });
+                    
+                    currentY = doc.lastAutoTable.finalY + 12;
+                    
+                    if (currentY > 260) {
+                        doc.addPage();
+                        currentY = 20;
+                    }
+                }
+            });
+
+            if(!aDesDonnees) {
+                alert("Aucun patient planifié sur cette semaine pour l'export.");
+                return;
+            }
+            
+            doc.save(`Rapport_Hebdo_${getCleDate(datesSemaineEnCours[0])}_${kineVisionne}.pdf`);
         }
 
         function verifierVerrouillageBackend(idPlanif) {
@@ -1291,7 +1451,6 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
             rafraichirAffichage();
         }
 
-        // MAJ POPUP PATIENTS A PREVOIR
         function ouvrirModalAPrevoir() {
             const aPrevoir = cataloguePatients.filter(p => p.a_prevoir);
             const conteneur = document.getElementById('conteneur-liste-prevoir');
@@ -1321,9 +1480,6 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
             const nb = cataloguePatients.filter(p => p.nom.toLowerCase().includes(term) || p.adresse.toLowerCase().includes(term)).length;
             document.getElementById('compteur-recherche').innerText = `${nb} patient(s) trouvé(s)`;
         }
-
-        function exporterRapportJour() { alert("La fonction d'export du jour sera générée ici."); }
-        function exporterRapportSemaine() { alert("La fonction d'export de la semaine sera générée ici."); }
 
         function ouvrirVueGlobaleJour() {
             const dateSelectionnee = datesSemaineEnCours[indiceJourActuel];
