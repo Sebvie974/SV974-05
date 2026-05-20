@@ -374,7 +374,7 @@
         </main>
     </div>
 
-    <div class="modal" id="modal-liste-prevoir"><div class="modal-content" style="max-width: 500px;"><h3 style="color: var(--danger);">🚨 Patients à prévoir</h3><div id="conteneur-liste-prevoir" style="display: flex; flex-direction: column; gap: 10px; max-height: 50vh; overflow-y: auto;"></div><div style="margin-top: 10px; text-align: right;"><button class="btn-secondary" onclick="fermerModal('modal-liste-prevoir')">Fermer</button></div></div></div>
+    <div class="modal" id="modal-liste-prevoir"><div class="modal-content" style="max-width: 500px;"><h3 style="color: var(--danger);">🚨 Patients à prévoir</h3><div id="conteneur-liste-prevoir" style="display: flex; flex-direction: column; gap: 10px; max-height: 60vh; overflow-y: auto;"></div><div style="margin-top: 10px; text-align: right;"><button class="btn-secondary" onclick="fermerModal('modal-liste-prevoir')">Fermer</button></div></div></div>
     
     <div class="modal" id="modal-note-volante" onclick="fermerModal('modal-note-volante')">
         <div class="modal-content" style="max-width: 500px;" onclick="event.stopPropagation()">
@@ -438,7 +438,9 @@
                 <label>Tél 2</label><input type="tel" id="patient-telephone2">
             </div>
             <button type="button" id="btn-add-tel2" class="btn-secondary" style="padding:5px; font-size:0.8rem; width:fit-content;" onclick="document.getElementById('zone-tel-secondaire').style.display='flex'; this.style.display='none';">➕ Ajouter un autre numéro</button>
-            <label>Informations (Petite note)</label><textarea id="patient-notes" rows="2"></textarea>
+            
+            <label>Informations (Petite note)</label>
+            <textarea id="patient-notes" rows="4" style="min-height: 100px; font-size: 0.95rem; resize: vertical; font-family: inherit; line-height: 1.4;"></textarea>
             
             <label style="display: flex; align-items: center; gap: 10px; background: #ffe5e5; padding: 10px; border-radius: 8px; margin-top: 5px; font-weight: bold; color: #b30000; cursor: pointer;">
                 <input type="checkbox" id="patient-aprevoir" style="width: auto;"> 🚨 Patient à prévoir
@@ -471,7 +473,7 @@
     </div>
 
     <script>
-        const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
+const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
         const SUPABASE_KEY = "sb_publishable_472y-YwY-VyEsRz7nqaMJg_LC3W6gDJ";
         let supabaseClient = null;
         const MOT_DE_PASSE_CABINET = "kine2026"; 
@@ -680,7 +682,6 @@
             brancherTempsReel();
         }
 
-        // --- FONCTIONS IMPORT / EXPORT DE DONNÉES ---
         async function exporterToutesDonnees() {
             if(!initialiserSupabase()) return;
             try {
@@ -731,7 +732,8 @@
             };
             reader.readAsText(file);
         }
-async function chargerDonneesDepuisServeur() {
+
+        async function chargerDonneesDepuisServeur() {
             if (!initialiserSupabase()) return;
             try {
                 const [p, r] = await Promise.all([
@@ -927,7 +929,6 @@ async function chargerDonneesDepuisServeur() {
                 const masquerFleches = kineVisionne === "TOUS" || (rdv.verrouille && !estSecretariat);
                 const affichageHeure = (rdv.heure && rdv.heure !== "00:00") ? `🕒 ${rdv.heure}` : "⏰ Non spécifié";
 
-                // CHANGEMENT TLA SECRÉTARIAT ICI
                 let htmlModuleTla = '';
                 if (estSecretariat) {
                     if (rdv.tlaStatut === 'facture') {
@@ -1009,16 +1010,15 @@ async function chargerDonneesDepuisServeur() {
             });
         }
 
-        // VERIFICATION DE SECURITE AVANT MODIFICATION EN BASE DE DONNÉES
         function verifierVerrouillageBackend(idPlanif) {
             const dateSelectionnee = datesSemaineEnCours[indiceJourActuel];
             const cleDate = getCleDate(dateSelectionnee);
             const rdv = planningsParDate[cleDate]?.find(r => String(r.idPlanif) === String(idPlanif));
             if (rdv && rdv.verrouille && kineRole !== 'secretariat') {
                 alert("Action impossible : la journée est verrouillée.");
-                return true; // est verrouillé
+                return true; 
             }
-            return false; // non verrouillé
+            return false; 
         }
 
         async function deplacerRdv(idPlanif, direction) {
@@ -1232,7 +1232,6 @@ async function chargerDonneesDepuisServeur() {
             }
         }
 
-        // MAJ DU VERROUILLAGE AVEC MOT DE PASSE
         async function gererVerrouillageJour() {
             if (!initialiserSupabase()) return;
             const dateSelectionnee = datesSemaineEnCours[indiceJourActuel];
@@ -1245,7 +1244,7 @@ async function chargerDonneesDepuisServeur() {
             
             if (estDejaVerrouille) {
                 const mdpSaisi = prompt("🔒 Cette tournée est verrouillée.\n\nVeuillez saisir votre mot de passe pour la déverrouiller :");
-                if (mdpSaisi === null) return; // L'utilisateur a cliqué sur Annuler
+                if (mdpSaisi === null) return; 
                 
                 const userActuel = listeUtilisateursComplets.find(u => u.nom === kineConnecte);
                 if (!userActuel || userActuel.mot_de_passe !== mdpSaisi) {
@@ -1292,6 +1291,7 @@ async function chargerDonneesDepuisServeur() {
             rafraichirAffichage();
         }
 
+        // MAJ POPUP PATIENTS A PREVOIR
         function ouvrirModalAPrevoir() {
             const aPrevoir = cataloguePatients.filter(p => p.a_prevoir);
             const conteneur = document.getElementById('conteneur-liste-prevoir');
@@ -1303,7 +1303,7 @@ async function chargerDonneesDepuisServeur() {
                     <div class="item-prevoir-modal" style="flex-direction: column; align-items: stretch; gap: 8px;">
                         <div>
                             <strong style="font-size:1.1rem;">${p.nom}</strong>
-                            <div style="font-size:0.85rem; color:var(--neutral); margin-top:4px;">${p.notes || 'Aucune note supplémentaire'}</div>
+                            <div style="font-size:0.9rem; color:#333; background-color:#fffcf3; border-left:3px solid var(--orange); padding:8px; margin-top:6px; border-radius:4px; max-height:120px; overflow-y:auto; white-space:pre-wrap;">${p.notes || 'Aucune note supplémentaire'}</div>
                         </div>
                         <div style="display: flex; gap: 6px;">
                             <button class="btn-success" style="padding:6px; font-size:0.85rem; flex: 1;" onclick="fermerModal('modal-liste-prevoir'); ouvrirPlanificateur('${p.id}')">📅 Planifier</button>
