@@ -399,7 +399,32 @@
 
     <div class="modal" id="modal-planifier"><div class="modal-content"><h3>Planifier un patient</h3><label>Praticien affecté</label><select id="planif-kine-affecte"></select><label>Choisir un patient</label><select id="select-patient"></select><label>Heure</label><input type="time" id="planif-heure"><label>Jours :</label><div class="days-checkbox-grid" id="conteneur-jours-checkbox"></div><div style="display: flex; gap: 10px; margin-top: 10px;"><button class="btn-primary" onclick="ajouterAuPlanningMultiJours()">Planifier</button><button class="btn-secondary" onclick="fermerModal('modal-planifier')">Annuler</button></div></div></div>
     
-    <div class="modal" id="modal-patient"><div class="modal-content"><h3 id="patient-modal-title">Fiche Patient</h3><input type="hidden" id="patient-id"><label>Nom</label><input type="text" id="patient-nom" required><label>Adresse</label><input type="text" id="patient-adresse" required><label>Tél 1</label><input type="tel" id="patient-telephone"><div id="zone-tel-secondaire" style="display:none; flex-direction:column; gap:4px;"><label>Tél 2</label><input type="tel" id="patient-telephone2"></div><button type="button" id="btn-add-tel2" class="btn-secondary" style="padding:5px; font-size:0.8rem; width:fit-content;" onclick="document.getElementById('zone-tel-secondaire').style.display='flex'; this.style.display='none';">➕ Ajouter un autre numéro</button><label>Informations (Petite note)</label><textarea id="patient-notes" rows="2"></textarea><label style="display: flex; align-items: center; gap: 10px; background: #ffe5e5; padding: 10px; border-radius: 8px; margin-top: 5px; font-weight: bold; color: #b30000; cursor: pointer;"><input type="checkbox" id="patient-aprevoir" style="width: auto;"> 🚨 Patient à prévoir</label><div style="display: flex; gap: 10px; margin-top: 10px;"><button class="btn-purple" onclick="sauvegarderFichePatient()">Enregistrer</button><button class="btn-danger" id="btn-supprimer-fiche" onclick="supprimerFichePatient()">Supprimer</button><button class="btn-secondary" onclick="fermerModal('modal-patient')">Annuler</button></div></div></div>
+    <div class="modal" id="modal-patient">
+        <div class="modal-content">
+            <h3 id="patient-modal-title">Fiche Patient</h3>
+            <input type="hidden" id="patient-id">
+            <label>Nom</label><input type="text" id="patient-nom" required>
+            <label>Adresse</label><input type="text" id="patient-adresse" required>
+            <label>Tél 1</label><input type="tel" id="patient-telephone">
+            <div id="zone-tel-secondaire" style="display:none; flex-direction:column; gap:4px;">
+                <label>Tél 2</label><input type="tel" id="patient-telephone2">
+            </div>
+            <button type="button" id="btn-add-tel2" class="btn-secondary" style="padding:5px; font-size:0.8rem; width:fit-content;" onclick="document.getElementById('zone-tel-secondaire').style.display='flex'; this.style.display='none';">➕ Ajouter un autre numéro</button>
+            <label>Informations (Petite note)</label><textarea id="patient-notes" rows="2"></textarea>
+            <label style="display: flex; align-items: center; gap: 10px; background: #ffe5e5; padding: 10px; border-radius: 8px; margin-top: 5px; font-weight: bold; color: #b30000; cursor: pointer;">
+                <input type="checkbox" id="patient-aprevoir" style="width: auto;"> 🚨 Patient à prévoir
+            </label>
+            
+            <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 10px;">
+                <button class="btn-success" id="btn-save-new" onclick="sauvegarderFichePatient(true)" style="padding: 10px;">Enregistrer et Nouveau 🔁</button>
+                <div style="display: flex; gap: 10px; width: 100%;">
+                    <button class="btn-purple" onclick="sauvegarderFichePatient(false)" style="flex: 1;">Enregistrer</button>
+                    <button class="btn-danger" id="btn-supprimer-fiche" onclick="supprimerFichePatient()">Supprimer</button>
+                    <button class="btn-secondary" onclick="fermerModal('modal-patient')">Annuler</button>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <script>
         const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
@@ -596,6 +621,14 @@
             let labelBadgeRole = (kineRole === 'secretariat') ? "Secrétaire" : (kineRole === 'remplacant') ? `Remplaçant de ${kineRemplace}` : "Kiné";
             document.getElementById('nom-kine-badge').innerText = `Session : ${kineConnecte} (${labelBadgeRole})`;
             document.getElementById('zone-filtre-secretariat').style.display = (kineRole === 'secretariat') ? 'flex' : 'none';
+            
+            // AUTOMATISATION DU JOUR ACTUEL ICI
+            let today = new Date().getDay();
+            if (today >= 1 && today <= 5) {
+                indiceJourActuel = today - 1; // 1 (Lundi) -> index 0, 5 (Vendredi) -> index 4
+            } else {
+                indiceJourActuel = 0; // Par défaut Lundi si on est le week-end
+            }
             
             calculerSemaine(); 
             chargerDonneesDepuisServeur(); 
@@ -804,7 +837,6 @@ async function chargerDonneesDepuisServeur() {
                     }
                 }
 
-                // Affichage Note / Bilan
                 const aDesNotes = patient.notes && patient.notes.trim() !== '';
                 const opaciteNote = aDesNotes ? '1' : '0.5';
                 const texteNote = aDesNotes ? '📝 Note' : '📝 Note (vide)';
@@ -1119,7 +1151,6 @@ async function chargerDonneesDepuisServeur() {
         function exporterRapportJour() { alert("La fonction d'export du jour sera générée ici."); }
         function exporterRapportSemaine() { alert("La fonction d'export de la semaine sera générée ici."); }
 
-        // NOUVELLE FONCTION POUR LA VUE GLOBALE
         function ouvrirVueGlobaleJour() {
             const dateSelectionnee = datesSemaineEnCours[indiceJourActuel];
             const cleDate = getCleDate(dateSelectionnee);
@@ -1194,6 +1225,7 @@ async function chargerDonneesDepuisServeur() {
             }).join('');
         }
 
+        // FOCUS AUTOMATIQUE ET GESTION DU BOUTON "NOUVEAU"
         function ouvrirFormulairePatient(id = '') {
             const p = id ? cataloguePatients.find(x => String(x.id) === String(id)) : null;
             document.getElementById('patient-modal-title').innerText = id ? "Modifier la fiche" : "Nouveau patient";
@@ -1204,15 +1236,30 @@ async function chargerDonneesDepuisServeur() {
             document.getElementById('patient-telephone2').value = id ? (p.telephone_2 || '') : '';
             document.getElementById('patient-notes').value = id ? (p.notes || '') : '';
             document.getElementById('patient-aprevoir').checked = id ? (p.a_prevoir || false) : false;
+            
             document.getElementById('btn-supprimer-fiche').style.display = id ? 'block' : 'none';
+            document.getElementById('btn-save-new').style.display = id ? 'none' : 'block'; // Cache le bouton si on modifie
+            
             ouvrirModal('modal-patient');
+            
+            // FOCUS AUTOMATIQUE (léger délai pour que la fenêtre soit bien affichée)
+            setTimeout(() => document.getElementById('patient-nom').focus(), 100);
         }
 
-        async function sauvegarderFichePatient() {
+        // FONCTION SAUVEGARDE AMELIOREE
+        async function sauvegarderFichePatient(garderOuvert = false) {
             const id = document.getElementById('patient-id').value;
+            const nomInput = document.getElementById('patient-nom');
+            const adresseInput = document.getElementById('patient-adresse');
+            
+            if(!nomInput.value.trim() || !adresseInput.value.trim()) {
+                alert("Le nom et l'adresse sont obligatoires.");
+                return;
+            }
+
             const p = { 
-                nom: document.getElementById('patient-nom').value, 
-                adresse: document.getElementById('patient-adresse').value, 
+                nom: nomInput.value.trim(), 
+                adresse: adresseInput.value.trim(), 
                 telephone: document.getElementById('patient-telephone').value, 
                 telephone_2: document.getElementById('patient-telephone2').value, 
                 notes: document.getElementById('patient-notes').value, 
@@ -1224,8 +1271,29 @@ async function chargerDonneesDepuisServeur() {
             } else {
                 await supabaseClient.from('catalogue_patients').insert([{...p, id: Math.floor(Math.random()*1000000000).toString()}]);
             }
-            fermerModal('modal-patient');
+            
             chargerDonneesDepuisServeur();
+
+            // Gestion "Enregistrer et Nouveau"
+            if (garderOuvert) {
+                document.getElementById('patient-id').value = '';
+                nomInput.value = '';
+                adresseInput.value = '';
+                document.getElementById('patient-telephone').value = '';
+                document.getElementById('patient-telephone2').value = '';
+                document.getElementById('patient-notes').value = '';
+                document.getElementById('patient-aprevoir').checked = false;
+                
+                nomInput.focus();
+                
+                // Petit effet visuel
+                const btn = document.getElementById('btn-save-new');
+                const textInit = btn.innerText;
+                btn.innerText = "✅ Enregistré !";
+                setTimeout(() => btn.innerText = textInit, 1500);
+            } else {
+                fermerModal('modal-patient');
+            }
         }
 
         async function supprimerFichePatient() {
