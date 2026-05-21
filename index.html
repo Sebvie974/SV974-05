@@ -259,8 +259,9 @@
         .modal-content { background: white; padding: 20px; border-radius: 16px; width: 100%; max-width: 450px; display: flex; flex-direction: column; gap: 12px; max-height: 90vh; overflow-y: auto; box-sizing: border-box;}
         .modal-content input, .modal-content select, .modal-content textarea { width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #ccc; box-sizing: border-box; }
         
-        .days-checkbox-grid { display: flex; flex-direction: row; flex-wrap: wrap; gap: 8px; background: #f4f6f9; padding: 8px; border-radius: 8px; }
-        .days-checkbox-grid label { display: flex; gap: 4px; cursor: pointer; font-size: 0.8rem; align-items: center; }
+        .days-checkbox-grid { display: flex; flex-direction: row; flex-wrap: wrap; gap: 12px; background: #f4f6f9; padding: 10px; border-radius: 8px; justify-content: flex-start; }
+        .days-checkbox-grid label { display: flex; gap: 6px; cursor: pointer; font-size: 0.85rem; align-items: center; margin: 0; }
+        .days-checkbox-grid input[type="checkbox"] { width: auto; margin: 0; flex-shrink: 0; }
         
         .item-prevoir-modal { background: #f4f6f9; padding: 10px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; gap: 10px; border-left: 4px solid var(--danger); }
         .search-container { background: var(--card-bg); padding: 10px; border-radius: 12px; box-shadow: 0 2px 5px rgba(0,0,0,0.03); margin-bottom: 5px; display: flex; flex-direction: column; gap: 6px; }
@@ -424,9 +425,9 @@
     </div>
 
     <div class="modal" id="modal-planifier">
-        <div class="modal-content" style="max-width: 90vw;">
-            <h3 style="margin-bottom:0;">Planifier des patients</h3>
-            <label style="color:var(--neutral); font-size:0.8rem; margin-top:-5px;">Affecter plusieurs patients en une fois</label>
+        <div class="modal-content" style="max-width: 550px; width: 95%; text-align: left;">
+            <h3 style="margin-bottom:0; text-align:left;">Planifier des patients</h3>
+            <label style="color:var(--neutral); font-size:0.8rem; margin-top:-5px; text-align:left;">Affecter plusieurs patients en une fois</label>
             
             <div style="display:flex; gap:10px; flex-wrap:wrap;">
                 <div style="flex:1; min-width:140px;">
@@ -442,7 +443,7 @@
             
             <label>Patients à ajouter :</label>
             <input type="text" id="recherche-planif-multi" placeholder="🔍 Rechercher un patient..." oninput="filtrerPatientsPlanif()" style="margin-bottom: 0px;">
-            <div id="liste-patients-planif" style="max-height: 180px; overflow-y: auto; background: #f4f6f9; padding: 10px; border-radius: 8px; display: flex; flex-direction: column; gap: 6px; border: 1px solid #e5e5ea;"></div>
+            <div id="liste-patients-planif" style="max-height: 250px; overflow-y: auto; background: #f4f6f9; padding: 10px; border-radius: 8px; display: flex; flex-direction: column; gap: 6px; border: 1px solid #e5e5ea;"></div>
             
             <div style="display: flex; gap: 10px; margin-top: 10px;">
                 <button class="btn-primary" onclick="ajouterAuPlanningMultiJours()">Valider la sélection ✅</button>
@@ -588,7 +589,6 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
         function majSelecteursKine() {
             const getRoleLabel = (role) => (role === 'secretariat' ? 'Secrétariat' : (role === 'remplacant' ? 'Remplaçant' : 'Kiné'));
             
-            // Dans le select de login, on exclut les inactifs pour plus de propreté (ils seront bloqués de toute façon)
             document.getElementById('kine-select-login').innerHTML = listeUtilisateursComplets.filter(u => u.actif !== false).map(u => `<option value="${u.nom}">${u.nom} (${getRoleLabel(u.role)})</option>`).join('');
             
             document.getElementById('liste-kines-admin').innerHTML = listeUtilisateursComplets.map(u => {
@@ -618,7 +618,7 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
             document.getElementById('nouveau-kine-input').value = u.nom;
             document.getElementById('nouveau-mdp-input').value = u.mot_de_passe;
             document.getElementById('nouveau-role-input').value = u.role;
-            document.getElementById('nouveau-actif-input').checked = (u.actif !== false); // True by default or if true
+            document.getElementById('nouveau-actif-input').checked = (u.actif !== false); 
             
             const remplaceInput = document.getElementById('nouveau-kine-remplace-input');
             if(u.role === 'remplacant') {
@@ -870,7 +870,6 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
             else afficherCatalogue(); 
         }
 
-        // AMELIORATION : STABILITÉ DU TRI (Utilisation du nom en cas d'égalité de l'ordre)
         function trierPlannings(a, b) {
             if (a.ordre !== b.ordre) {
                 return (a.ordre || 0) - (b.ordre || 0);
@@ -1408,7 +1407,7 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
             } catch(e) { console.error(e); }
         }
 
-        // NOUVEAU PLANIFICATEUR MULTI-PATIENTS
+        // MISE A JOUR : Alignement strict à gauche de la liste des patients à planifier
         function filtrerPatientsPlanif(preselectedId = null) {
             const term = document.getElementById('recherche-planif-multi').value.toLowerCase();
             const container = document.getElementById('liste-patients-planif');
@@ -1419,10 +1418,10 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
             sortedPatients.forEach(p => {
                 if(p.nom.toLowerCase().includes(term) || (p.adresse && p.adresse.toLowerCase().includes(term))) {
                     const isChecked = String(p.id) === String(preselectedId) ? 'checked' : '';
-                    html += `<label style="display:flex; gap:10px; cursor:pointer; font-size:0.9rem; align-items:center; padding: 6px; border-bottom: 1px solid #e5e5ea; background:white;">
-                        <input type="checkbox" class="cb-planif-patient" value="${p.id}" ${isChecked}>
-                        <div style="display:flex; flex-direction:column; justify-content:center;">
-                            <span style="font-weight:bold; color:var(--primary);">${p.nom}</span>
+                    html += `<label style="display:flex; gap:12px; cursor:pointer; font-size:0.9rem; align-items:center; justify-content: flex-start; text-align: left; padding: 8px; border-bottom: 1px solid #e5e5ea; background:white; border-radius:4px; margin:0;">
+                        <input type="checkbox" class="cb-planif-patient" value="${p.id}" ${isChecked} style="width: auto; margin: 0; flex-shrink: 0; transform: scale(1.1);">
+                        <div style="display:flex; flex-direction:column; justify-content:center; text-align: left;">
+                            <span style="font-weight:bold; color:var(--primary); margin-bottom: 2px;">${p.nom}</span>
                             <span style="font-size:0.75rem; color:var(--neutral);">${p.adresse || 'Sans adresse'}</span>
                         </div>
                     </label>`;
@@ -1590,7 +1589,6 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
             document.getElementById('compteur-recherche').innerText = `${nb} patient(s) trouvé(s)`;
         }
 
-        // VUE GLOBALE AVEC ICONES
         function ouvrirVueGlobaleJour() {
             const dateSelectionnee = datesSemaineEnCours[indiceJourActuel];
             const cleDate = getCleDate(dateSelectionnee);
