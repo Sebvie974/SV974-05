@@ -160,29 +160,31 @@
             align-items: center;
             justify-content: space-between;
             background: #e5e5ea;
-            padding: 5px 10px;
+            padding: 4px 8px;
             border-radius: 8px;
             margin-bottom: 8px;
             font-weight: bold;
-            font-size: 0.9rem;
+            font-size: 0.85rem;
         }
 
-        .week-btn { background: transparent; color: var(--primary); padding: 5px 10px; font-size: 1rem; border: none; cursor: pointer; }
-        .days-nav { display: flex; gap: 5px; overflow-x: auto; padding-bottom: 5px; margin-bottom: 8px; }
+        .week-btn { background: transparent; color: var(--primary); padding: 4px 8px; font-size: 0.9rem; border: none; cursor: pointer; }
+        .days-nav { display: flex; gap: 4px; overflow-x: auto; padding-bottom: 5px; margin-bottom: 8px; }
         
         .day-btn {
             background: #e5e5ea;
             color: var(--text-color);
-            padding: 8px 12px;
+            padding: 6px 10px;
             border-radius: 20px;
-            font-size: 0.85rem;
+            font-size: 0.75rem;
             white-space: nowrap;
             border: none;
             cursor: pointer;
         }
         .day-btn.active { background: var(--primary); color: white; }
         .stats { font-size: 0.85rem; color: var(--neutral); font-weight: bold; margin-bottom: 8px; }
+        
         .actions-bar { display: flex; gap: 6px; flex-wrap: wrap; }
+        .actions-bar > button { padding: 6px 8px; font-size: 0.75rem; flex: auto; }
 
         button, select, input, textarea {
             border: none;
@@ -194,7 +196,7 @@
         button { cursor: pointer; }
         button:disabled { opacity: 0.5 !important; cursor: not-allowed !important; pointer-events: none !important; }
         
-        .btn-primary { background-color: var(--primary); color: white; flex: 1; }
+        .btn-primary { background-color: var(--primary); color: white; }
         .btn-secondary { background-color: var(--neutral); color: white; }
         .btn-success { background-color: var(--success); color: white; }
         .btn-danger { background-color: var(--danger); color: white; }
@@ -254,9 +256,11 @@
         .btn-icon { background: transparent; font-size: 0.9rem; border: none; cursor: pointer; }
 
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 120; justify-content: center; align-items: center; padding: 10px; box-sizing: border-box; }
-        .modal-content { background: white; padding: 20px; border-radius: 16px; width: 100%; max-width: 400px; display: flex; flex-direction: column; gap: 12px; max-height: 90vh; overflow-y: auto; box-sizing: border-box;}
+        .modal-content { background: white; padding: 20px; border-radius: 16px; width: 100%; max-width: 450px; display: flex; flex-direction: column; gap: 12px; max-height: 90vh; overflow-y: auto; box-sizing: border-box;}
         .modal-content input, .modal-content select, .modal-content textarea { width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #ccc; box-sizing: border-box; }
-        .days-checkbox-grid { display: flex; flex-direction: column; gap: 8px; background: #f4f6f9; padding: 10px; border-radius: 8px; }
+        
+        .days-checkbox-grid { display: flex; flex-direction: row; flex-wrap: wrap; gap: 8px; background: #f4f6f9; padding: 8px; border-radius: 8px; }
+        .days-checkbox-grid label { display: flex; gap: 4px; cursor: pointer; font-size: 0.8rem; align-items: center; }
         
         .item-prevoir-modal { background: #f4f6f9; padding: 10px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; gap: 10px; border-left: 4px solid var(--danger); }
         .search-container { background: var(--card-bg); padding: 10px; border-radius: 12px; box-shadow: 0 2px 5px rgba(0,0,0,0.03); margin-bottom: 5px; display: flex; flex-direction: column; gap: 6px; }
@@ -288,7 +292,8 @@
                         <option value="kine">Kiné</option><option value="remplacant">Remplaçant</option><option value="secretariat">Secrétariat</option>
                     </select>
                     <select id="nouveau-kine-remplace-input" style="padding:6px; border:1px solid #ccc; background: white; font-weight: bold; display: none;"></select>
-                    <div style="display: flex; gap: 5px; width: 100%;">
+                    <label style="display:flex; gap:8px; align-items:center; font-size:0.85rem; cursor:pointer;"><input type="checkbox" id="nouveau-actif-input" checked> Compte actif</label>
+                    <div style="display: flex; gap: 5px; width: 100%; margin-top: 4px;">
                         <button id="btn-soumettre-kine" class="btn-success" style="padding:8px; flex: 1;" onclick="sauvegarderKine()">Créer</button>
                         <button id="btn-annuler-kine" class="btn-secondary" style="padding:8px; display: none;" onclick="reinitialiserFormulaireKine()">Annuler</button>
                     </div>
@@ -328,9 +333,9 @@
             </div>
 
             <div id="zone-filtre-secretariat" style="display: none; background: #e5e5ea; padding: 8px; border-radius: 8px; margin-bottom: 10px; flex-direction: column; gap: 8px;">
-                <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px; width: 100%;">
-                    <span style="font-weight: bold; font-size: 0.85rem; color: var(--purple);">👀 Tournée de :</span>
-                    <select id="filtre-view-kine" style="flex: 1; padding: 6px; font-weight: bold;" onchange="changerFiltreVisionPraticien()"></select>
+                <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px; width: 100%; flex-wrap: wrap;">
+                    <span style="font-weight: bold; font-size: 0.85rem; color: var(--purple);">👀 Tournée de:</span>
+                    <select id="filtre-view-kine" style="flex: 1; min-width: 130px; padding: 6px; font-weight: bold;" onchange="changerFiltreVisionPraticien()"></select>
                     <button class="btn-purple" style="padding: 6px 10px; font-size: 0.8rem;" onclick="basculerAffichageConfig('interface')">Personnel 👥</button>
                 </div>
                 <div id="integration-config-secretariat"></div>
@@ -350,14 +355,14 @@
                 <div class="stats" id="tournee-stats">Chargement...</div>
                 
                 <div class="actions-bar">
-                    <button class="btn-primary" id="btn-rapport-jour" onclick="exporterRapportJour()" style="padding: 4px 6px; font-size: 0.75rem; flex: none;">Jour 📋</button>
-                    <button class="btn-purple" id="btn-rapport-semaine" onclick="exporterRapportSemaine()" style="padding: 4px 6px; font-size: 0.75rem; flex: none;">Hebdo 📅</button>
-                    <button class="btn-secondary" onclick="ouvrirVueGlobaleJour()" style="background-color: #64748b; color: white; padding: 4px 6px; font-size: 0.75rem; flex: none;">Globale 📄</button>
-                    <button class="btn-filter-tla" id="btn-filtre-tla-uniquement" onclick="basculerFiltreTlaUniquement()" style="padding: 4px 6px; font-size: 0.75rem; font-weight: bold; border-radius: 8px; flex: none;">Filtre TLA 📱</button>
+                    <button class="btn-primary" id="btn-rapport-jour" onclick="exporterRapportJour()">Jour 📋</button>
+                    <button class="btn-purple" id="btn-rapport-semaine" onclick="exporterRapportSemaine()">Hebdo 📅</button>
+                    <button class="btn-secondary" onclick="ouvrirVueGlobaleJour()" style="background-color: #64748b; color: white;">Globale 📄</button>
+                    <button class="btn-filter-tla" id="btn-filtre-tla-uniquement" onclick="basculerFiltreTlaUniquement()">Filtre TLA 📱</button>
                     
-                    <button class="btn-success" id="btn-global-planifier" onclick="ouvrirPlanificateur()" style="flex: 1;">Planifier ➕</button>
-                    <button class="btn-secondary" id="btn-global-reset" onclick="reinitialiserJour()" style="flex: none;">Reset 🔄</button>
-                    <button class="btn-orange" style="width:100%; margin-top:4px;" id="btn-verrouiller-jour" onclick="gererVerrouillageJour()">Valider et Verrouiller 🔒</button>
+                    <button class="btn-success" id="btn-global-planifier" onclick="ouvrirPlanificateur()" style="flex: auto; font-weight: bold;">Planifier ➕</button>
+                    <button class="btn-secondary" id="btn-global-reset" onclick="reinitialiserJour()">Reset 🔄</button>
+                    <button class="btn-orange" style="width:100%; margin-top:2px;" id="btn-verrouiller-jour" onclick="gererVerrouillageJour()">Valider et Verrouiller 🔒</button>
                 </div>
                 
                 <div class="search-container" style="margin-top: 10px;">
@@ -419,15 +424,28 @@
     </div>
 
     <div class="modal" id="modal-planifier">
-        <div class="modal-content">
-            <h3>Planifier un patient</h3>
-            <label>Praticien affecté</label><select id="planif-kine-affecte"></select>
-            <label>Choisir un patient</label><select id="select-patient" onchange="renderCheckboxesPlanificateur(this.value)"></select>
-            <label>Heure</label><input type="time" id="planif-heure">
+        <div class="modal-content" style="max-width: 90vw;">
+            <h3 style="margin-bottom:0;">Planifier des patients</h3>
+            <label style="color:var(--neutral); font-size:0.8rem; margin-top:-5px;">Affecter plusieurs patients en une fois</label>
+            
+            <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                <div style="flex:1; min-width:140px;">
+                    <label>Praticien affecté</label><select id="planif-kine-affecte"></select>
+                </div>
+                <div style="flex:1; min-width:140px;">
+                    <label>Heure (optionnel)</label><input type="time" id="planif-heure">
+                </div>
+            </div>
+            
             <label>Jours :</label>
             <div class="days-checkbox-grid" id="conteneur-jours-checkbox"></div>
+            
+            <label>Patients à ajouter :</label>
+            <input type="text" id="recherche-planif-multi" placeholder="🔍 Rechercher un patient..." oninput="filtrerPatientsPlanif()" style="margin-bottom: 0px;">
+            <div id="liste-patients-planif" style="max-height: 180px; overflow-y: auto; background: #f4f6f9; padding: 10px; border-radius: 8px; display: flex; flex-direction: column; gap: 6px; border: 1px solid #e5e5ea;"></div>
+            
             <div style="display: flex; gap: 10px; margin-top: 10px;">
-                <button class="btn-primary" onclick="ajouterAuPlanningMultiJours()">Planifier</button>
+                <button class="btn-primary" onclick="ajouterAuPlanningMultiJours()">Valider la sélection ✅</button>
                 <button class="btn-secondary" onclick="fermerModal('modal-planifier')">Annuler</button>
             </div>
         </div>
@@ -569,13 +587,20 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
 
         function majSelecteursKine() {
             const getRoleLabel = (role) => (role === 'secretariat' ? 'Secrétariat' : (role === 'remplacant' ? 'Remplaçant' : 'Kiné'));
-            document.getElementById('kine-select-login').innerHTML = listeUtilisateursComplets.map(u => `<option value="${u.nom}">${u.nom} (${getRoleLabel(u.role)})</option>`).join('');
-            document.getElementById('liste-kines-admin').innerHTML = listeUtilisateursComplets.map(u => `<div class="kine-list-item"><span>👤 <b>${u.nom}</b> [${getRoleLabel(u.role)}${(u.role === 'remplacant' && u.kine_remplace) ? ' de '+u.kine_remplace : ''}]</span><div style="display: flex; gap: 8px;"><button class="btn-icon" style="color:var(--primary);" onclick="abrirEditionKine('${u.id}')">✏️</button><button class="btn-icon" style="color:var(--danger);" onclick="supprimerKine('${u.nom}')">🗑️</button></div></div>`).join('');
+            
+            // Dans le select de login, on exclut les inactifs pour plus de propreté (ils seront bloqués de toute façon)
+            document.getElementById('kine-select-login').innerHTML = listeUtilisateursComplets.filter(u => u.actif !== false).map(u => `<option value="${u.nom}">${u.nom} (${getRoleLabel(u.role)})</option>`).join('');
+            
+            document.getElementById('liste-kines-admin').innerHTML = listeUtilisateursComplets.map(u => {
+                let badgeInactif = (u.actif === false) ? '<span style="color:var(--danger); font-size:0.7rem; font-weight:bold;">[INACTIF]</span> ' : '';
+                return `<div class="kine-list-item"><span>${badgeInactif}👤 <b>${u.nom}</b> [${getRoleLabel(u.role)}${(u.role === 'remplacant' && u.kine_remplace) ? ' de '+u.kine_remplace : ''}]</span><div style="display: flex; gap: 8px;"><button class="btn-icon" style="color:var(--primary);" onclick="abrirEditionKine('${u.id}')">✏️</button><button class="btn-icon" style="color:var(--danger);" onclick="supprimerKine('${u.nom}')">🗑️</button></div></div>`
+            }).join('');
+            
             const filtreSec = document.getElementById('filtre-view-kine');
             const praticiens = listeUtilisateursComplets.filter(u => u.role === 'kine' || u.role === 'remplacant').map(u => u.nom);
             filtreSec.innerHTML = `<option value="TOUS">👥 Tous</option>` + praticiens.map(k => `<option value="${k}">👤 ${k}</option>`).join('');
             filtreSec.value = kineVisionne || "TOUS";
-            document.getElementById('select-declaration-tla').innerHTML = `<option value="Cabinet">🏢 Au Cabinet</option>` + listeUtilisateursComplets.map(u => `<option value="${u.nom}">👤 ${u.nom}</option>`).join('');
+            document.getElementById('select-declaration-tla').innerHTML = `<option value="Cabinet">🏢 Au Cabinet</option>` + listeUtilisateursComplets.filter(u => u.actif !== false).map(u => `<option value="${u.nom}">👤 ${u.nom}</option>`).join('');
         }
 
         function basculerAffichageConfig(provenance) {
@@ -593,10 +618,14 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
             document.getElementById('nouveau-kine-input').value = u.nom;
             document.getElementById('nouveau-mdp-input').value = u.mot_de_passe;
             document.getElementById('nouveau-role-input').value = u.role;
+            document.getElementById('nouveau-actif-input').checked = (u.actif !== false); // True by default or if true
+            
             const remplaceInput = document.getElementById('nouveau-kine-remplace-input');
             if(u.role === 'remplacant') {
                 remplaceInput.style.display = 'block';
                 remplaceInput.innerHTML = '<option value="">-- Sélectionnez --</option>' + listeUtilisateursComplets.filter(k => k.role === 'kine').map(k => `<option value="${k.nom}" ${k.nom === u.kine_remplace ? 'selected' : ''}>${k.nom}</option>`).join('');
+            } else {
+                remplaceInput.style.display = 'none';
             }
             document.getElementById('btn-soumettre-kine').innerText = "Enregistrer 💾";
             document.getElementById('btn-annuler-kine').style.display = 'block';
@@ -608,6 +637,7 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
             document.getElementById('nouveau-kine-input').value = '';
             document.getElementById('nouveau-mdp-input').value = '';
             document.getElementById('nouveau-role-input').value = 'kine';
+            document.getElementById('nouveau-actif-input').checked = true;
             document.getElementById('nouveau-kine-remplace-input').style.display = 'none';
             document.getElementById('btn-soumettre-kine').innerText = "Créer l'utilisateur";
             document.getElementById('btn-annuler-kine').style.display = 'none';
@@ -618,18 +648,23 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
             const nom = document.getElementById('nouveau-kine-input').value.trim();
             const mdp = document.getElementById('nouveau-mdp-input').value.trim();
             const role = document.getElementById('nouveau-role-input').value;
+            const actif = document.getElementById('nouveau-actif-input').checked;
             const kine_remplace = role === 'remplacant' ? document.getElementById('nouveau-kine-remplace-input').value : null;
-            if (!nom || !mdp) { alert("Nom et mdp obligatoires."); return; }
+            if (!nom || !mdp) { alert("Nom et mot de passe obligatoires."); return; }
             if (!initialiserSupabase()) return;
-            const payload = { nom, mot_de_passe: mdp, role, kine_remplace };
-            if (id) await supabaseClient.from('practiciens').update(payload).eq('id', id);
-            else await supabaseClient.from('practiciens').insert([{...payload, id: Math.floor(Math.random() * 1000000000).toString(), detient_tla: false}]);
-            reinitialiserFormulaireKine();
-            await chargerListeKines();
+            const payload = { nom, mot_de_passe: mdp, role, kine_remplace, actif };
+            try {
+                if (id) await supabaseClient.from('practiciens').update(payload).eq('id', id);
+                else await supabaseClient.from('practiciens').insert([{...payload, id: Math.floor(Math.random() * 1000000000).toString(), detient_tla: false}]);
+                reinitialiserFormulaireKine();
+                await chargerListeKines();
+            } catch(e) {
+                alert("Erreur de sauvegarde. Si c'est la 1ere fois, vérifiez que la colonne 'actif' (type booléen) existe bien dans votre table 'practiciens'.");
+            }
         }
 
         async function supprimerKine(nom) {
-            if (confirm(`Supprimer ${nom} ?`)) {
+            if (confirm(`Supprimer ${nom} de la base de données ? (Conseil: vous pouvez juste décocher 'Compte Actif' en le modifiant pour garder son historique)`)) {
                 await supabaseClient.from('practiciens').delete().eq('nom', nom);
                 await chargerListeKines();
             }
@@ -642,6 +677,10 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
             const utilisateurSelectionne = document.getElementById('kine-select-login').value;
             const cible = listeUtilisateursComplets.find(u => u.nom === utilisateurSelectionne);
             if (cible && cible.mot_de_passe === mdpSaisi) {
+                if(cible.actif === false) {
+                    alert("Ce compte a été désactivé par l'administrateur.");
+                    return;
+                }
                 localStorage.setItem('kine_connecte', 'true');
                 localStorage.setItem('kine_nom_actif', cible.nom);
                 localStorage.setItem('kine_role_actif', cible.role);
@@ -831,11 +870,18 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
             else afficherCatalogue(); 
         }
 
+        // AMELIORATION : STABILITÉ DU TRI (Utilisation du nom en cas d'égalité de l'ordre)
         function trierPlannings(a, b) {
-            return (a.ordre || 0) - (b.ordre || 0);
+            if (a.ordre !== b.ordre) {
+                return (a.ordre || 0) - (b.ordre || 0);
+            }
+            const pA = cataloguePatients.find(x => String(x.id) === String(a.patientId));
+            const pB = cataloguePatients.find(x => String(x.id) === String(b.patientId));
+            const nomA = pA ? pA.nom.toLowerCase() : "";
+            const nomB = pB ? pB.nom.toLowerCase() : "";
+            return nomA.localeCompare(nomB);
         }
 
-        // Fonction pour griser le planning un jour spécifique
         function estPatientAbsentA(dateIso, historiqueJsonStr) {
             if(!historiqueJsonStr) return null;
             try {
@@ -847,7 +893,6 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
             return null;
         }
 
-        // NOUVEAU : Fonction globale pour le badge d'alerte (en cours ou à venir)
         function getAbsencePertinente(historiqueJsonStr) {
             if(!historiqueJsonStr) return null;
             try {
@@ -856,7 +901,6 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
                 let best = null;
                 for(let a of abs) {
                     const dateFinEffective = a.fin || a.debut;
-                    // L'absence est soit en cours, soit dans le futur
                     if(dateFinEffective >= aujourdhui) {
                         if (!best || a.debut < best.debut) best = a;
                     }
@@ -866,7 +910,6 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
             return null;
         }
 
-        // Fonction d'aide pour générer le HTML du badge
         function genererBadgeAbsenceGlobalHtml(historiqueJsonStr) {
             const evt = getAbsencePertinente(historiqueJsonStr);
             if (!evt) return '';
@@ -874,7 +917,7 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
             let bgCol = evt.type === 'Hospitalisation' ? '#dc2626' : '#64748b';
             let d = evt.debut ? ` du ${evt.debut.split('-').reverse().join('/')}` : '';
             let f = evt.fin ? ` au ${evt.fin.split('-').reverse().join('/')}` : '';
-            return `<span style="font-size: 0.75rem; background: ${bgCol}; color: white; padding: 2px 6px; border-radius: 4px; font-weight: bold; margin-left: 5px;" title="${evt.type}${d}${f}">${typeLabel}${d}${f}</span>`;
+            return `<span style="font-size: 0.7rem; background: ${bgCol}; color: white; padding: 2px 6px; border-radius: 4px; font-weight: bold; margin-left: 5px;" title="${evt.type}${d}${f}">${typeLabel}${d}${f}</span>`;
         }
 
         function afficherPlanning() {
@@ -978,7 +1021,7 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
                 card.className = `patient-card ${rdv.statut || ''} ${evtAbsCeJour ? 'absent' : ''}`;
                 
                 const desactiveBouton = rdv.verrouille ? 'disabled' : '';
-                const desactiveTla = ''; // TLA est explicitement TOUJOURS libre
+                const desactiveTla = ''; 
 
                 let chaineTels = patient.telephone ? `📞 ${patient.telephone}` : '';
                 if(patient.telephone_2) chaineTels += ` / ${patient.telephone_2}`;
@@ -1060,7 +1103,6 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
             });
         }
 
-        // GENERATION RAPPORTS PDF AMELIORÉE (Groupe par Kine si "TOUS")
         function exporterRapportJour() {
             if (!window.jspdf || !window.jspdf.jsPDF) { alert("Outil PDF en cours de chargement, veuillez patienter..."); return; }
             
@@ -1232,12 +1274,10 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
             doc.save(`Rapport_Hebdo_${getCleDate(datesSemaineEnCours[0])}_${kineVisionne}.pdf`);
         }
 
-        // VERIFICATION DE SECURITE AVANT MODIFICATION EN BASE DE DONNÉES
         function verifierVerrouillageBackend(idPlanif) {
             const dateSelectionnee = datesSemaineEnCours[indiceJourActuel];
             const cleDate = getCleDate(dateSelectionnee);
             const rdv = planningsParDate[cleDate]?.find(r => String(r.idPlanif) === String(idPlanif));
-            // Le verrouillage s'applique maintenant à tout le monde
             if (rdv && rdv.verrouille) {
                 alert("Action impossible : la journée est verrouillée. Veuillez déverrouiller pour faire des modifications.");
                 return true; 
@@ -1294,7 +1334,6 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
             } catch (err) { console.error(err); }
         }
 
-        // TLA N'EST PAS BLOQUÉ PAR LE VERROUILLAGE
         async function basculerTlaStatut(idPlanif, source) {
             if (!initialiserSupabase()) return;
             const dateSelectionnee = datesSemaineEnCours[indiceJourActuel];
@@ -1341,17 +1380,12 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
         async function sauvegarderNoteVolante() {
             const patientId = document.getElementById('note-volante-patient-id').value;
             const nouvellesNotes = document.getElementById('note-volante-corps').value;
-            
             if (!initialiserSupabase()) return;
-
             try {
                 await supabaseClient.from('catalogue_patients').update({ notes: nouvellesNotes }).eq('id', patientId);
                 fermerModal('modal-note-volante');
                 chargerDonneesDepuisServeur(); 
-            } catch(e) {
-                console.error("Erreur de sauvegarde de la note", e);
-                alert("Erreur lors de la sauvegarde.");
-            }
+            } catch(e) { console.error(e); }
         }
 
         function ouvrirBilan(patientId) {
@@ -1366,93 +1400,104 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
         async function sauvegarderBilan() {
             const patientId = document.getElementById('bilan-patient-id').value;
             const nouveauBilan = document.getElementById('bilan-corps').value;
-            
             if (!initialiserSupabase()) return;
-
             try {
                 await supabaseClient.from('catalogue_patients').update({ bilan: nouveauBilan }).eq('id', patientId);
                 fermerModal('modal-bilan');
                 chargerDonneesDepuisServeur(); 
-            } catch(e) {
-                console.error("Erreur de sauvegarde du bilan", e);
-                alert("Erreur. Avez-vous bien créé la colonne 'bilan' dans Supabase ?");
-            }
+            } catch(e) { console.error(e); }
         }
 
-        function renderCheckboxesPlanificateur(patientId) {
-            const patient = cataloguePatients.find(p => String(p.id) === String(patientId));
-            const hist = patient ? patient.historique_absences : null;
-            const joursContainer = document.getElementById('conteneur-jours-checkbox');
+        // NOUVEAU PLANIFICATEUR MULTI-PATIENTS
+        function filtrerPatientsPlanif(preselectedId = null) {
+            const term = document.getElementById('recherche-planif-multi').value.toLowerCase();
+            const container = document.getElementById('liste-patients-planif');
             
-            joursContainer.innerHTML = datesSemaineEnCours.map((d, i) => {
-                const dIso = getCleDate(d);
-                const evtAbs = estPatientAbsentA(dIso, hist);
-                let styling = evtAbs ? 'text-decoration: line-through; opacity: 0.5; color: var(--danger);' : '';
-                let lbl = evtAbs ? ` (<em>${evtAbs.type}</em>)` : '';
-                return `<label style="display:flex; gap:10px; cursor:pointer; ${styling}">
-                    <input type="checkbox" value="${i}" ${i === indiceJourActuel && !evtAbs ? 'checked' : ''} ${evtAbs ? 'disabled' : ''}>
-                    ${getLabelDate(d)}${lbl}
-                </label>`;
-            }).join('');
+            const sortedPatients = cataloguePatients.sort((a,b) => a.nom.localeCompare(b.nom));
+            let html = '';
+            
+            sortedPatients.forEach(p => {
+                if(p.nom.toLowerCase().includes(term) || (p.adresse && p.adresse.toLowerCase().includes(term))) {
+                    const isChecked = String(p.id) === String(preselectedId) ? 'checked' : '';
+                    html += `<label style="display:flex; gap:10px; cursor:pointer; font-size:0.9rem; align-items:center; padding: 6px; border-bottom: 1px solid #e5e5ea; background:white;">
+                        <input type="checkbox" class="cb-planif-patient" value="${p.id}" ${isChecked}>
+                        <div style="display:flex; flex-direction:column; justify-content:center;">
+                            <span style="font-weight:bold; color:var(--primary);">${p.nom}</span>
+                            <span style="font-size:0.75rem; color:var(--neutral);">${p.adresse || 'Sans adresse'}</span>
+                        </div>
+                    </label>`;
+                }
+            });
+            
+            if(html === '') html = '<p style="text-align:center; font-size:0.85rem; color:var(--neutral);">Aucun patient trouvé.</p>';
+            container.innerHTML = html;
         }
 
         function ouvrirPlanificateur(preselectedPatientId = null) {
             const selectKine = document.getElementById('planif-kine-affecte');
-            const selectPatient = document.getElementById('select-patient');
-            
             const praticiens = listeUtilisateursComplets.filter(u => u.role === 'kine' || u.role === 'remplacant').map(u => u.nom);
             selectKine.innerHTML = praticiens.map(k => `<option value="${k}" ${k === kineVisionne ? 'selected' : ''}>${k}</option>`).join('');
             if (kineVisionne === "TOUS" && praticiens.length > 0) { selectKine.value = praticiens[0]; }
             
-            const sortedPatients = cataloguePatients.sort((a,b) => a.nom.localeCompare(b.nom));
-            let chosenId = preselectedPatientId || (sortedPatients.length > 0 ? sortedPatients[0].id : null);
-            
-            selectPatient.innerHTML = sortedPatients.map(p => `<option value="${p.id}">${p.nom}</option>`).join('');
-            selectPatient.value = chosenId;
-            
-            renderCheckboxesPlanificateur(chosenId);
+            const joursContainer = document.getElementById('conteneur-jours-checkbox');
+            joursContainer.innerHTML = datesSemaineEnCours.map((d, i) => `
+                <label>
+                    <input type="checkbox" value="${i}" ${i === indiceJourActuel ? 'checked' : ''}>
+                    ${getLabelDate(d)}
+                </label>
+            `).join('');
 
             document.getElementById('planif-heure').value = '';
+            document.getElementById('recherche-planif-multi').value = '';
+            
+            filtrerPatientsPlanif(preselectedPatientId);
+            
             ouvrirModal('modal-planifier');
         }
 
         async function ajouterAuPlanningMultiJours() {
-            const patientId = document.getElementById('select-patient').value;
             const kineAffecte = document.getElementById('planif-kine-affecte').value;
             const heure = document.getElementById('planif-heure').value;
-            const checkboxes = document.querySelectorAll('#conteneur-jours-checkbox input[type="checkbox"]:checked');
+            const checkboxesJours = document.querySelectorAll('#conteneur-jours-checkbox input[type="checkbox"]:checked');
+            const checkboxesPatients = document.querySelectorAll('.cb-planif-patient:checked');
             
-            if (checkboxes.length === 0) { alert("Veuillez sélectionner au moins un jour valide."); return; }
+            if (checkboxesJours.length === 0) { alert("Veuillez sélectionner au moins un jour."); return; }
+            if (checkboxesPatients.length === 0) { alert("Veuillez sélectionner au moins un patient."); return; }
 
             if (!initialiserSupabase()) return;
 
-            const insertions = Array.from(checkboxes).map(cb => {
-                const dateCible = datesSemaineEnCours[parseInt(cb.value)];
-                return {
-                    id_planif: Math.floor(Math.random() * 1000000000).toString(),
-                    patient_id: patientId,
-                    date_cle: getCleDate(dateCible),
-                    heure: heure || "00:00",
-                    kine_nom: kineAffecte,
-                    statut: null,
-                    ordre: 99,
-                    journee_verrouillee: false,
-                    tla_statut: null
-                };
+            let insertions = [];
+            
+            Array.from(checkboxesPatients).forEach(cbP => {
+                const patientId = cbP.value;
+                Array.from(checkboxesJours).forEach(cbJ => {
+                    const dateCible = datesSemaineEnCours[parseInt(cbJ.value)];
+                    insertions.push({
+                        id_planif: Math.floor(Math.random() * 1000000000).toString(),
+                        patient_id: patientId,
+                        date_cle: getCleDate(dateCible),
+                        heure: heure || "00:00",
+                        kine_nom: kineAffecte,
+                        statut: null,
+                        ordre: 99,
+                        journee_verrouillee: false,
+                        tla_statut: null
+                    });
+                });
             });
 
             try {
                 const { error } = await supabaseClient.from('plannings_dates').insert(insertions);
                 if (error) {
-                    console.error("Détails de l'erreur Supabase :", error);
+                    console.error(error);
                     alert("Erreur base de données : " + error.message);
                     return;
                 }
                 fermerModal('modal-planifier');
                 chargerDonneesDepuisServeur();
             } catch(e) { 
-                console.error("Erreur inattendue", e); 
-                alert("Erreur inattendue lors de l'enregistrement.");
+                console.error(e); 
+                alert("Erreur lors de l'enregistrement.");
             }
         }
 
@@ -1507,11 +1552,8 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
         function basculerFiltreTlaUniquement() {
             filtreTlaUniquementActif = !filtreTlaUniquementActif;
             const btn = document.getElementById('btn-filtre-tla-uniquement');
-            if(filtreTlaUniquementActif) {
-                btn.classList.add('active');
-            } else {
-                btn.classList.remove('active');
-            }
+            if(filtreTlaUniquementActif) btn.classList.add('active');
+            else btn.classList.remove('active');
             rafraichirAffichage();
         }
 
@@ -1548,6 +1590,7 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
             document.getElementById('compteur-recherche').innerText = `${nb} patient(s) trouvé(s)`;
         }
 
+        // VUE GLOBALE AVEC ICONES
         function ouvrirVueGlobaleJour() {
             const dateSelectionnee = datesSemaineEnCours[indiceJourActuel];
             const cleDate = getCleDate(dateSelectionnee);
@@ -1582,6 +1625,14 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
                     const affichageHeure = (rdv.heure && rdv.heure !== "00:00") ? rdv.heure : "--:--";
                     const kineInfo = kineVisionne === "TOUS" ? `<br><small style="color:var(--neutral);">👤 ${rdv.kineNom}</small>` : '';
                     
+                    let iconeStatut = '';
+                    if (rdv.statut === 'vu') iconeStatut = '✅ ';
+                    else if (rdv.statut === 'non-vu') iconeStatut = '❌ ';
+                    
+                    let iconeTla = '';
+                    if (rdv.tlaStatut === 'dans_tla') iconeTla = '📱 ';
+                    else if (rdv.tlaStatut === 'facture') iconeTla = '✓📱 ';
+                    
                     let styleLigne = evtAbsCeJour ? 'opacity: 0.6; background: #f8fafc; text-decoration: line-through;' : 'background: white;';
                     
                     return `
@@ -1589,7 +1640,7 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
                             <strong style="color: var(--primary); min-width: 45px; margin-top: 2px;">${affichageHeure}</strong>
                             <div>
                                 <div style="font-weight: bold; display:flex; align-items:center; flex-wrap:wrap;">
-                                    ${patient.nom} ${badgeAbsentHtml}
+                                    ${iconeStatut}${iconeTla}${patient.nom} ${badgeAbsentHtml}
                                 </div>
                                 <div style="font-size: 0.85rem; color: var(--neutral); margin-top: 2px;">${patient.adresse}${kineInfo}</div>
                             </div>
