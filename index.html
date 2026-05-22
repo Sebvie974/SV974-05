@@ -359,6 +359,7 @@
                     <button class="btn-primary" id="btn-rapport-jour" onclick="exporterRapportJour()">Jour 📋</button>
                     <button class="btn-purple" id="btn-rapport-semaine" onclick="exporterRapportSemaine()">Hebdo 📅</button>
                     <button class="btn-secondary" onclick="ouvrirVueGlobaleJour()" style="background-color: #64748b; color: white;">Globale 📄</button>
+                    <button class="btn-secondary" id="btn-autres-kines" onclick="ouvrirVueAutresKines()" style="background-color: #0ea5e9; color: white;">Collègues 👥</button>
                     <button class="btn-filter-tla" id="btn-filtre-tla-uniquement" onclick="basculerFiltreTlaUniquement()">Filtre TLA 📱</button>
                     
                     <button class="btn-success" id="btn-global-planifier" onclick="ouvrirPlanificateur()" style="flex: auto; font-weight: bold;">Planifier ➕</button>
@@ -420,6 +421,16 @@
             <div id="conteneur-vue-globale" style="display: flex; flex-direction: column; gap: 8px; max-height: 60vh; overflow-y: auto; background: #f1f5f9; padding: 10px; border-radius: 8px; border: 1px solid #cbd5e1;"></div>
             <div style="display: flex; justify-content: flex-end; margin-top:10px;">
                 <button class="btn-secondary" onclick="fermerModal('modal-vue-globale')">Fermer</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="modal-autres-kines" onclick="fermerModal('modal-autres-kines')">
+        <div class="modal-content" style="max-width: 500px; width: 95%;" onclick="event.stopPropagation()">
+            <h3 style="margin: 0 0 10px 0; color: #0ea5e9;" id="titre-autres-kines">👥 Plannings des collègues</h3>
+            <div id="conteneur-autres-kines" style="display: flex; flex-direction: column; gap: 8px; max-height: 60vh; overflow-y: auto; background: #f1f5f9; padding: 10px; border-radius: 8px; border: 1px solid #cbd5e1;"></div>
+            <div style="display: flex; justify-content: flex-end; margin-top:10px;">
+                <button class="btn-secondary" onclick="fermerModal('modal-autres-kines')">Fermer</button>
             </div>
         </div>
     </div>
@@ -672,6 +683,23 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
 
         function changerFiltreVisionPraticien() { kineVisionne = document.getElementById('filtre-view-kine').value; rafraichirAffichage(); }
 
+        // FUSION DES GROUPES (Kiné Titulaire + Remplaçants)
+        function getKinesAssocies(kineCible) {
+            if (kineCible === "TOUS") return listeUtilisateursComplets.map(u => u.nom);
+            const user = listeUtilisateursComplets.find(u => u.nom === kineCible);
+            if (!user) return [kineCible];
+            
+            let titulaireNom = user.role === 'remplacant' ? user.kine_remplace : user.nom;
+            let liste = [titulaireNom];
+            
+            listeUtilisateursComplets.forEach(u => {
+                if (u.role === 'remplacant' && u.kine_remplace === titulaireNom) {
+                    if(!liste.includes(u.nom)) liste.push(u.nom);
+                }
+            });
+            return liste;
+        }
+
         function verifierConnexion() {
             const mdpSaisi = document.getElementById('password-input').value;
             const utilisateurSelectionne = document.getElementById('kine-select-login').value;
@@ -715,6 +743,9 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
             document.getElementById('nom-kine-badge').innerText = `Session : ${kineConnecte} (${labelBadgeRole})`;
             document.getElementById('zone-filtre-secretariat').style.display = (kineRole === 'secretariat') ? 'flex' : 'none';
             
+            const btnAutres = document.getElementById('btn-autres-kines');
+            if(btnAutres) btnAutres.style.display = (kineRole === 'secretariat' || kineVisionne === "TOUS") ? 'none' : 'inline-block';
+
             let today = new Date().getDay();
             if (today >= 1 && today <= 5) {
                 indiceJourActuel = today - 1; 
@@ -866,6 +897,8 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
         }
 
         function rafraichirAffichage() { 
+            const btnAutres = document.getElementById('btn-autres-kines');
+            if(btnAutres) btnAutres.style.display = (kineRole === 'secretariat' || kineVisionne === "TOUS") ? 'none' : 'inline-block';
             if(vueActuelle === 'planning') afficherPlanning(); 
             else afficherCatalogue(); 
         }
@@ -939,14 +972,15 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
 
             const dateSelectionnee = datesSemaineEnCours[indiceJourActuel];
             const cleDate = getCleDate(dateSelectionnee);
-            
             const tousRdvDuJour = planningsParDate[cleDate] || [];
             
+            const groupeKines = getKinesAssocies(kineVisionne);
             let rdvAAfficher = [];
+            
             if (kineVisionne === "TOUS") {
                 rdvAAfficher = [...tousRdvDuJour]; 
             } else {
-                rdvAAfficher = tousRdvDuJour.filter(r => r.kineNom === kineVisionne);
+                rdvAAfficher = tousRdvDuJour.filter(r => groupeKines.includes(r.kineNom));
             }
             
             if (typeof filtreTlaUniquementActif !== 'undefined' && filtreTlaUniquementActif) {
@@ -977,12 +1011,12 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
                     btnVerrou.style.display = 'none'; 
                 } else {
                     btnVerrou.style.display = 'block';
-                    const kineVerrouille = tousRdvDuJour.filter(r => r.kineNom === kineVisionne).some(r => r.verrouille === true);
+                    const kineVerrouille = rdvAAfficher.some(r => r.verrouille === true);
                     if (kineVerrouille) {
-                        btnVerrou.innerText = `Tournée de ${kineVisionne} Validée 🔒 (Déverrouiller)`;
+                        btnVerrou.innerText = `Tournée Validée 🔒 (Déverrouiller)`;
                         btnVerrou.className = "btn-secondary";
                     } else {
-                        btnVerrou.innerText = `Valider la journée de ${kineVisionne} 🔐`;
+                        btnVerrou.innerText = `Valider la tournée 🔐`;
                         btnVerrou.className = "btn-orange";
                     }
                 }
@@ -993,7 +1027,7 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
 
             const statsEl = document.getElementById('tournee-stats');
             if (statsEl) {
-                let cibleTexte = kineVisionne === "TOUS" ? "Général cabinet" : kineVisionne;
+                let cibleTexte = kineVisionne === "TOUS" ? "Général cabinet" : "Tournée de " + getKinesAssocies(kineVisionne)[0];
                 let addFiltreTexte = (typeof filtreTlaUniquementActif !== 'undefined' && filtreTlaUniquementActif) ? " [Filtre TLA Actif]" : "";
                 let texteStats = `${cibleTexte} (${String(dateSelectionnee.getDate()).padStart(2,'0')}/${String(dateSelectionnee.getMonth()+1).padStart(2,'0')})${addFiltreTexte} : ${rdvAAfficher.filter(r => r.statut !== null && r.statut !== undefined && r.statut !== '').length} / ${rdvAAfficher.length} traités`;
                 statsEl.innerText = texteStats;
@@ -1088,7 +1122,7 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
                                 <span class="btn-bilan-declencheur" style="opacity: ${opaciteBilan}; margin-top:0;" onclick="ouvrirBilan('${patient.id}')">${texteBilan}</span>
                             </div>
                             
-                            ${kineVisionne === "TOUS" ? `<span class="kine-tag">Praticien : ${rdv.kineNom} ${rdv.verrouille ? '🔒' : ''}</span>` : ''}
+                            ${(kineVisionne === "TOUS" || groupeKines.length > 1) ? `<span class="kine-tag">Praticien : ${rdv.kineNom} ${rdv.verrouille ? '🔒' : ''}</span>` : ''}
                             ${htmlModuleTla}
                         </div>
                     </div>
@@ -1112,14 +1146,21 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
             const cleDate = getCleDate(dateSelectionnee);
             const tousRdvDuJour = planningsParDate[cleDate] || [];
             
+            const groupeKines = getKinesAssocies(kineVisionne);
             let rdvFiltres = [];
-            if (typeof filtreTlaUniquementActif !== 'undefined' && filtreTlaUniquementActif) {
-                rdvFiltres = tousRdvDuJour.filter(r => r.tlaStatut === 'dans_tla' || r.tlaStatut === 'facture');
+            
+            if (kineVisionne !== "TOUS") {
+                rdvFiltres = tousRdvDuJour.filter(r => groupeKines.includes(r.kineNom));
             } else {
                 rdvFiltres = [...tousRdvDuJour];
             }
 
-            let kinesAExporter = kineVisionne === "TOUS" ? [...new Set(rdvFiltres.map(r => r.kineNom))] : [kineVisionne];
+            if (typeof filtreTlaUniquementActif !== 'undefined' && filtreTlaUniquementActif) {
+                rdvFiltres = rdvFiltres.filter(r => r.tlaStatut === 'dans_tla' || r.tlaStatut === 'facture');
+            }
+
+            // Exporter par le nom de l'affectation ou par titulaire. Faisons simple : on regroupe par le nom enregistré.
+            let kinesAExporter = kineVisionne === "TOUS" ? [...new Set(rdvFiltres.map(r => r.kineNom))] : groupeKines.filter(k => rdvFiltres.some(r => r.kineNom === k));
 
             if (kinesAExporter.length === 0 || rdvFiltres.length === 0) {
                 alert("Aucun patient à exporter pour ce jour.");
@@ -1192,18 +1233,24 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
             let currentY = 32;
             let aDesDonnees = false;
 
+            const groupeKines = getKinesAssocies(kineVisionne);
+
             datesSemaineEnCours.forEach((dateObj) => {
                 const cleDate = getCleDate(dateObj);
                 const tousRdv = planningsParDate[cleDate] || [];
                 
                 let rdvFiltres = [];
-                if (typeof filtreTlaUniquementActif !== 'undefined' && filtreTlaUniquementActif) {
-                    rdvFiltres = tousRdv.filter(r => r.tlaStatut === 'dans_tla' || r.tlaStatut === 'facture');
+                if (kineVisionne !== "TOUS") {
+                    rdvFiltres = tousRdv.filter(r => groupeKines.includes(r.kineNom));
                 } else {
                     rdvFiltres = [...tousRdv];
                 }
 
-                let kinesAExporter = kineVisionne === "TOUS" ? [...new Set(rdvFiltres.map(r => r.kineNom))] : [kineVisionne];
+                if (typeof filtreTlaUniquementActif !== 'undefined' && filtreTlaUniquementActif) {
+                    rdvFiltres = rdvFiltres.filter(r => r.tlaStatut === 'dans_tla' || r.tlaStatut === 'facture');
+                }
+
+                let kinesAExporter = kineVisionne === "TOUS" ? [...new Set(rdvFiltres.map(r => r.kineNom))] : groupeKines.filter(k => rdvFiltres.some(r => r.kineNom === k));
                 let rdvsDuJourGlobaux = rdvFiltres.filter(r => kinesAExporter.includes(r.kineNom));
                 
                 if (rdvsDuJourGlobaux.length > 0) {
@@ -1221,7 +1268,7 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
                         
                         if(rdvKine.length === 0) return;
 
-                        if (kineVisionne === "TOUS") {
+                        if (kineVisionne === "TOUS" || kinesAExporter.length > 1) {
                             doc.setFontSize(10);
                             doc.setFont("helvetica", "italic");
                             doc.text(`Praticien : ${kine}`, 14, currentY);
@@ -1288,7 +1335,9 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
             if (verifierVerrouillageBackend(idPlanif)) return;
             const dateSelectionnee = datesSemaineEnCours[indiceJourActuel];
             const cleDate = getCleDate(dateSelectionnee);
-            let rdvDuJour = planningsParDate[cleDate].filter(r => r.kineNom === kineVisionne);
+            
+            const groupeKines = getKinesAssocies(kineVisionne);
+            let rdvDuJour = planningsParDate[cleDate].filter(r => groupeKines.includes(r.kineNom));
             rdvDuJour.sort(trierPlannings);
             
             const index = rdvDuJour.findIndex(r => String(r.idPlanif) === String(idPlanif));
@@ -1407,7 +1456,6 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
             } catch(e) { console.error(e); }
         }
 
-        // MISE A JOUR : Alignement strict à gauche de la liste des patients à planifier
         function filtrerPatientsPlanif(preselectedId = null) {
             const term = document.getElementById('recherche-planif-multi').value.toLowerCase();
             const container = document.getElementById('liste-patients-planif');
@@ -1504,7 +1552,9 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
             if (!initialiserSupabase()) return;
             const dateSelectionnee = datesSemaineEnCours[indiceJourActuel];
             const cleDate = getCleDate(dateSelectionnee);
-            const rdvDuJour = planningsParDate[cleDate]?.filter(r => r.kineNom === kineVisionne) || [];
+            
+            const groupeKines = getKinesAssocies(kineVisionne);
+            const rdvDuJour = planningsParDate[cleDate]?.filter(r => groupeKines.includes(r.kineNom)) || [];
             
             if(rdvDuJour.length === 0) return;
 
@@ -1533,17 +1583,18 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
         }
 
         async function reinitialiserJour() {
-            if (!confirm(`Voulez-vous vraiment effacer TOUT le planning de ${kineVisionne} pour ce jour ?`)) return;
+            if (!confirm(`Voulez-vous vraiment effacer TOUT le planning de votre tournée pour ce jour ?`)) return;
             if (!initialiserSupabase()) return;
             
             const dateSelectionnee = datesSemaineEnCours[indiceJourActuel];
             const cleDate = getCleDate(dateSelectionnee);
+            const groupeKines = getKinesAssocies(kineVisionne);
             
             try {
                 await supabaseClient.from('plannings_dates')
                     .delete()
                     .eq('date_cle', cleDate)
-                    .eq('kine_nom', kineVisionne);
+                    .in('kine_nom', groupeKines);
                 chargerDonneesDepuisServeur();
             } catch(e) { console.error(e); }
         }
@@ -1594,11 +1645,13 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
             const cleDate = getCleDate(dateSelectionnee);
             const tousRdvDuJour = planningsParDate[cleDate] || [];
             
+            const groupeKines = getKinesAssocies(kineVisionne);
             let rdvAAfficher = [];
+            
             if (kineVisionne === "TOUS") {
                 rdvAAfficher = [...tousRdvDuJour]; 
             } else {
-                rdvAAfficher = tousRdvDuJour.filter(r => r.kineNom === kineVisionne);
+                rdvAAfficher = tousRdvDuJour.filter(r => groupeKines.includes(r.kineNom));
             }
             
             if (typeof filtreTlaUniquementActif !== 'undefined' && filtreTlaUniquementActif) {
@@ -1608,7 +1661,8 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
             rdvAAfficher.sort(trierPlannings);
 
             const conteneur = document.getElementById('conteneur-vue-globale');
-            document.getElementById('titre-vue-globale').innerText = `📄 Vue Globale - ${getLabelDate(dateSelectionnee)} (${kineVisionne})`;
+            const titreAffichage = kineVisionne === "TOUS" ? "Cabinet" : "Tournée de " + groupeKines[0];
+            document.getElementById('titre-vue-globale').innerText = `📄 Vue Globale - ${getLabelDate(dateSelectionnee)} (${titreAffichage})`;
 
             if (rdvAAfficher.length === 0) {
                 conteneur.innerHTML = '<p style="text-align:center; color:var(--neutral); margin-top:20px;">Aucun patient planifié.</p>';
@@ -1621,7 +1675,7 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
                     const badgeAbsentHtml = genererBadgeAbsenceGlobalHtml(patient.historique_absences);
                     
                     const affichageHeure = (rdv.heure && rdv.heure !== "00:00") ? rdv.heure : "--:--";
-                    const kineInfo = kineVisionne === "TOUS" ? `<br><small style="color:var(--neutral);">👤 ${rdv.kineNom}</small>` : '';
+                    const kineInfo = (kineVisionne === "TOUS" || groupeKines.length > 1) ? `<br><small style="color:var(--neutral);">👤 ${rdv.kineNom}</small>` : '';
                     
                     let iconeStatut = '';
                     if (rdv.statut === 'vu') iconeStatut = '✅ ';
@@ -1648,6 +1702,76 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
             }
 
             ouvrirModal('modal-vue-globale');
+        }
+
+        // VUE DES AUTRES COLLÈGUES (NOUVEAU)
+        function ouvrirVueAutresKines() {
+            const dateSelectionnee = datesSemaineEnCours[indiceJourActuel];
+            const cleDate = getCleDate(dateSelectionnee);
+            const tousRdvDuJour = planningsParDate[cleDate] || [];
+
+            const monGroupe = getKinesAssocies(kineVisionne);
+            let autresRdv = tousRdvDuJour.filter(r => !monGroupe.includes(r.kineNom));
+
+            if (typeof filtreTlaUniquementActif !== 'undefined' && filtreTlaUniquementActif) {
+                autresRdv = autresRdv.filter(r => r.tlaStatut === 'dans_tla' || r.tlaStatut === 'facture');
+            }
+
+            autresRdv.sort(trierPlannings);
+
+            const conteneur = document.getElementById('conteneur-autres-kines');
+            document.getElementById('titre-autres-kines').innerText = `👥 Plannings des collègues - ${getLabelDate(dateSelectionnee)}`;
+
+            if (autresRdv.length === 0) {
+                conteneur.innerHTML = '<p style="text-align:center; color:var(--neutral); margin-top:20px;">Aucun autre patient planifié ce jour pour les collègues.</p>';
+            } else {
+                let html = '';
+                const groupes = {};
+                autresRdv.forEach(rdv => {
+                    const titulaire = getKinesAssocies(rdv.kineNom)[0] || rdv.kineNom;
+                    if (!groupes[titulaire]) groupes[titulaire] = [];
+                    groupes[titulaire].push(rdv);
+                });
+
+                for (const [titulaire, rdvs] of Object.entries(groupes)) {
+                    html += `<h4 style="margin: 15px 0 6px 0; color: #475569; border-bottom: 2px solid #cbd5e1; padding-bottom: 4px;">Tournée de ${titulaire}</h4>`;
+                    
+                    html += rdvs.map(rdv => {
+                        const patient = cataloguePatients.find(p => String(p.id) === String(rdv.patientId));
+                        if (!patient) return '';
+                        
+                        const evtAbsCeJour = estPatientAbsentA(cleDate, patient.historique_absences);
+                        const badgeAbsentHtml = genererBadgeAbsenceGlobalHtml(patient.historique_absences);
+                        
+                        const affichageHeure = (rdv.heure && rdv.heure !== "00:00") ? rdv.heure : "--:--";
+                        const kineInfo = rdv.kineNom !== titulaire ? `<br><small style="color:var(--neutral);">Effectué par : 👤 ${rdv.kineNom}</small>` : '';
+                        
+                        let iconeStatut = '';
+                        if (rdv.statut === 'vu') iconeStatut = '✅ ';
+                        else if (rdv.statut === 'non-vu') iconeStatut = '❌ ';
+                        
+                        let iconeTla = '';
+                        if (rdv.tlaStatut === 'dans_tla') iconeTla = '📱 ';
+                        else if (rdv.tlaStatut === 'facture') iconeTla = '✓📱 ';
+                        
+                        let styleLigne = evtAbsCeJour ? 'opacity: 0.6; background: #e2e8f0; text-decoration: line-through;' : 'background: white;';
+                        
+                        return `
+                            <div style="${styleLigne} padding: 8px 10px; border-radius: 6px; border-left: 4px solid var(--neutral); display: flex; align-items: flex-start; gap: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); margin-bottom: 6px;">
+                                <strong style="color: var(--primary); min-width: 45px; margin-top: 2px;">${affichageHeure}</strong>
+                                <div>
+                                    <div style="font-weight: bold; display:flex; align-items:center; flex-wrap:wrap; font-size: 0.95rem; color: #333;">
+                                        ${iconeStatut}${iconeTla}${patient.nom} ${badgeAbsentHtml}
+                                    </div>
+                                    <div style="font-size: 0.8rem; color: var(--neutral); margin-top: 2px;">${patient.adresse}${kineInfo}</div>
+                                </div>
+                            </div>
+                        `;
+                    }).join('');
+                }
+                conteneur.innerHTML = html;
+            }
+            ouvrirModal('modal-autres-kines');
         }
 
         function afficherCatalogue() {
