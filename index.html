@@ -249,13 +249,17 @@
             <h3 style="margin: 0 0 5px 0; color: var(--orange);">⚠️ Notes & Informations Cabinet</h3>
             <div id="liste-notes-cabinet" style="max-height: 60vh; min-height: 100px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; background: #fffcf3; padding: 10px; border-radius: 8px; border: 1px solid #ffeeba;"></div>
             <hr style="width: 100%; border: 0; border-top: 1px solid #ccc; margin: 5px 0;">
-            <label style="font-weight: bold;">Ajouter une note :</label>
+            <label style="font-weight: bold;" id="label-action-note">Ajouter une note :</label>
+            
+            <input type="hidden" id="note-cabinet-id-edite">
+            
             <div style="display: flex; gap: 10px;">
                 <select id="note-cabinet-cible" style="flex: 1; padding: 8px;"></select>
             </div>
             <textarea id="note-cabinet-texte" rows="3" placeholder="Saisissez l'information importante ici..."></textarea>
             <div style="display: flex; gap: 10px; margin-top:5px;">
-                <button class="btn-success" onclick="ajouterNoteCabinet()">Ajouter la note ➕</button>
+                <button class="btn-success" id="btn-save-note" onclick="sauvegarderNoteCabinet()">Ajouter la note ➕</button>
+                <button class="btn-secondary" id="btn-cancel-note" style="display:none;" onclick="reinitialiserFormulaireNote()">Annuler</button>
                 <button class="btn-secondary" onclick="fermerModal('modal-notes-cabinet')">Fermer</button>
             </div>
         </div>
@@ -697,8 +701,18 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
                 }
 
                 // GESTION NOUVEAU BANDEAU NOTES IMPORTANTES
-                const groupeKines = getKinesAssocies(kineVisionne);
-                const notesAffichees = notesCabinet.filter(note => note.kine_cible === 'GLOBAL' || groupeKines.includes(note.kine_cible) || note.kine_cible === kineConnecte);
+                const mesKines = getKinesAssocies(kineConnecte);
+                const kinesVus = getKinesAssocies(kineVisionne);
+                
+                const notesAffichees = notesCabinet.filter(note => {
+                    if (note.kine_cible === 'GLOBAL') return true; // Tout le monde voit les globales
+                    if (note.auteur === kineConnecte) return true; // L'auteur voit toujours sa note (ex: Secrétariat)
+                    if (mesKines.includes(note.kine_cible)) return true; // Le Kiné ciblé voit sa note
+                    // Le secrétariat voit les notes destinées au kiné qu'il filtre à l'écran
+                    if (kineRole === 'secretariat' && kinesVus.includes(note.kine_cible)) return true;
+                    return false;
+                });
+                
                 const bandeauNotes = document.getElementById('bandeau-notes-importantes');
                 if (bandeauNotes) {
                     bandeauNotes.style.display = notesAffichees.length > 0 ? 'block' : 'none';
@@ -975,51 +989,112 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
             });
         }
 
-        // NOUVEAU: NOTES CABINET
+        // GESTION DES NOTES CABINET (Affichage, Édition, Filtres)
         function afficherNotesCabinet() {
             const conteneur = document.getElementById('liste-notes-cabinet');
-            const groupeKines = getKinesAssocies(kineVisionne);
-            const notesAffichees = notesCabinet.filter(note => note.kine_cible === 'GLOBAL' || groupeKines.includes(note.kine_cible) || note.kine_cible === kineConnecte);
+            const mesKines = getKinesAssocies(kineConnecte);
+            const kinesVus = getKinesAssocies(kineVisionne);
+            
+            // Filtre identique à celui du bandeau
+            const notesAffichees = notesCabinet.filter(note => {
+                if (note.kine_cible === 'GLOBAL') return true;
+                if (note.auteur === kineConnecte) return true;
+                if (mesKines.includes(note.kine_cible)) return true;
+                if (kineRole === 'secretariat' && kinesVus.includes(note.kine_cible)) return true;
+                return false;
+            });
             
             if (notesAffichees.length === 0) {
                 conteneur.innerHTML = '<p style="text-align:center; font-size:0.85rem; color:var(--neutral);">Aucune note importante pour le moment.</p>';
             } else {
                 conteneur.innerHTML = notesAffichees.map(note => {
-                    const isMonMessage = note.auteur === kineConnecte || kineRole === 'secretariat';
+                    const isMonMessage = note.auteur === kineConnecte;
+                    const isSecretariat = kineRole === 'secretariat';
+                    
                     const cibleTxt = note.kine_cible === 'GLOBAL' ? '🌍 Pour tous' : `👤 Pour ${note.kine_cible}`;
                     const auteurTxt = note.auteur ? ` (par ${note.auteur})` : '';
-                    return `
-                        <div style="background: white; padding: 8px; border-radius: 6px; border-left: 3px solid var(--orange); display:flex; justify-content:space-between; align-items:flex-start;">
-                            <div>
-                                <div style="font-size:0.75rem; font-weight:bold; color:var(--neutral); margin-bottom:4px;">${cibleTxt}${auteurTxt}</div>
-                                <div style="font-size:0.9rem; white-space:pre-wrap;">${note.texte}</div>
+                    
+                    let actionsHtml = '';
+                    if (isMonMessage) {
+                        // L'auteur peut modifier ET supprimer
+                        actionsHtml = `
+                            <div style="display: flex; gap: 6px; flex-direction: column;">
+                                <button class="btn-icon" style="color:var(--primary); font-size:1.1rem;" onclick="editerNoteCabinet('${note.id}')" title="Modifier">✏️</button>
+                                <button class="btn-icon" style="color:var(--danger); font-size:1.1rem;" onclick="supprimerNoteCabinet('${note.id}')" title="Supprimer">🗑️</button>
                             </div>
-                            ${isMonMessage ? `<button class="btn-icon" style="color:var(--danger);" onclick="supprimerNoteCabinet('${note.id}')">🗑️</button>` : ''}
+                        `;
+                    } else if (isSecretariat) {
+                        // Le secrétariat peut faire le ménage et supprimer si besoin
+                        actionsHtml = `
+                            <div style="display: flex; gap: 6px; flex-direction: column;">
+                                <button class="btn-icon" style="color:var(--danger); font-size:1.1rem;" onclick="supprimerNoteCabinet('${note.id}')" title="Supprimer">🗑️</button>
+                            </div>
+                        `;
+                    }
+
+                    return `
+                        <div style="background: white; padding: 8px; border-radius: 6px; border-left: 3px solid var(--orange); display:flex; justify-content:space-between; align-items:flex-start; margin-bottom: 4px;">
+                            <div style="flex: 1; padding-right: 10px;">
+                                <div style="font-size:0.75rem; font-weight:bold; color:var(--neutral); margin-bottom:4px;">${cibleTxt}${auteurTxt}</div>
+                                <div style="font-size:0.95rem; white-space:pre-wrap;">${note.texte}</div>
+                            </div>
+                            ${actionsHtml}
                         </div>
                     `;
                 }).join('');
             }
         }
 
-        async function ajouterNoteCabinet() {
+        async function sauvegarderNoteCabinet() {
+            const idEdite = document.getElementById('note-cabinet-id-edite').value;
             const texte = document.getElementById('note-cabinet-texte').value.trim();
             const cible = document.getElementById('note-cabinet-cible').value;
+            
             if(!texte) return;
             if(!initialiserSupabase()) return;
 
-            const nouvelleNote = {
-                id: Math.floor(Math.random()*1000000000).toString(),
-                texte: texte,
-                kine_cible: cible,
-                auteur: kineConnecte
-            };
-
             try {
-                await supabaseClient.from('notes_cabinet').insert([nouvelleNote]);
-                document.getElementById('note-cabinet-texte').value = '';
+                if (idEdite) {
+                    // Modification d'une note existante
+                    await supabaseClient.from('notes_cabinet').update({ texte: texte, kine_cible: cible }).eq('id', idEdite);
+                } else {
+                    // Création d'une nouvelle note
+                    const nouvelleNote = {
+                        id: Math.floor(Math.random()*1000000000).toString(),
+                        texte: texte,
+                        kine_cible: cible,
+                        auteur: kineConnecte
+                    };
+                    await supabaseClient.from('notes_cabinet').insert([nouvelleNote]);
+                }
+                
+                reinitialiserFormulaireNote();
                 chargerDonneesDepuisServeur();
-                setTimeout(afficherNotesCabinet, 500);
+                setTimeout(afficherNotesCabinet, 400); // Laisse le temps à l'affichage de se mettre à jour
             } catch(e) { console.error(e); }
+        }
+
+        function editerNoteCabinet(idNote) {
+            const note = notesCabinet.find(n => String(n.id) === String(idNote));
+            if(!note) return;
+            
+            document.getElementById('note-cabinet-id-edite').value = note.id;
+            document.getElementById('note-cabinet-texte').value = note.texte;
+            document.getElementById('note-cabinet-cible').value = note.kine_cible;
+            
+            document.getElementById('label-action-note').innerText = "Modifier la note :";
+            document.getElementById('btn-save-note').innerText = "Enregistrer 💾";
+            document.getElementById('btn-cancel-note').style.display = "inline-block";
+        }
+
+        function reinitialiserFormulaireNote() {
+            document.getElementById('note-cabinet-id-edite').value = '';
+            document.getElementById('note-cabinet-texte').value = '';
+            document.getElementById('note-cabinet-cible').value = 'GLOBAL'; 
+            
+            document.getElementById('label-action-note').innerText = "Ajouter une note :";
+            document.getElementById('btn-save-note').innerText = "Ajouter la note ➕";
+            document.getElementById('btn-cancel-note').style.display = "none";
         }
 
         async function supprimerNoteCabinet(idNote) {
@@ -1028,7 +1103,7 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
             try {
                 await supabaseClient.from('notes_cabinet').delete().eq('id', idNote);
                 chargerDonneesDepuisServeur();
-                setTimeout(afficherNotesCabinet, 500);
+                setTimeout(afficherNotesCabinet, 400);
             } catch(e) { console.error(e); }
         }
 
