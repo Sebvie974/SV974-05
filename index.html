@@ -1705,24 +1705,28 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
                     
                     let styleLigne = evtAbsCeJour ? 'opacity: 0.6; background: #f8fafc; text-decoration: line-through;' : 'background: white;';
                     
-                    // NOUVEAU : La case à cocher pour le secrétariat
-                    let casePointageSecretariat = '';
+                    // NOUVEAU : Zone du bas pour le secrétariat avec la case papier alignée à gauche du TLA
+                    let zoneActionsBasse = '';
                     if (kineRole === 'secretariat') {
-                        casePointageSecretariat = `<input type="checkbox" style="transform: scale(1.5); margin-right: 12px; margin-top: 6px; cursor: pointer; flex-shrink: 0;" title="Pointage papier">`;
+                        zoneActionsBasse = `
+                            <div style="display: flex; align-items: center; gap: 12px; margin-top: 4px;">
+                                <input type="checkbox" style="width: 16px; height: 16px; margin: 0; cursor: pointer; flex-shrink: 0;" title="Pointage papier">
+                                <div style="margin-top: -4px;">${genererHtmlTla(rdv)}</div>
+                            </div>
+                        `;
+                    } else {
+                        zoneActionsBasse = `<div>${genererHtmlTla(rdv)}</div>`;
                     }
                     
                     return `
                         <div style="${styleLigne} padding: 10px; border-radius: 6px; border-left: 4px solid var(--primary); display: flex; align-items: flex-start; gap: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); margin-bottom: 6px;">
-                            ${casePointageSecretariat}
                             <strong style="color: var(--primary); min-width: 45px; margin-top: 2px;">${affichageHeure}</strong>
                             <div style="flex: 1; width: 100%;">
                                 <div style="font-weight: bold; display:flex; align-items:center; flex-wrap:wrap;">
                                     ${iconeStatut}${patient.nom} ${badgeAbsentHtml}
                                 </div>
                                 <div style="font-size: 0.85rem; color: var(--neutral); margin-top: 2px;">${patient.adresse}${kineInfo}</div>
-                                <div>
-                                    ${genererHtmlTla(rdv)}
-                                </div>
+                                ${zoneActionsBasse}
                             </div>
                         </div>
                     `;
