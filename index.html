@@ -1017,11 +1017,12 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
             const term = document.getElementById('recherche-gestion-tla').value.toLowerCase();
             const conteneur = document.getElementById('liste-gestion-tla');
             
-            // 1. On trie d'abord par ceux qui sont cochés (TLA), puis par ordre alphabétique
-            const triPatient = cataloguePatients.sort((a,b) => {
-                if (a.a_facturer_tla && !b.a_facturer_tla) return -1;
-                if (!a.a_facturer_tla && b.a_facturer_tla) return 1;
-                return a.nom.localeCompare(b.nom);
+            // 1. On crée une COPIE de la liste pour ne pas perturber le fichier principal, puis on trie
+            const triPatient = [...cataloguePatients].sort((a,b) => {
+                const valA = a.a_facturer_tla ? 1 : 0;
+                const valB = b.a_facturer_tla ? 1 : 0;
+                if (valA !== valB) return valB - valA; // Les cochés (1) montent en premier
+                return a.nom.localeCompare(b.nom);     // Ensuite par ordre alphabétique
             });
             
             let html = '';
@@ -1030,7 +1031,7 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
                 if(p.nom.toLowerCase().includes(term) || (p.adresse && p.adresse.toLowerCase().includes(term))) {
                     const isChecked = p.a_facturer_tla ? 'checked' : '';
                     
-                    // 2. On cherche si le patient a été facturé à domicile dans la semaine chargée
+                    // 2. Recherche si le patient a été facturé dans les plannings de cette semaine
                     let infoFacturation = '';
                     let joursFactures = [];
                     for (let dateCle in planningsParDate) {
@@ -1045,8 +1046,8 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
                         infoFacturation = `<span style="font-size: 0.7rem; background-color: var(--success); color: white; padding: 2px 6px; border-radius: 4px; margin-left: 8px;">✅ Facturé dom. (${joursFactures.join(', ')})</span>`;
                     }
 
-                    // 3. Style de fond différent si coché pour bien les distinguer visuellement
-                    const bgStyle = p.a_facturer_tla ? 'background:#e6f8f5; border: 1px solid #00c7b1;' : 'background:white; border: 1px solid #e5e5ea;';
+                    // 3. Style visuel (Fond bleuté si coché)
+                    const bgStyle = p.a_facturer_tla ? 'background:#eefdfb; border: 1px solid #00c7b1;' : 'background:white; border: 1px solid #e5e5ea;';
 
                     html += `
                         <label style="display:flex; gap:12px; cursor:pointer; font-size:0.9rem; align-items:center; ${bgStyle} padding: 8px; border-radius:4px; margin:0; transition: background 0.2s;">
@@ -1076,12 +1077,14 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
             if(!initialiserSupabase()) return;
             try {
                 await supabaseClient.from('catalogue_patients').update({ a_facturer_tla: isChecked }).eq('id', patientId);
-                // Mise à jour locale pour éviter de tout recharger et perdre le focus
+                // Mise à jour locale
                 const p = cataloguePatients.find(x => String(x.id) === String(patientId));
                 if(p) p.a_facturer_tla = isChecked;
+                
+                // On rafraîchit la liste pour appliquer le changement de couleur immédiatement (sans réorganiser)
+                filtrerGestionTla();
             } catch(e) { console.error(e); }
         }
-
         // NOUVEAU: PREMIERE SEANCE
         async function basculerPremiereSeance(idPlanif) {
             if (verifierVerrouillageBackend(idPlanif)) return;
