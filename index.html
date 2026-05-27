@@ -164,7 +164,7 @@
     </div>
 
     <div id="main-app">
-        <div id="bandeau-notes-importantes" class="bandeau-alerte" onclick="ouvrirModal('modal-notes-cabinet')">⚠️ <span id="texte-bandeau-notes">Notes importantes (Cliquer pour lire)</span></div>
+        <div id="bandeau-notes-importantes" class="bandeau-alerte" onclick="ouvrirNotesCabinet()">⚠️ <span id="texte-bandeau-notes">Notes importantes (Cliquer pour lire)</span></div>
         <div id="bandeau-a-prevoir" class="bandeau-alerte" onclick="ouvrirModalAPrevoir()">🚀 <span id="texte-bandeau-prevoir">0 patient à prévoir en attente</span></div>
 
         <header>
@@ -197,7 +197,7 @@
 
             <div style="margin-bottom: 10px; display: flex; gap: 10px;">
                 <button class="btn-purple" style="flex: 1;" id="btn-toggle-view" onclick="basculerVue()">Fichier Patients 🗂️</button>
-                <button class="btn-orange" style="flex: 1;" onclick="ouvrirModal('modal-notes-cabinet')">Notes Info ⚠️</button>
+                <button class="btn-orange" style="flex: 1;" onclick="ouvrirNotesCabinet()">Notes Info ⚠️</button>
             </div>
             
             <div id="header-planning">
@@ -990,6 +990,12 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
         }
 
         // GESTION DES NOTES CABINET (Affichage, Édition, Filtres)
+        function ouvrirNotesCabinet() {
+            afficherNotesCabinet(); // On génère le texte de la liste
+            reinitialiserFormulaireNote(); // On vide la zone de saisie
+            ouvrirModal('modal-notes-cabinet'); // ET ENSUITE on ouvre la fenêtre
+        }
+
         function afficherNotesCabinet() {
             const conteneur = document.getElementById('liste-notes-cabinet');
             const mesKines = getKinesAssocies(kineConnecte);
