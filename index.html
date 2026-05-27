@@ -1017,17 +1017,45 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
             const term = document.getElementById('recherche-gestion-tla').value.toLowerCase();
             const conteneur = document.getElementById('liste-gestion-tla');
             
-            const triPatient = cataloguePatients.sort((a,b) => a.nom.localeCompare(b.nom));
+            // 1. On trie d'abord par ceux qui sont cochés (TLA), puis par ordre alphabétique
+            const triPatient = cataloguePatients.sort((a,b) => {
+                if (a.a_facturer_tla && !b.a_facturer_tla) return -1;
+                if (!a.a_facturer_tla && b.a_facturer_tla) return 1;
+                return a.nom.localeCompare(b.nom);
+            });
+            
             let html = '';
             
             triPatient.forEach(p => {
                 if(p.nom.toLowerCase().includes(term) || (p.adresse && p.adresse.toLowerCase().includes(term))) {
                     const isChecked = p.a_facturer_tla ? 'checked' : '';
+                    
+                    // 2. On cherche si le patient a été facturé à domicile dans la semaine chargée
+                    let infoFacturation = '';
+                    let joursFactures = [];
+                    for (let dateCle in planningsParDate) {
+                        const rdvs = planningsParDate[dateCle].filter(r => String(r.patientId) === String(p.id) && r.tlaStatut === 'facture');
+                        if (rdvs.length > 0) {
+                            const d = new Date(dateCle);
+                            joursFactures.push(`${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}`);
+                        }
+                    }
+                    
+                    if (joursFactures.length > 0) {
+                        infoFacturation = `<span style="font-size: 0.7rem; background-color: var(--success); color: white; padding: 2px 6px; border-radius: 4px; margin-left: 8px;">✅ Facturé dom. (${joursFactures.join(', ')})</span>`;
+                    }
+
+                    // 3. Style de fond différent si coché pour bien les distinguer visuellement
+                    const bgStyle = p.a_facturer_tla ? 'background:#e6f8f5; border: 1px solid #00c7b1;' : 'background:white; border: 1px solid #e5e5ea;';
+
                     html += `
-                        <label style="display:flex; gap:12px; cursor:pointer; font-size:0.9rem; align-items:center; background:white; padding: 8px; border-radius:4px; margin:0; border:1px solid #e5e5ea;">
+                        <label style="display:flex; gap:12px; cursor:pointer; font-size:0.9rem; align-items:center; ${bgStyle} padding: 8px; border-radius:4px; margin:0; transition: background 0.2s;">
                             <input type="checkbox" onchange="changerStatutGestionTla('${p.id}', this.checked)" ${isChecked} style="width: auto; margin: 0; transform: scale(1.3);">
                             <div style="display:flex; flex-direction:column; flex:1;">
-                                <span style="font-weight:bold; color:var(--primary);">${p.nom}</span>
+                                <div style="display:flex; align-items:center; flex-wrap:wrap;">
+                                    <span style="font-weight:bold; color:var(--primary);">${p.nom}</span>
+                                    ${infoFacturation}
+                                </div>
                                 <span style="font-size:0.75rem; color:var(--neutral);">${p.adresse || 'Sans adresse'}</span>
                             </div>
                         </label>
