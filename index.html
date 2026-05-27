@@ -1033,42 +1033,73 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
         }
 
         // NOUVEAU: GESTION TLA GLOBALE SYNCHRONISÉE
+        // NOUVEAU: GESTION TLA GLOBALE SYNCHRONISÉE (AVEC RÉTROCOMPATIBILITÉ)
         function filtrerGestionTla() {
             const term = document.getElementById('recherche-gestion-tla').value.toLowerCase();
             const conteneur = document.getElementById('liste-gestion-tla');
             
-            // Tri : Les patients TLA en haut, puis ordre alphabétique
-            const triPatient = [...cataloguePatients].sort((a,b) => {
-                const valA = a.a_facturer_tla ? 1 : 0;
-                const valB = b.a_facturer_tla ? 1 : 0;
+            // ÉTAPE 1 : Analyser les données pour assurer la rétrocompatibilité
+            const patientsEnrichis = cataloguePatients.map(p => {
+                // Statut de base (nouveau système)
+                let dansCircuitTla = (p.a_facturer_tla === true);
+                let estFactureParKine = false;
+                let joursFactures = [];
+
+                // Recherche dans les plannings (pour rattraper les anciens cochages)
+                for (let dateCle in planningsParDate) {
+                    const rdvsPatient = planningsParDate[dateCle].filter(r => String(r.patientId) === String(p.id));
+                    rdvsPatient.forEach(r => {
+                        if (r.tlaStatut === 'dans_tla') {
+                            dansCircuitTla = true; // Rétrocompatibilité : on force la détection
+                        }
+                        if (r.tlaStatut === 'facture') {
+                            dansCircuitTla = true;
+                            estFactureParKine = true;
+                            const d = new Date(dateCle);
+                            joursFactures.push(`${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}`);
+                        }
+                    });
+                }
+
+                return {
+                    ...p,
+                    vraiTla: dansCircuitTla,
+                    estFacture: estFactureParKine,
+                    joursFactures: joursFactures,
+                    nomSecurise: p.nom || "Sans Nom" // Sécurité anti-bug si une fiche est vide
+                };
+            });
+
+            // ÉTAPE 2 : Tri (Les patients TLA en haut, puis ordre alphabétique)
+            const triPatient = patientsEnrichis.sort((a,b) => {
+                const valA = a.vraiTla ? 1 : 0;
+                const valB = b.vraiTla ? 1 : 0;
                 if (valA !== valB) return valB - valA;
-                return a.nom.localeCompare(b.nom);
+                return a.nomSecurise.localeCompare(b.nomSecurise);
             });
             
+            // ÉTAPE 3 : Création de l'affichage HTML
             let html = '';
             
             triPatient.forEach(p => {
-                if(p.nom.toLowerCase().includes(term) || (p.adresse && p.adresse.toLowerCase().includes(term))) {
-                    const isChecked = p.a_facturer_tla ? 'checked' : '';
+                if(p.nomSecurise.toLowerCase().includes(term) || (p.adresse && p.adresse.toLowerCase().includes(term))) {
+                    const isChecked = p.vraiTla ? 'checked' : '';
                     
-                    // Vérifie si un Kiné a cliqué pour dire qu'il a facturé
-                    let isFactureByKine = false;
-                    for (let dateCle in planningsParDate) {
-                        if (planningsParDate[dateCle].some(r => String(r.patientId) === String(p.id) && r.tlaStatut === 'facture')) {
-                            isFactureByKine = true;
-                            break;
-                        }
-                    }
-                    
-                    let infoFacturation = isFactureByKine ? `<span style="font-size: 0.75rem; background-color: var(--success); color: white; padding: 2px 6px; border-radius: 4px; margin-left: 8px;">✅ Fait par le Kiné !</span>` : '';
-                    const bgStyle = p.a_facturer_tla ? (isFactureByKine ? 'background:#e6f8f5; border: 1px solid #34c759;' : 'background:#fff3cd; border: 1px solid #ff9500;') : 'background:white; border: 1px solid #e5e5ea;';
+                    let infoFacturation = p.estFacture 
+                        ? `<span style="font-size: 0.75rem; background-color: var(--success); color: white; padding: 2px 6px; border-radius: 4px; margin-left: 8px;">✅ Fait par le Kiné (${p.joursFactures.join(', ')})</span>` 
+                        : '';
+                        
+                    // Fond orange pour "En attente", Vert pour "Facturé", Blanc pour le reste
+                    const bgStyle = p.vraiTla 
+                        ? (p.estFacture ? 'background:#e6f8f5; border: 1px solid #34c759;' : 'background:#fff3cd; border: 1px solid #ff9500;') 
+                        : 'background:white; border: 1px solid #e5e5ea;';
 
                     html += `
                         <label style="display:flex; gap:12px; cursor:pointer; font-size:0.9rem; align-items:center; ${bgStyle} padding: 8px; border-radius:4px; margin:0; transition: background 0.2s;">
                             <input type="checkbox" onchange="changerStatutGestionTla('${p.id}', this.checked)" ${isChecked} style="width: auto; margin: 0; transform: scale(1.3);">
                             <div style="display:flex; flex-direction:column; flex:1;">
                                 <div style="display:flex; align-items:center; flex-wrap:wrap;">
-                                    <span style="font-weight:bold; color:var(--primary);">${p.nom}</span>
+                                    <span style="font-weight:bold; color:var(--primary);">${p.nomSecurise}</span>
                                     ${infoFacturation}
                                 </div>
                                 <span style="font-size:0.75rem; color:var(--neutral);">${p.adresse || 'Sans adresse'}</span>
@@ -1077,7 +1108,8 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
                     `;
                 }
             });
-            if(html === '') html = '<p style="text-align:center; font-size:0.85rem; color:var(--neutral);">Aucun patient.</p>';
+            
+            if(html === '') html = '<p style="text-align:center; font-size:0.85rem; color:var(--neutral);">Aucun patient trouvé.</p>';
             conteneur.innerHTML = html;
         }
 
