@@ -1767,26 +1767,33 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
                         const kineInfo = rdv.kineNom !== titulaire ? `<br><small style="color:var(--neutral);">Effectué par : 👤 ${rdv.kineNom}</small>` : '';
                         
                         let iconeStatut = '';
-                        if (rdv.statut === 'vu') iconeStatut = '✅ ';
-                        else if (rdv.statut === 'non-vu') iconeStatut = '❌ ';
-                        
-                        let styleLigne = evtAbsCeJour ? 'opacity: 0.6; background: #e2e8f0; text-decoration: line-through;' : 'background: white;';
-                        
-                        return `
-                            <div style="${styleLigne} padding: 8px 10px; border-radius: 6px; border-left: 4px solid var(--neutral); display: flex; align-items: flex-start; gap: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); margin-bottom: 6px;">
-                                <strong style="color: var(--primary); min-width: 45px; margin-top: 2px;">${affichageHeure}</strong>
-                                <div style="flex: 1; width: 100%;">
-                                    <div style="font-weight: bold; display:flex; align-items:center; flex-wrap:wrap; font-size: 0.95rem; color: #333;">
-                                        ${iconeStatut}${patient.nom} ${badgeAbsentHtml}
-                                    </div>
-                                    <div style="font-size: 0.8rem; color: var(--neutral); margin-top: 2px;">${patient.adresse}${kineInfo}</div>
-                                    <div>
-                                        ${genererHtmlTla(rdv)}
-                                    </div>
+                    if (rdv.statut === 'vu') iconeStatut = '✅ ';
+                    else if (rdv.statut === 'non-vu') iconeStatut = '❌ ';
+                    
+                    let styleLigne = evtAbsCeJour ? 'opacity: 0.6; background: #f8fafc; text-decoration: line-through;' : 'background: white;';
+                    
+                    // NOUVEAU : Case à cocher pour le pointage visuel du secrétariat
+                    let casePointageSecretariat = '';
+                    if (kineRole === 'secretariat') {
+                        casePointageSecretariat = `<input type="checkbox" style="transform: scale(1.4); margin-right: 5px; margin-top: 4px; cursor: pointer;" title="Pointage papier">`;
+                    }
+                    
+                    return `
+                        <div style="${styleLigne} padding: 10px; border-radius: 6px; border-left: 4px solid var(--primary); display: flex; align-items: flex-start; gap: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+                            ${casePointageSecretariat}
+                            <strong style="color: var(--primary); min-width: 45px; margin-top: 2px;">${affichageHeure}</strong>
+                            <div style="flex: 1; width: 100%;">
+                                <div style="font-weight: bold; display:flex; align-items:center; flex-wrap:wrap;">
+                                    ${iconeStatut}${patient.nom} ${badgeAbsentHtml}
+                                </div>
+                                <div style="font-size: 0.85rem; color: var(--neutral); margin-top: 2px;">${patient.adresse}${kineInfo}</div>
+                                <div>
+                                    ${genererHtmlTla(rdv)}
                                 </div>
                             </div>
-                        `;
-                    }).join('');
+                        </div>
+                    `;
+                }).join('');
                 }
                 conteneur.innerHTML = html;
             }
