@@ -24,175 +24,42 @@
             --tla-color: #34c759;
         }
 
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-color);
-            margin: 0;
-            padding: 15px;
-        }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: var(--bg-color); color: var(--text-color); margin: 0; padding: 15px; }
 
-        #login-screen {
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: var(--bg-color);
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            z-index: 100;
-            gap: 15px;
-        }
-        .login-box {
-            background: white;
-            padding: 30px;
-            border-radius: 16px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-            text-align: center;
-            width: 90%;
-            max-width: 350px;
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-            position: relative;
-        }
-
-        .btn-config-corner {
-            position: absolute;
-            top: 15px;
-            right: 15px;
-            background: transparent;
-            font-size: 1.2rem;
-            padding: 0;
-            border: none;
-            cursor: pointer;
-        }
-
-        #config-panel {
-            display: none;
-            border-top: 2px dashed #e5e5ea;
-            margin-top: 10px;
-            padding-top: 15px;
-            text-align: left;
-            flex-direction: column;
-            gap: 8px;
-        }
-        .kine-list-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background: #f4f6f9;
-            padding: 6px 10px;
-            border-radius: 6px;
-            font-size: 0.85rem;
-        }
+        #login-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg-color); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 100; gap: 15px; }
+        .login-box { background: white; padding: 30px; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); text-align: center; width: 90%; max-width: 350px; display: flex; flex-direction: column; gap: 12px; position: relative; }
+        .btn-config-corner { position: absolute; top: 15px; right: 15px; background: transparent; font-size: 1.2rem; padding: 0; border: none; cursor: pointer; }
+        #config-panel { display: none; border-top: 2px dashed #e5e5ea; margin-top: 10px; padding-top: 15px; text-align: left; flex-direction: column; gap: 8px; }
+        .kine-list-item { display: flex; justify-content: space-between; align-items: center; background: #f4f6f9; padding: 6px 10px; border-radius: 6px; font-size: 0.85rem; }
 
         #main-app { display: none; }
 
-        #bandeau-a-prevoir {
-            display: none;
-            background-color: var(--danger);
-            color: white;
-            text-align: center;
-            padding: 10px;
-            font-weight: bold;
-            font-size: 0.95rem;
-            border-radius: 8px;
-            margin-bottom: 10px;
-            cursor: pointer;
-            box-shadow: 0 4px 8px rgba(255, 59, 48, 0.3);
-            transition: transform 0.1s;
-        }
-        #bandeau-a-prevoir:active { transform: scale(0.98); }
+        /* Nouveaux Bandeaux (À prévoir & Notes) */
+        .bandeau-alerte { color: white; text-align: center; padding: 10px; font-weight: bold; font-size: 0.95rem; border-radius: 8px; margin-bottom: 10px; cursor: pointer; box-shadow: 0 4px 8px rgba(0,0,0,0.15); transition: transform 0.1s; display: none; }
+        .bandeau-alerte:active { transform: scale(0.98); }
+        #bandeau-a-prevoir { background-color: var(--danger); }
+        #bandeau-notes-importantes { background-color: var(--orange); }
 
-        header {
-            background: var(--card-bg);
-            padding: 10px 12px;
-            border-radius: 12px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-            margin-bottom: 10px;
-            position: sticky;
-            top: 0;
-            z-index: 10;
-        }
-
+        header { background: var(--card-bg); padding: 10px 12px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); margin-bottom: 10px; position: sticky; top: 0; z-index: 10; }
         h1 { margin: 0; font-size: 1.25rem; color: var(--primary); }
 
-        .user-badge {
-            font-size: 0.85rem;
-            background: #e5e5ea;
-            padding: 4px 10px;
-            border-radius: 12px;
-            font-weight: bold;
-            color: var(--purple);
-        }
-
-        .tla-location-badge {
-            font-size: 0.85rem;
-            background: #eefdfb;
-            border: 1px solid #00c7b1;
-            color: #008777;
-            padding: 4px 10px;
-            border-radius: 8px;
-            font-weight: bold;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            margin-top: 4px;
-            width: fit-content;
-        }
-
-        .sync-indicator {
-            font-size: 0.8rem;
-            display: inline-flex;
-            align-items: center;
-            gap: 5px;
-            padding: 4px 8px;
-            border-radius: 12px;
-            background: #e5e5ea;
-            font-weight: bold;
-        }
+        .user-badge { font-size: 0.85rem; background: #e5e5ea; padding: 4px 10px; border-radius: 12px; font-weight: bold; color: var(--purple); }
+        .tla-location-badge { font-size: 0.85rem; background: #eefdfb; border: 1px solid #00c7b1; color: #008777; padding: 4px 10px; border-radius: 8px; font-weight: bold; display: flex; align-items: center; gap: 6px; margin-top: 4px; width: fit-content; }
+        .sync-indicator { font-size: 0.8rem; display: inline-flex; align-items: center; gap: 5px; padding: 4px 8px; border-radius: 12px; font-weight: bold; }
         .sync-online { background: #d4edda; color: #155724; }
         .sync-offline { background: #f8d7da; color: #721c24; }
 
-        .week-selector {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            background: #e5e5ea;
-            padding: 4px 8px;
-            border-radius: 8px;
-            margin-bottom: 8px;
-            font-weight: bold;
-            font-size: 0.85rem;
-        }
-
+        .week-selector { display: flex; align-items: center; justify-content: space-between; background: #e5e5ea; padding: 4px 8px; border-radius: 8px; margin-bottom: 8px; font-weight: bold; font-size: 0.85rem; }
         .week-btn { background: transparent; color: var(--primary); padding: 4px 8px; font-size: 0.9rem; border: none; cursor: pointer; }
         .days-nav { display: flex; gap: 4px; overflow-x: auto; padding-bottom: 5px; margin-bottom: 8px; }
-        
-        .day-btn {
-            background: #e5e5ea;
-            color: var(--text-color);
-            padding: 6px 10px;
-            border-radius: 20px;
-            font-size: 0.75rem;
-            white-space: nowrap;
-            border: none;
-            cursor: pointer;
-        }
+        .day-btn { background: #e5e5ea; color: var(--text-color); padding: 6px 10px; border-radius: 20px; font-size: 0.75rem; white-space: nowrap; border: none; cursor: pointer; }
         .day-btn.active { background: var(--primary); color: white; }
         .stats { font-size: 0.85rem; color: var(--neutral); font-weight: bold; margin-bottom: 8px; }
         
         .actions-bar { display: flex; gap: 6px; flex-wrap: wrap; }
         .actions-bar > button { padding: 6px 8px; font-size: 0.75rem; flex: auto; }
 
-        button, select, input, textarea {
-            border: none;
-            padding: 8px 12px;
-            border-radius: 8px;
-            font-weight: bold;
-            font-size: 0.85rem;
-        }
+        button, select, input, textarea { border: none; padding: 8px 12px; border-radius: 8px; font-weight: bold; font-size: 0.85rem; }
         button { cursor: pointer; }
         button:disabled { opacity: 0.5 !important; cursor: not-allowed !important; pointer-events: none !important; }
         
@@ -206,31 +73,15 @@
         .app-view { display: none; }
         .app-view.active { display: flex; flex-direction: column; gap: 6px; }
         
-        .patient-card {
-            background: var(--card-bg);
-            padding: 8px 10px;
-            border-radius: 10px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.03);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-left: 5px solid var(--neutral);
-            gap: 8px;
-            transition: opacity 0.2s;
-        }
+        .patient-card { background: var(--card-bg); padding: 8px 10px; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.03); display: flex; justify-content: space-between; align-items: center; border-left: 5px solid var(--neutral); gap: 8px; transition: opacity 0.2s; }
         .patient-card.vu { border-left-color: var(--success); }
         .patient-card.non-vu { border-left-color: var(--danger); }
-        .patient-card.absent {
-            opacity: 0.60;
-            background-image: repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(0,0,0,0.03) 10px, rgba(0,0,0,0.03) 20px);
-        }
+        .patient-card.absent { opacity: 0.60; background-image: repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(0,0,0,0.03) 10px, rgba(0,0,0,0.03) 20px); }
         
-        .patient-card-left { display: flex; align-items: center; gap: 8px; max-width: 68%; }
-        
+        .patient-card-left { display: flex; align-items: center; gap: 8px; max-width: 70%; }
         .reorder-actions { display: flex; flex-direction: column; gap: 4px; }
         .btn-reorder { background: #e5e5ea; padding: 4px 6px; font-size: 0.75rem; border-radius: 4px; color: #555; display: flex; align-items: center; justify-content: center; }
-        .btn-reorder:active { background: #ccc; }
-
+        
         .patient-info { display: flex; flex-direction: column; gap: 2px; width: 100%; }
         .patient-name { font-weight: 600; font-size: 1rem; }
         .patient-address { font-size: 0.8rem; color: var(--neutral); text-decoration: none; }
@@ -238,10 +89,13 @@
         .kine-tag { font-size: 0.75rem; background: #e5e5ea; color: #555; padding: 2px 6px; border-radius: 4px; font-weight: bold; width: fit-content; margin-top: 2px;}
         .badge-card-prevoir { font-size: 0.7rem; background: var(--danger); color: white; padding: 2px 6px; border-radius: 4px; font-weight: bold; width: fit-content; }
         
-        .badge-tla-kine { font-size: 0.75rem; background-color: var(--tla-color); color: white; padding: 4px 8px; border-radius: 6px; font-weight: bold; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; width: fit-content; margin-top: 2px; border: none; }
+        .badge-tla-kine { font-size: 0.75rem; background-color: var(--tla-color); color: white; padding: 4px 8px; border-radius: 6px; font-weight: bold; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; width: fit-content; border: none; }
         .badge-tla-kine.facture { background-color: #e5e5ea; color: #8e8e93; text-decoration: line-through; }
-        .badge-tla-sec-facture { font-size: 0.7rem; background-color: var(--success); color: white; padding: 4px 6px; border-radius: 4px; font-weight: bold; width: fit-content; margin-top: 2px; }
-        .sec-tla-checkbox-container { display: flex; align-items: center; gap: 6px; font-size: 0.8rem; color: #333; margin-top: 2px; cursor: pointer; background: #eefdfb; padding: 4px 8px; border-radius: 4px; width: fit-content; font-weight: bold; }
+        .badge-tla-sec-facture { font-size: 0.7rem; background-color: var(--success); color: white; padding: 4px 6px; border-radius: 4px; font-weight: bold; width: fit-content; }
+        
+        /* Nouveau badge 1ere séance */
+        .badge-premiere { font-size: 0.75rem; background-color: #fff; border: 1px solid var(--purple); color: var(--purple); padding: 4px 6px; border-radius: 6px; font-weight: bold; cursor: pointer; display: inline-flex; align-items: center; margin-left: 5px;}
+        .badge-premiere.active { background-color: var(--purple); color: white; }
 
         .btn-filter-tla { background-color: #e5e5ea; color: #555; transition: all 0.2s ease; }
         .btn-filter-tla.active { background-color: #00c7b1; color: white; }
@@ -249,11 +103,11 @@
         .btn-note-declencheur { font-size: 0.75rem; background: #fff3cd; color: #856404; padding: 4px 8px; border-radius: 6px; font-weight: bold; width: fit-content; cursor: pointer; border: 1px solid #ffeeba; display: inline-block; }
         .btn-bilan-declencheur { font-size: 0.75rem; background: #e0f2fe; color: #0284c7; padding: 4px 8px; border-radius: 6px; font-weight: bold; width: fit-content; cursor: pointer; border: 1px solid #bae6fd; display: inline-block; }
 
-        .btn-group { display: flex; gap: 6px; align-items: center; }
+        .btn-group { display: flex; gap: 4px; align-items: center; flex-wrap: wrap; justify-content: flex-end; max-width: 80px;}
         .btn-status { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1rem; background: #f0f0f5; }
         .btn-vu.active { background-color: var(--success); color: white; }
         .btn-nonvu.active { background-color: var(--danger); color: white; }
-        .btn-icon { background: transparent; font-size: 0.9rem; border: none; cursor: pointer; }
+        .btn-icon { background: transparent; font-size: 0.9rem; border: none; cursor: pointer; padding: 4px;}
 
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 120; justify-content: center; align-items: center; padding: 10px; box-sizing: border-box; }
         .modal-content { background: white; padding: 20px; border-radius: 16px; width: 100%; max-width: 450px; display: flex; flex-direction: column; gap: 12px; max-height: 90vh; overflow-y: auto; box-sizing: border-box;}
@@ -266,7 +120,6 @@
         .item-prevoir-modal { background: #f4f6f9; padding: 10px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; gap: 10px; border-left: 4px solid var(--danger); }
         .search-container { background: var(--card-bg); padding: 10px; border-radius: 12px; box-shadow: 0 2px 5px rgba(0,0,0,0.03); margin-bottom: 5px; display: flex; flex-direction: column; gap: 6px; }
         .search-input { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; font-size: 0.95rem; background: #f9f9f9; }
-        .search-input:focus { outline: 2px solid var(--purple); background: white; }
         .search-counter { font-size: 0.8rem; color: var(--neutral); font-weight: bold; padding-left: 4px; }
         
         .absence-item { display: flex; justify-content: space-between; align-items: center; background: white; padding: 6px 8px; border: 1px solid #cbd5e1; border-radius: 6px; margin-bottom: 6px; font-size: 0.8rem; }
@@ -278,7 +131,6 @@
         <div class="login-box">
             <button class="btn-config-corner" onclick="basculerAffichageConfig('login')" title="Gérer le personnel">⚙️</button>
             <h2 style="color: var(--primary); margin:0;">Accès Cabinet</h2>
-            <p style="color: var(--neutral); font-size:0.9rem; margin:0;">Sélectionnez votre profil.</p>
             <select id="kine-select-login" style="padding:10px; font-size:1rem; border:1px solid #ccc; font-weight: bold;"><option value="">Chargement...</option></select>
             <input type="password" id="password-input" placeholder="Mot de passe" style="padding:10px; border:1px solid #ccc; text-align:center; font-size:1.1rem;">
             <button class="btn-primary" style="padding:10px; font-size:1rem;" onclick="verifierConnexion()">Se connecter 🔐</button>
@@ -287,14 +139,14 @@
                 <h4 id="titre-form-kine" style="margin: 0 0 5px 0; color: var(--purple);">⚙️ Comptes</h4>
                 <div style="display: flex; flex-direction: column; gap: 5px; margin-bottom: 10px; background: #f4f6f9; padding: 8px; border-radius: 8px;">
                     <input type="hidden" id="kine-id-edite">
-                    <input type="text" id="nouveau-kine-input" placeholder="Nom d'utilisateur" style="padding:6px; border:1px solid #ccc; background: white;">
-                    <input type="password" id="nouveau-mdp-input" placeholder="Mot de passe" style="padding:6px; border:1px solid #ccc; background: white;">
-                    <select id="nouveau-role-input" style="padding:6px; border:1px solid #ccc; background: white; font-weight: bold;">
+                    <input type="text" id="nouveau-kine-input" placeholder="Nom d'utilisateur" style="padding:6px; border:1px solid #ccc;">
+                    <input type="password" id="nouveau-mdp-input" placeholder="Mot de passe" style="padding:6px; border:1px solid #ccc;">
+                    <select id="nouveau-role-input" style="padding:6px; border:1px solid #ccc; font-weight: bold;">
                         <option value="kine">Kiné</option><option value="remplacant">Remplaçant</option><option value="secretariat">Secrétariat</option>
                     </select>
-                    <select id="nouveau-kine-remplace-input" style="padding:6px; border:1px solid #ccc; background: white; font-weight: bold; display: none;"></select>
-                    <label style="display:flex; gap:8px; align-items:center; font-size:0.85rem; cursor:pointer;"><input type="checkbox" id="nouveau-actif-input" checked> Compte actif</label>
-                    <div style="display: flex; gap: 5px; width: 100%; margin-top: 4px;">
+                    <select id="nouveau-kine-remplace-input" style="padding:6px; border:1px solid #ccc; font-weight: bold; display: none;"></select>
+                    <label style="display:flex; gap:8px; align-items:center; font-size:0.85rem;"><input type="checkbox" id="nouveau-actif-input" checked> Compte actif</label>
+                    <div style="display: flex; gap: 5px; margin-top: 4px;">
                         <button id="btn-soumettre-kine" class="btn-success" style="padding:8px; flex: 1;" onclick="sauvegarderKine()">Créer</button>
                         <button id="btn-annuler-kine" class="btn-secondary" style="padding:8px; display: none;" onclick="reinitialiserFormulaireKine()">Annuler</button>
                     </div>
@@ -312,7 +164,8 @@
     </div>
 
     <div id="main-app">
-        <div id="bandeau-a-prevoir" onclick="ouvrirModalAPrevoir()">🚀 <span id="texte-bandeau-prevoir">0 patient à prévoir en attente</span></div>
+        <div id="bandeau-notes-importantes" class="bandeau-alerte" onclick="ouvrirModal('modal-notes-cabinet')">⚠️ <span id="texte-bandeau-notes">Notes importantes (Cliquer pour lire)</span></div>
+        <div id="bandeau-a-prevoir" class="bandeau-alerte" onclick="ouvrirModalAPrevoir()">🚀 <span id="texte-bandeau-prevoir">0 patient à prévoir en attente</span></div>
 
         <header>
             <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
@@ -326,7 +179,7 @@
                 <div style="display:flex; flex-direction:column; gap:6px; align-items:flex-end;">
                     <div id="sync-badge" class="sync-indicator sync-online">Prêt 🟢</div>
                     <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 2px;">
-                        <span style="font-size: 0.7rem; font-weight: bold; color: var(--neutral);">Le boîtier TLA est avec :</span>
+                        <span style="font-size: 0.7rem; font-weight: bold; color: var(--neutral);">Boîtier TLA avec :</span>
                         <select id="select-declaration-tla" style="padding: 2px 6px; font-size: 0.75rem; border: 1px solid #ccc; background: #fff;" onchange="declarerDetenteurTla(this.value)"></select>
                     </div>
                     <button class="btn-icon" style="font-size:0.8rem; color:var(--danger); padding:0;" onclick="deconnexion()">Déconnexion 🚪</button>
@@ -342,8 +195,9 @@
                 <div id="integration-config-secretariat"></div>
             </div>
 
-            <div style="margin-bottom: 10px;">
-                <button class="btn-purple" style="width: 100%;" id="btn-toggle-view" onclick="basculerVue()">Voir le Fichier Patients 🗂️</button>
+            <div style="margin-bottom: 10px; display: flex; gap: 10px;">
+                <button class="btn-purple" style="flex: 1;" id="btn-toggle-view" onclick="basculerVue()">Fichier Patients 🗂️</button>
+                <button class="btn-orange" style="flex: 1;" onclick="ouvrirModal('modal-notes-cabinet')">Notes Info ⚠️</button>
             </div>
             
             <div id="header-planning">
@@ -375,7 +229,7 @@
             <div id="header-fichier" style="display: none;">
                 <div style="display: flex; gap: 10px; margin-bottom: 10px;">
                     <button class="btn-success" style="flex: 1; padding: 10px; font-size: 0.9rem;" onclick="ouvrirFormulairePatient()">Nouveau patient 👤➕</button>
-                    <button class="btn-filter-tla active" style="flex: 1; padding: 10px; font-size: 0.9rem; border-radius: 8px; font-weight: bold; color: white; background-color: #00c7b1; border: none; cursor: pointer;" onclick="ouvrirPlanificateur(null, true)">Planifier TLA 📱</button>
+                    <button class="btn-filter-tla active" style="flex: 1; padding: 10px; font-size: 0.9rem; border-radius: 8px; font-weight: bold; color: white; background-color: #00c7b1; border: none; cursor: pointer;" onclick="ouvrirGestionTla()">Gestion TLA 📱</button>
                 </div>
                 <div class="search-container">
                     <input type="text" id="recherche-patient-input" class="search-input" placeholder="🔍 Rechercher (Nom, adresse...)" oninput="filtrerFichierPatientsIntuitivement()">
@@ -390,81 +244,93 @@
         </main>
     </div>
 
+    <div class="modal" id="modal-notes-cabinet" onclick="fermerModal('modal-notes-cabinet')">
+        <div class="modal-content" style="max-width: 550px;" onclick="event.stopPropagation()">
+            <h3 style="margin: 0 0 5px 0; color: var(--orange);">⚠️ Notes & Informations Cabinet</h3>
+            <div id="liste-notes-cabinet" style="max-height: 250px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; background: #fffcf3; padding: 10px; border-radius: 8px; border: 1px solid #ffeeba;"></div>
+            <hr style="width: 100%; border: 0; border-top: 1px solid #ccc; margin: 5px 0;">
+            <label style="font-weight: bold;">Ajouter une note :</label>
+            <div style="display: flex; gap: 10px;">
+                <select id="note-cabinet-cible" style="flex: 1; padding: 8px;"></select>
+            </div>
+            <textarea id="note-cabinet-texte" rows="3" placeholder="Saisissez l'information importante ici..."></textarea>
+            <div style="display: flex; gap: 10px; margin-top:5px;">
+                <button class="btn-success" onclick="ajouterNoteCabinet()">Ajouter la note ➕</button>
+                <button class="btn-secondary" onclick="fermerModal('modal-notes-cabinet')">Fermer</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="modal-deplacer-rdv">
+        <div class="modal-content" style="max-width: 400px;">
+            <h3 style="margin-bottom: 0;">Déplacer le RDV ➡️📅</h3>
+            <p id="deplacer-rdv-nom" style="font-size:0.9rem; color:var(--neutral); margin-top:0;"></p>
+            <input type="hidden" id="deplacer-rdv-id">
+            
+            <label>Nouvelle Date :</label>
+            <input type="date" id="deplacer-rdv-date">
+            
+            <label>Nouveau Praticien (optionnel) :</label>
+            <select id="deplacer-rdv-kine"></select>
+            
+            <div style="display: flex; gap: 10px; margin-top: 10px;">
+                <button class="btn-primary" onclick="validerDeplacementRdv()">Valider le déplacement ✅</button>
+                <button class="btn-secondary" onclick="fermerModal('modal-deplacer-rdv')">Annuler</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="modal-gestion-tla">
+        <div class="modal-content" style="max-width: 550px; width: 95%;">
+            <h3 style="margin-bottom: 5px; color: #008777;">📱 Gestion des TLA à facturer</h3>
+            <p style="font-size: 0.85rem; color: var(--neutral); margin-top: 0;">Sélectionnez ici les patients qui doivent être facturés dans le lecteur, indépendamment du planning.</p>
+            
+            <input type="text" id="recherche-gestion-tla" placeholder="🔍 Rechercher un patient..." oninput="filtrerGestionTla()" style="margin-bottom: 5px;">
+            <div id="liste-gestion-tla" style="max-height: 50vh; overflow-y: auto; background: #eefdfb; padding: 10px; border-radius: 8px; display: flex; flex-direction: column; gap: 6px; border: 1px solid #00c7b1;"></div>
+            
+            <div style="display: flex; justify-content: flex-end; margin-top: 10px;">
+                <button class="btn-secondary" onclick="fermerModal('modal-gestion-tla')">Fermer</button>
+            </div>
+        </div>
+    </div>
+
     <div class="modal" id="modal-liste-prevoir"><div class="modal-content" style="max-width: 500px;"><h3 style="color: var(--danger);">🚨 Patients à prévoir</h3><div id="conteneur-liste-prevoir" style="display: flex; flex-direction: column; gap: 10px; max-height: 60vh; overflow-y: auto;"></div><div style="margin-top: 10px; text-align: right;"><button class="btn-secondary" onclick="fermerModal('modal-liste-prevoir')">Fermer</button></div></div></div>
     
-    <div class="modal" id="modal-note-volante" onclick="fermerModal('modal-note-volante')">
-        <div class="modal-content" style="max-width: 500px;" onclick="event.stopPropagation()">
-            <h3 style="margin: 0 0 5px 0; color: var(--purple);">📝 Notes & Infos</h3>
-            <p id="note-volante-nom-patient" style="font-weight: bold; margin: 0 0 5px 0;"></p>
-            <input type="hidden" id="note-volante-patient-id">
-            <textarea id="note-volante-corps" rows="10" placeholder="Saisissez vos notes ou informations ici..." style="width: 100%; min-height: 200px; background: #fffcf3; padding: 12px; border-radius: 8px; border: 1px solid #ccc; border-left: 4px solid var(--orange); box-sizing: border-box; font-family: inherit; font-size: 0.95rem; resize: vertical;"></textarea>
-            <div style="display: flex; gap: 10px; margin-top:5px;">
-                <button class="btn-success" onclick="sauvegarderNoteVolante()">Enregistrer 💾</button>
-                <button class="btn-secondary" onclick="fermerModal('modal-note-volante')">Fermer</button>
-            </div>
-        </div>
-    </div>
+    <div class="modal" id="modal-note-volante" onclick="fermerModal('modal-note-volante')"><div class="modal-content" style="max-width: 500px;" onclick="event.stopPropagation()"><h3 style="margin: 0 0 5px 0; color: var(--purple);">📝 Notes du patient</h3><p id="note-volante-nom-patient" style="font-weight: bold; margin: 0 0 5px 0;"></p><input type="hidden" id="note-volante-patient-id"><textarea id="note-volante-corps" rows="10" placeholder="Notes..." style="width: 100%; min-height: 200px; background: #fffcf3; padding: 12px; border-radius: 8px; border: 1px solid #ccc;"></textarea><div style="display: flex; gap: 10px; margin-top:5px;"><button class="btn-success" onclick="sauvegarderNoteVolante()">Enregistrer 💾</button><button class="btn-secondary" onclick="fermerModal('modal-note-volante')">Fermer</button></div></div></div>
 
-    <div class="modal" id="modal-bilan" onclick="fermerModal('modal-bilan')">
-        <div class="modal-content" style="max-width: 650px;" onclick="event.stopPropagation()">
-            <h3 style="margin: 0 0 5px 0; color: #0284c7;">📋 Bilan Kiné</h3>
-            <p id="bilan-nom-patient" style="font-weight: bold; margin: 0 0 5px 0;"></p>
-            <input type="hidden" id="bilan-patient-id">
-            <textarea id="bilan-corps" rows="15" placeholder="Saisissez le bilan du patient ici..." style="width: 100%; min-height: 300px; background: #fdfdfd; padding: 12px; border-radius: 8px; border: 1px solid #ccc; border-left: 4px solid #0284c7; box-sizing: border-box; font-family: inherit; font-size: 0.95rem; resize: vertical; line-height: 1.4;"></textarea>
-            <div style="display: flex; gap: 10px; margin-top:5px;">
-                <button class="btn-success" onclick="sauvegarderBilan()">Enregistrer le Bilan 💾</button>
-                <button class="btn-secondary" onclick="fermerModal('modal-bilan')">Fermer</button>
-            </div>
-        </div>
-    </div>
+    <div class="modal" id="modal-bilan" onclick="fermerModal('modal-bilan')"><div class="modal-content" style="max-width: 650px;" onclick="event.stopPropagation()"><h3 style="margin: 0 0 5px 0; color: #0284c7;">📋 Bilan Kiné</h3><p id="bilan-nom-patient" style="font-weight: bold; margin: 0 0 5px 0;"></p><input type="hidden" id="bilan-patient-id"><textarea id="bilan-corps" rows="15" style="width: 100%; min-height: 300px; background: #fdfdfd; padding: 12px; border-radius: 8px; border: 1px solid #ccc;"></textarea><div style="display: flex; gap: 10px; margin-top:5px;"><button class="btn-success" onclick="sauvegarderBilan()">Enregistrer le Bilan 💾</button><button class="btn-secondary" onclick="fermerModal('modal-bilan')">Fermer</button></div></div></div>
     
-    <div class="modal" id="modal-vue-globale" onclick="fermerModal('modal-vue-globale')">
-        <div class="modal-content" style="max-width: 500px; width: 95%;" onclick="event.stopPropagation()">
-            <h3 style="margin: 0 0 10px 0; color: #475569;" id="titre-vue-globale">📄 Vue Globale</h3>
-            <div id="conteneur-vue-globale" style="display: flex; flex-direction: column; gap: 8px; max-height: 60vh; overflow-y: auto; background: #f1f5f9; padding: 10px; border-radius: 8px; border: 1px solid #cbd5e1;"></div>
-            <div style="display: flex; justify-content: flex-end; margin-top:10px;">
-                <button class="btn-secondary" onclick="fermerModal('modal-vue-globale')">Fermer</button>
-            </div>
-        </div>
-    </div>
+    <div class="modal" id="modal-vue-globale" onclick="fermerModal('modal-vue-globale')"><div class="modal-content" style="max-width: 500px; width: 95%;" onclick="event.stopPropagation()"><h3 style="margin: 0 0 10px 0; color: #475569;" id="titre-vue-globale">📄 Vue Globale</h3><div id="conteneur-vue-globale" style="display: flex; flex-direction: column; gap: 8px; max-height: 60vh; overflow-y: auto; background: #f1f5f9; padding: 10px; border-radius: 8px; border: 1px solid #cbd5e1;"></div><div style="display: flex; justify-content: flex-end; margin-top:10px;"><button class="btn-secondary" onclick="fermerModal('modal-vue-globale')">Fermer</button></div></div></div>
 
-    <div class="modal" id="modal-autres-kines" onclick="fermerModal('modal-autres-kines')">
-        <div class="modal-content" style="max-width: 500px; width: 95%;" onclick="event.stopPropagation()">
-            <h3 style="margin: 0 0 10px 0; color: #0ea5e9;" id="titre-autres-kines">👥 Plannings des collègues</h3>
-            <div id="conteneur-autres-kines" style="display: flex; flex-direction: column; gap: 8px; max-height: 60vh; overflow-y: auto; background: #f1f5f9; padding: 10px; border-radius: 8px; border: 1px solid #cbd5e1;"></div>
-            <div style="display: flex; justify-content: flex-end; margin-top:10px;">
-                <button class="btn-secondary" onclick="fermerModal('modal-autres-kines')">Fermer</button>
-            </div>
-        </div>
-    </div>
+    <div class="modal" id="modal-autres-kines" onclick="fermerModal('modal-autres-kines')"><div class="modal-content" style="max-width: 500px; width: 95%;" onclick="event.stopPropagation()"><h3 style="margin: 0 0 10px 0; color: #0ea5e9;" id="titre-autres-kines">👥 Plannings des collègues</h3><div id="conteneur-autres-kines" style="display: flex; flex-direction: column; gap: 8px; max-height: 60vh; overflow-y: auto; background: #f1f5f9; padding: 10px; border-radius: 8px; border: 1px solid #cbd5e1;"></div><div style="display: flex; justify-content: flex-end; margin-top:10px;"><button class="btn-secondary" onclick="fermerModal('modal-autres-kines')">Fermer</button></div></div></div>
 
     <div class="modal" id="modal-planifier">
-        <div class="modal-content" style="max-width: 550px; width: 95%; text-align: left;">
-            <h3 style="margin-bottom:0; text-align:left;">Planifier des patients</h3>
-            <label style="color:var(--neutral); font-size:0.8rem; margin-top:-5px; text-align:left;">Affecter plusieurs patients en une fois</label>
+        <div class="modal-content" style="max-width: 550px; width: 95%; text-align: left; padding: 15px;">
+            <h3 style="margin-bottom:5px; text-align:left;">Planifier des patients</h3>
             
-            <div style="display:flex; gap:10px; flex-wrap:wrap; align-items: center; margin-bottom: 5px;">
-                <div style="flex:1; min-width:140px;">
-                    <label>Praticien affecté</label><select id="planif-kine-affecte"></select>
+            <div style="display:flex; gap:10px; flex-wrap:wrap; align-items: center; background: #f4f6f9; padding: 8px; border-radius: 8px; margin-bottom: 10px;">
+                <div style="flex:2; min-width:120px;">
+                    <label style="font-size:0.75rem; color:var(--neutral);">Praticien affecté</label>
+                    <select id="planif-kine-affecte" style="padding: 6px;"></select>
                 </div>
-                <div style="flex:1; min-width:140px;">
-                    <label>Heure (optionnel)</label><input type="time" id="planif-heure">
+                <div style="flex:1; min-width:90px;">
+                    <label style="font-size:0.75rem; color:var(--neutral);">Heure (opt.)</label>
+                    <input type="time" id="planif-heure" style="padding: 6px;">
                 </div>
             </div>
-
-            <div style="margin-bottom: 10px; padding: 8px 10px; background: #eefdfb; border-radius: 8px; border: 1px dashed #00c7b1;">
-                <label style="display: flex; gap: 8px; align-items: center; cursor: pointer; color: #008777; font-weight: bold; margin: 0; font-size: 0.9rem;">
-                    <input type="checkbox" id="planif-tla-coche" style="width: auto; margin: 0; transform: scale(1.2);">
-                    Préparer dans le TLA 📱 (À facturer)
-                </label>
-            </div>
             
-            <label>Jours :</label>
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 5px;">
+                <label style="margin:0;">Jours à planifier :</label>
+                <div style="display: flex; gap: 5px;">
+                    <button type="button" class="btn-secondary" style="padding: 2px 8px; font-size: 0.75rem;" onclick="changerSemainePlanif(-1)">◀ Sem. Préc.</button>
+                    <button type="button" class="btn-secondary" style="padding: 2px 8px; font-size: 0.75rem;" onclick="changerSemainePlanif(1)">Sem. Suiv. ▶</button>
+                </div>
+            </div>
             <div class="days-checkbox-grid" id="conteneur-jours-checkbox"></div>
             
-            <label>Patients à ajouter :</label>
+            <label style="margin-top: 10px;">Patients à ajouter :</label>
             <input type="text" id="recherche-planif-multi" placeholder="🔍 Rechercher un patient..." oninput="filtrerPatientsPlanif()" style="margin-bottom: 0px;">
-            <div id="liste-patients-planif" style="max-height: 250px; overflow-y: auto; background: #f4f6f9; padding: 10px; border-radius: 8px; display: flex; flex-direction: column; gap: 6px; border: 1px solid #e5e5ea;"></div>
+            <div id="liste-patients-planif" style="max-height: 50vh; overflow-y: auto; background: #f4f6f9; padding: 10px; border-radius: 8px; display: flex; flex-direction: column; gap: 6px; border: 1px solid #e5e5ea;"></div>
             
             <div style="display: flex; gap: 10px; margin-top: 10px;">
                 <button class="btn-primary" onclick="ajouterAuPlanningMultiJours()">Valider la sélection ✅</button>
@@ -480,13 +346,9 @@
             <label>Nom</label><input type="text" id="patient-nom" required>
             <label>Adresse</label><input type="text" id="patient-adresse" required>
             <label>Tél 1</label><input type="tel" id="patient-telephone">
-            <div id="zone-tel-secondaire" style="display:none; flex-direction:column; gap:4px;">
-                <label>Tél 2</label><input type="tel" id="patient-telephone2">
-            </div>
+            <div id="zone-tel-secondaire" style="display:none; flex-direction:column; gap:4px;"><label>Tél 2</label><input type="tel" id="patient-telephone2"></div>
             <button type="button" id="btn-add-tel2" class="btn-secondary" style="padding:5px; font-size:0.8rem; width:fit-content;" onclick="document.getElementById('zone-tel-secondaire').style.display='flex'; this.style.display='none';">➕ Ajouter un autre numéro</button>
-            
-            <label>Informations (Petite note)</label>
-            <textarea id="patient-notes" rows="4" style="min-height: 100px; font-size: 0.95rem; resize: vertical; font-family: inherit; line-height: 1.4;"></textarea>
+            <label>Informations</label><textarea id="patient-notes" rows="3" style="min-height: 80px;"></textarea>
             
             <label style="display: flex; align-items: center; gap: 10px; background: #ffe5e5; padding: 10px; border-radius: 8px; margin-top: 5px; font-weight: bold; color: #b30000; cursor: pointer;">
                 <input type="checkbox" id="patient-aprevoir" style="width: auto;"> 🚨 Patient à prévoir
@@ -495,12 +357,9 @@
             <div style="background: #f1f5f9; padding: 10px; border-radius: 8px; margin-top: 5px; border: 1px dashed #cbd5e1;">
                 <label style="font-weight: bold; color: #475569; margin-bottom: 5px; display: block;">🏥 Historique Absences / Hospit.</label>
                 <div style="display:flex; gap:5px; margin-bottom:10px;">
-                    <select id="abs-type" style="padding:4px; font-size:0.8rem; flex:1;">
-                        <option value="Absence">Absence simple</option>
-                        <option value="Hospitalisation">Hospitalisation</option>
-                    </select>
-                    <input type="date" id="abs-debut" style="padding:4px; font-size:0.8rem; flex:1;" title="Date de début">
-                    <input type="date" id="abs-fin" style="padding:4px; font-size:0.8rem; flex:1;" title="Date de fin (optionnel)">
+                    <select id="abs-type" style="padding:4px; font-size:0.8rem; flex:1;"><option value="Absence">Absence simple</option><option value="Hospitalisation">Hospitalisation</option></select>
+                    <input type="date" id="abs-debut" style="padding:4px; font-size:0.8rem; flex:1;">
+                    <input type="date" id="abs-fin" style="padding:4px; font-size:0.8rem; flex:1;">
                     <button type="button" class="btn-success" style="padding:4px 8px; font-size:0.8rem;" onclick="ajouterEvenementAbsence()">➕</button>
                 </div>
                 <div id="conteneur-liste-absences" style="max-height: 100px; overflow-y: auto;"></div>
@@ -531,6 +390,7 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
         let indiceJourActuel = 0;
         let cataloguePatients = [];
         let planningsParDate = {};
+        let notesCabinet = []; // NOUVEAU
         let journeeEstVerrouillee = false; 
         let kineConnecte = ""; 
         let kineRole = "kine"; 
@@ -540,6 +400,11 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
         let filtreTlaUniquementActif = false;
         
         let currentAbsences = []; 
+        
+        // Variables pour la nouvelle gestion Planif (pour ne pas effacer les coches)
+        let selectionPlanifMulti = new Set();
+        let offsetSemainePlanif = 0;
+        let datesSemainePlanif = [];
 
         function initialiserSupabase() {
             if (supabaseClient === null) {
@@ -621,7 +486,11 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
             const praticiens = listeUtilisateursComplets.filter(u => u.role === 'kine' || u.role === 'remplacant').map(u => u.nom);
             filtreSec.innerHTML = `<option value="TOUS">👥 Tous</option>` + praticiens.map(k => `<option value="${k}">👤 ${k}</option>`).join('');
             filtreSec.value = kineVisionne || "TOUS";
+            
             document.getElementById('select-declaration-tla').innerHTML = `<option value="Cabinet">🏢 Au Cabinet</option>` + listeUtilisateursComplets.filter(u => u.actif !== false).map(u => `<option value="${u.nom}">👤 ${u.nom}</option>`).join('');
+            
+            const cibleNotes = document.getElementById('note-cabinet-cible');
+            if(cibleNotes) cibleNotes.innerHTML = `<option value="GLOBAL">Pour tout le cabinet (Général)</option>` + praticiens.map(k => `<option value="${k}">Kiné: ${k}</option>`).join('');
         }
 
         function basculerAffichageConfig(provenance) {
@@ -679,13 +548,11 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
                 else await supabaseClient.from('practiciens').insert([{...payload, id: Math.floor(Math.random() * 1000000000).toString(), detient_tla: false}]);
                 reinitialiserFormulaireKine();
                 await chargerListeKines();
-            } catch(e) {
-                alert("Erreur de sauvegarde. Si c'est la 1ere fois, vérifiez que la colonne 'actif' (type booléen) existe bien dans votre table 'practiciens'.");
-            }
+            } catch(e) { alert("Erreur de sauvegarde."); }
         }
 
         async function supprimerKine(nom) {
-            if (confirm(`Supprimer ${nom} de la base de données ? (Conseil: vous pouvez juste décocher 'Compte Actif' en le modifiant pour garder son historique)`)) {
+            if (confirm(`Supprimer ${nom} de la base de données ?`)) {
                 await supabaseClient.from('practiciens').delete().eq('nom', nom);
                 await chargerListeKines();
             }
@@ -693,7 +560,6 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
 
         function changerFiltreVisionPraticien() { kineVisionne = document.getElementById('filtre-view-kine').value; rafraichirAffichage(); }
 
-        // FUSION DES GROUPES (Kiné Titulaire + Remplaçants)
         function getKinesAssocies(kineCible) {
             if (kineCible === "TOUS") return listeUtilisateursComplets.map(u => u.nom);
             const user = listeUtilisateursComplets.find(u => u.nom === kineCible);
@@ -715,10 +581,7 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
             const utilisateurSelectionne = document.getElementById('kine-select-login').value;
             const cible = listeUtilisateursComplets.find(u => u.nom === utilisateurSelectionne);
             if (cible && cible.mot_de_passe === mdpSaisi) {
-                if(cible.actif === false) {
-                    alert("Ce compte a été désactivé par l'administrateur.");
-                    return;
-                }
+                if(cible.actif === false) { alert("Ce compte a été désactivé."); return; }
                 localStorage.setItem('kine_connecte', 'true');
                 localStorage.setItem('kine_nom_actif', cible.nom);
                 localStorage.setItem('kine_role_actif', cible.role);
@@ -734,7 +597,6 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
         window.addEventListener('DOMContentLoaded', async () => {
             initialiserSupabase(); 
             await chargerListeKines();
-            
             modifierBadgeReseau(navigator.onLine);
 
             if (localStorage.getItem('kine_connecte') === 'true') {
@@ -757,11 +619,8 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
             if(btnAutres) btnAutres.style.display = (kineRole === 'secretariat' || kineVisionne === "TOUS") ? 'none' : 'inline-block';
 
             let today = new Date().getDay();
-            if (today >= 1 && today <= 5) {
-                indiceJourActuel = today - 1; 
-            } else {
-                indiceJourActuel = 0; 
-            }
+            if (today >= 1 && today <= 5) { indiceJourActuel = today - 1; } 
+            else { indiceJourActuel = 0; }
             
             calculerSemaine(); 
             chargerDonneesDepuisServeur(); 
@@ -769,52 +628,36 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
         }
 
         async function exporterToutesDonnees() {
+            // Logique inchangée pour l'export Json
             if(!initialiserSupabase()) return;
             try {
                 const resPatients = await supabaseClient.from('catalogue_patients').select('*');
                 const resPlanning = await supabaseClient.from('plannings_dates').select('*');
                 const resPrat = await supabaseClient.from('practiciens').select('*');
                 
-                const backup = {
-                    date: new Date().toISOString(),
-                    patients: resPatients.data || [],
-                    plannings: resPlanning.data || [],
-                    praticiens: resPrat.data || []
-                };
+                const backup = { date: new Date().toISOString(), patients: resPatients.data || [], plannings: resPlanning.data || [], praticiens: resPrat.data || [] };
                 const blob = new Blob([JSON.stringify(backup, null, 2)], {type: 'application/json'});
                 const url = URL.createObjectURL(blob);
                 const a = document.createElement('a');
-                a.href = url;
-                a.download = `backup_kine_${new Date().toISOString().split('T')[0]}.json`;
-                a.click();
-                URL.revokeObjectURL(url);
-            } catch(e) {
-                alert("Erreur lors de l'export: " + e.message);
-            }
+                a.href = url; a.download = `backup_kine_${new Date().toISOString().split('T')[0]}.json`; a.click(); URL.revokeObjectURL(url);
+            } catch(e) { alert("Erreur lors de l'export: " + e.message); }
         }
 
         async function importerToutesDonnees(event) {
+            // Logique inchangée import Json
             const file = event.target.files[0];
             if(!file) return;
             const reader = new FileReader();
             reader.onload = async (e) => {
                 try {
                     const data = JSON.parse(e.target.result);
-                    if(!confirm("⚠️ ATTENTION : L'importation va écraser les données existantes. Continuer ?")) {
-                        document.getElementById('import-file').value = "";
-                        return;
-                    }
+                    if(!confirm("⚠️ L'importation va écraser les données. Continuer ?")) { document.getElementById('import-file').value = ""; return; }
                     if(!initialiserSupabase()) return;
-                    
                     if(data.praticiens && data.praticiens.length > 0) await supabaseClient.from('practiciens').upsert(data.praticiens);
                     if(data.patients && data.patients.length > 0) await supabaseClient.from('catalogue_patients').upsert(data.patients);
                     if(data.plannings && data.plannings.length > 0) await supabaseClient.from('plannings_dates').upsert(data.plannings);
-                    
-                    alert("✅ Importation terminée avec succès ! L'application va se recharger.");
-                    window.location.reload();
-                } catch(err) {
-                    alert("❌ Erreur lors de l'importation : " + err.message);
-                }
+                    alert("✅ Importation terminée !"); window.location.reload();
+                } catch(err) { alert("❌ Erreur : " + err.message); }
             };
             reader.readAsText(file);
         }
@@ -822,11 +665,14 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
         async function chargerDonneesDepuisServeur() {
             if (!initialiserSupabase()) return;
             try {
-                const [p, r] = await Promise.all([
+                const [p, r, n] = await Promise.all([
                     supabaseClient.from('catalogue_patients').select('*'), 
-                    supabaseClient.from('plannings_dates').select('*')
+                    supabaseClient.from('plannings_dates').select('*'),
+                    supabaseClient.from('notes_cabinet').select('*') // NOUVEAU
                 ]);
                 cataloguePatients = p.data || [];
+                notesCabinet = n.data || [];
+                
                 planningsParDate = {};
                 (r.data || []).forEach(x => {
                     if (!planningsParDate[x.date_cle]) planningsParDate[x.date_cle] = [];
@@ -838,30 +684,34 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
                         verrouille: x.journee_verrouillee, 
                         kineNom: x.kine_nom, 
                         ordre: x.ordre || 0, 
-                        tlaStatut: x.tla_statut 
+                        tlaStatut: x.tla_statut,
+                        premiere_seance: x.premiere_seance // NOUVEAU
                     });
                 });
                 
-                const nbAPrevoir = cataloguePatients.filter(p => p.a_prevoir).length;
-                const bandeau = document.getElementById('bandeau-a-prevoir');
-                if (bandeau) {
-                    bandeau.style.display = nbAPrevoir > 0 ? 'block' : 'none';
+                const nbAPrevoir = cataloguePatients.filter(pat => pat.a_prevoir).length;
+                const bandeauPrevoir = document.getElementById('bandeau-a-prevoir');
+                if (bandeauPrevoir) {
+                    bandeauPrevoir.style.display = nbAPrevoir > 0 ? 'block' : 'none';
                     if(nbAPrevoir > 0) document.getElementById('texte-bandeau-prevoir').innerText = `${nbAPrevoir} patient(s) à prévoir en attente`;
                 }
 
+                // GESTION NOUVEAU BANDEAU NOTES IMPORTANTES
+                const groupeKines = getKinesAssocies(kineVisionne);
+                const notesAffichees = notesCabinet.filter(note => note.kine_cible === 'GLOBAL' || groupeKines.includes(note.kine_cible) || note.kine_cible === kineConnecte);
+                const bandeauNotes = document.getElementById('bandeau-notes-importantes');
+                if (bandeauNotes) {
+                    bandeauNotes.style.display = notesAffichees.length > 0 ? 'block' : 'none';
+                    if(notesAffichees.length > 0) document.getElementById('texte-bandeau-notes').innerText = `${notesAffichees.length} note(s) importante(s) - Cliquer pour lire`;
+                }
+
                 rafraichirAffichage();
-            } catch (e) { 
-                modifierBadgeReseau(false); 
-                console.error("Erreur de chargement", e);
-            }
+            } catch (e) { modifierBadgeReseau(false); console.error("Erreur", e); }
         }
 
         function brancherTempsReel() {
             supabaseClient.channel('custom-all-channel')
-                .on('postgres_changes', { event: '*', schema: 'public' }, () => { 
-                    chargerListeKines(); 
-                    chargerDonneesDepuisServeur(); 
-                }).subscribe();
+                .on('postgres_changes', { event: '*', schema: 'public' }, () => { chargerListeKines(); chargerDonneesDepuisServeur(); }).subscribe();
         }
 
         function modifierBadgeReseau(estEnLigne) {
@@ -875,9 +725,7 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
             let lundi = new Date(dateAncre);
             lundi.setDate(dateAncre.getDate() - (dateAncre.getDay() === 0 ? 6 : dateAncre.getDay() - 1));
             for (let i = 0; i < 5; i++) { 
-                let j = new Date(lundi); 
-                j.setDate(lundi.getDate() + i); 
-                datesSemaineEnCours.push(j); 
+                let j = new Date(lundi); j.setDate(lundi.getDate() + i); datesSemaineEnCours.push(j); 
             }
             document.getElementById('label-semaine').innerText = `Sem. du ${datesSemaineEnCours[0].toLocaleDateString('fr-FR')} au ${datesSemaineEnCours[4].toLocaleDateString('fr-FR')}`;
         }
@@ -893,7 +741,7 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
         function basculerVue() {
             vueActuelle = (vueActuelle === 'planning') ? 'fichier' : 'planning';
             document.getElementById('app-title').innerText = (vueActuelle === 'planning') ? "Planning Tournées" : "Fichier Patients";
-            document.getElementById('btn-toggle-view').innerText = (vueActuelle === 'planning') ? "Voir le Fichier Patients 🗂️" : "Voir le Planning 🗓️";
+            document.getElementById('btn-toggle-view').innerText = (vueActuelle === 'planning') ? "Fichier Patients 🗂️" : "Planning 🗓️";
             document.getElementById('header-planning').style.display = (vueActuelle === 'planning') ? 'block' : 'none';
             document.getElementById('header-fichier').style.display = (vueActuelle === 'planning') ? 'none' : 'block';
             document.getElementById('view-planning').className = (vueActuelle === 'planning') ? 'app-view active' : 'app-view';
@@ -913,15 +761,13 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
             if(vueActuelle === 'planning') afficherPlanning(); 
             else afficherCatalogue(); 
 
-            // Si les modals globales sont ouvertes, on les rafraîchit
             if (document.getElementById('modal-vue-globale').style.display === 'flex') ouvrirVueGlobaleJour();
             if (document.getElementById('modal-autres-kines').style.display === 'flex') ouvrirVueAutresKines();
+            if (document.getElementById('modal-notes-cabinet').style.display === 'flex') afficherNotesCabinet();
         }
 
         function trierPlannings(a, b) {
-            if (a.ordre !== b.ordre) {
-                return (a.ordre || 0) - (b.ordre || 0);
-            }
+            if (a.ordre !== b.ordre) return (a.ordre || 0) - (b.ordre || 0);
             const pA = cataloguePatients.find(x => String(x.id) === String(a.patientId));
             const pB = cataloguePatients.find(x => String(x.id) === String(b.patientId));
             const nomA = pA ? pA.nom.toLowerCase() : "";
@@ -931,30 +777,17 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
 
         function estPatientAbsentA(dateIso, historiqueJsonStr) {
             if(!historiqueJsonStr) return null;
-            try {
-                const abs = JSON.parse(historiqueJsonStr);
-                for(let a of abs) {
-                    if(dateIso >= a.debut && (!a.fin || dateIso <= a.fin)) return a;
-                }
-            } catch(e) {}
+            try { const abs = JSON.parse(historiqueJsonStr); for(let a of abs) { if(dateIso >= a.debut && (!a.fin || dateIso <= a.fin)) return a; } } catch(e) {}
             return null;
         }
 
         function getAbsencePertinente(historiqueJsonStr) {
             if(!historiqueJsonStr) return null;
             try {
-                const abs = JSON.parse(historiqueJsonStr);
-                const aujourdhui = getCleDate(new Date());
-                let best = null;
-                for(let a of abs) {
-                    const dateFinEffective = a.fin || a.debut;
-                    if(dateFinEffective >= aujourdhui) {
-                        if (!best || a.debut < best.debut) best = a;
-                    }
-                }
+                const abs = JSON.parse(historiqueJsonStr); const aujourdhui = getCleDate(new Date()); let best = null;
+                for(let a of abs) { const dateFinEffective = a.fin || a.debut; if(dateFinEffective >= aujourdhui) { if (!best || a.debut < best.debut) best = a; } }
                 return best;
-            } catch(e) {}
-            return null;
+            } catch(e) {} return null;
         }
 
         function genererBadgeAbsenceGlobalHtml(historiqueJsonStr) {
@@ -967,34 +800,19 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
             return `<span style="font-size: 0.7rem; background: ${bgCol}; color: white; padding: 2px 6px; border-radius: 4px; font-weight: bold; margin-left: 5px;" title="${evt.type}${d}${f}">${typeLabel}${d}${f}</span>`;
         }
 
-        // FONCTION CENTRALE POUR GENERER LE MODULE TLA
         function genererHtmlTla(rdv) {
             const desactiveTla = rdv.verrouille ? 'disabled' : '';
             if (kineRole === 'secretariat') {
                 if (rdv.tlaStatut === 'facture') {
-                    return `
-                        <div style="display:flex; align-items:center; gap:6px; margin-top:4px;">
-                            <span class="badge-tla-sec-facture" style="font-size:0.7rem;">✅ Facturé (TLA traité)</span>
-                            <button class="btn-icon" style="font-size:0.75rem; color:var(--danger); padding:0; font-weight:bold;" ${desactiveTla} onclick="basculerTlaStatut('${rdv.idPlanif}', 'annuler_facture'); event.stopPropagation();">🔄 Annuler</button>
-                        </div>`;
+                    return `<div style="display:flex; align-items:center; gap:6px; margin-top:4px;"><span class="badge-tla-sec-facture" style="font-size:0.7rem;">✅ Facturé (TLA traité)</span><button class="btn-icon" style="font-size:0.75rem; color:var(--danger); padding:0; font-weight:bold;" ${desactiveTla} onclick="basculerTlaStatut('${rdv.idPlanif}', 'annuler_facture'); event.stopPropagation();">🔄 Annuler</button></div>`;
                 } else {
                     const isCoché = rdv.tlaStatut === 'dans_tla' ? 'checked' : '';
-                    return `
-                        <div style="display:flex; align-items:center; gap:8px; margin-top:4px;">
-                            <label class="sec-tla-checkbox-container" style="padding:2px 6px; font-size:0.75rem;" onclick="event.stopPropagation();">
-                                <input type="checkbox" ${isCoché} ${desactiveTla} onchange="basculerTlaStatut('${rdv.idPlanif}', 'toggle_tla')"> TLA
-                            </label>
-                            ${rdv.tlaStatut === 'dans_tla' ? `<button class="btn-success" style="font-size:0.7rem; padding:2px 6px; border-radius:4px;" ${desactiveTla} onclick="basculerTlaStatut('${rdv.idPlanif}', 'valider_facture'); event.stopPropagation();">Facturer ✅</button>` : ''}
-                        </div>`;
+                    return `<div style="display:flex; align-items:center; gap:8px; margin-top:4px;"><label class="sec-tla-checkbox-container" style="padding:2px 6px; font-size:0.75rem;" onclick="event.stopPropagation();"><input type="checkbox" ${isCoché} ${desactiveTla} onchange="basculerTlaStatut('${rdv.idPlanif}', 'toggle_tla')"> TLA</label>${rdv.tlaStatut === 'dans_tla' ? `<button class="btn-success" style="font-size:0.7rem; padding:2px 6px; border-radius:4px;" ${desactiveTla} onclick="basculerTlaStatut('${rdv.idPlanif}', 'valider_facture'); event.stopPropagation();">Facturer ✅</button>` : ''}</div>`;
                 }
             } else {
-                if (rdv.tlaStatut === 'dans_tla') {
-                    return `<button class="badge-tla-kine" style="margin-top:4px;" ${desactiveTla} onclick="basculerTlaStatut('${rdv.idPlanif}', 'kine_click'); event.stopPropagation();">📱 TLA</button>`;
-                } else if (rdv.tlaStatut === 'facture') {
-                    return `<button class="badge-tla-kine facture" style="margin-top:4px;" ${desactiveTla} onclick="basculerTlaStatut('${rdv.idPlanif}', 'kine_click'); event.stopPropagation();">✓ TLA</button>`;
-                } else {
-                    return `<button class="badge-tla-kine" style="background:transparent; border:1px solid #00c7b1; color:#008777; margin-top:4px;" ${desactiveTla} onclick="basculerTlaStatut('${rdv.idPlanif}', 'kine_click'); event.stopPropagation();">+ 📱 TLA</button>`;
-                }
+                if (rdv.tlaStatut === 'dans_tla') return `<button class="badge-tla-kine" style="margin-top:4px;" ${desactiveTla} onclick="basculerTlaStatut('${rdv.idPlanif}', 'kine_click'); event.stopPropagation();">📱 TLA</button>`;
+                else if (rdv.tlaStatut === 'facture') return `<button class="badge-tla-kine facture" style="margin-top:4px;" ${desactiveTla} onclick="basculerTlaStatut('${rdv.idPlanif}', 'kine_click'); event.stopPropagation();">✓ TLA</button>`;
+                else return `<button class="badge-tla-kine" style="background:transparent; border:1px solid #00c7b1; color:#008777; margin-top:4px;" ${desactiveTla} onclick="basculerTlaStatut('${rdv.idPlanif}', 'kine_click'); event.stopPropagation();">+ 📱 TLA</button>`;
             }
         }
 
@@ -1007,12 +825,7 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
                 const btn = document.createElement('button');
                 btn.className = `day-btn ${index === indiceJourActuel ? 'active' : ''}`;
                 btn.innerText = getLabelDate(dateObj);
-                btn.onclick = () => { 
-                    indiceJourActuel = index; 
-                    const searchInput = document.getElementById('recherche-planning-input');
-                    if(searchInput) searchInput.value = ''; 
-                    afficherPlanning(); 
-                };
+                btn.onclick = () => { indiceJourActuel = index; const s = document.getElementById('recherche-planning-input'); if(s) s.value = ''; afficherPlanning(); };
                 tabsConteneur.appendChild(btn);
             });
 
@@ -1023,11 +836,8 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
             const groupeKines = getKinesAssocies(kineVisionne);
             let rdvAAfficher = [];
             
-            if (kineVisionne === "TOUS") {
-                rdvAAfficher = [...tousRdvDuJour]; 
-            } else {
-                rdvAAfficher = tousRdvDuJour.filter(r => groupeKines.includes(r.kineNom));
-            }
+            if (kineVisionne === "TOUS") rdvAAfficher = [...tousRdvDuJour]; 
+            else rdvAAfficher = tousRdvDuJour.filter(r => groupeKines.includes(r.kineNom));
             
             if (typeof filtreTlaUniquementActif !== 'undefined' && filtreTlaUniquementActif) {
                 rdvAAfficher = rdvAAfficher.filter(r => r.tlaStatut === 'dans_tla' || r.tlaStatut === 'facture');
@@ -1038,33 +848,20 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
             if (termPlanning) {
                 rdvAAfficher = rdvAAfficher.filter(r => {
                     const p = cataloguePatients.find(x => String(x.id) === String(r.patientId));
-                    if (!p) return false;
-                    return p.nom.toLowerCase().includes(termPlanning) || p.adresse.toLowerCase().includes(termPlanning);
+                    return p && (p.nom.toLowerCase().includes(termPlanning) || (p.adresse && p.adresse.toLowerCase().includes(termPlanning)));
                 });
             }
 
             rdvAAfficher.sort(trierPlannings);
-            
-            if(rdvAAfficher.length > 0) {
-                journeeEstVerrouillee = rdvAAfficher.every(r => r.verrouille === true);
-            } else {
-                journeeEstVerrouillee = false;
-            }
+            journeeEstVerrouillee = rdvAAfficher.length > 0 && rdvAAfficher.every(r => r.verrouille === true);
 
             const btnVerrou = document.getElementById('btn-verrouiller-jour');
             if (btnVerrou) {
-                if (kineVisionne === "TOUS") {
-                    btnVerrou.style.display = 'none'; 
-                } else {
+                if (kineVisionne === "TOUS") { btnVerrou.style.display = 'none'; } 
+                else {
                     btnVerrou.style.display = 'block';
-                    const kineVerrouille = rdvAAfficher.some(r => r.verrouille === true);
-                    if (kineVerrouille) {
-                        btnVerrou.innerText = `Tournée Validée 🔒 (Déverrouiller)`;
-                        btnVerrou.className = "btn-secondary";
-                    } else {
-                        btnVerrou.innerText = `Valider la tournée 🔐`;
-                        btnVerrou.className = "btn-orange";
-                    }
+                    if (rdvAAfficher.some(r => r.verrouille === true)) { btnVerrou.innerText = `Tournée Validée 🔒 (Déverrouiller)`; btnVerrou.className = "btn-secondary"; } 
+                    else { btnVerrou.innerText = `Valider la tournée 🔐`; btnVerrou.className = "btn-orange"; }
                 }
             }
 
@@ -1075,8 +872,7 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
             if (statsEl) {
                 let cibleTexte = kineVisionne === "TOUS" ? "Général cabinet" : "Tournée de " + getKinesAssocies(kineVisionne)[0];
                 let addFiltreTexte = (typeof filtreTlaUniquementActif !== 'undefined' && filtreTlaUniquementActif) ? " [Filtre TLA Actif]" : "";
-                let texteStats = `${cibleTexte} (${String(dateSelectionnee.getDate()).padStart(2,'0')}/${String(dateSelectionnee.getMonth()+1).padStart(2,'0')})${addFiltreTexte} : ${rdvAAfficher.filter(r => r.statut !== null && r.statut !== undefined && r.statut !== '').length} / ${rdvAAfficher.length} traités`;
-                statsEl.innerText = texteStats;
+                statsEl.innerText = `${cibleTexte} (${String(dateSelectionnee.getDate()).padStart(2,'0')}/${String(dateSelectionnee.getMonth()+1).padStart(2,'0')})${addFiltreTexte} : ${rdvAAfficher.filter(r => r.statut !== null && r.statut !== undefined && r.statut !== '').length} / ${rdvAAfficher.length} traités`;
             }
 
             const conteneur = document.getElementById('view-planning');
@@ -1084,8 +880,7 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
             conteneur.innerHTML = '';
 
             if (rdvAAfficher.length === 0) {
-                if(termPlanning) conteneur.innerHTML = `<p style="text-align:center; color:var(--neutral); margin-top:20px;">Aucun résultat pour cette recherche.</p>`;
-                else conteneur.innerHTML = `<p style="text-align:center; color:var(--neutral); margin-top:20px;">Aucun patient planifié ici.</p>`;
+                conteneur.innerHTML = `<p style="text-align:center; color:var(--neutral); margin-top:20px;">Aucun patient planifié ici.</p>`;
                 return;
             }
 
@@ -1100,7 +895,6 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
                 card.className = `patient-card ${rdv.statut || ''} ${evtAbsCeJour ? 'absent' : ''}`;
                 
                 const desactiveBouton = rdv.verrouille ? 'disabled' : '';
-
                 let chaineTels = patient.telephone ? `📞 ${patient.telephone}` : '';
                 if(patient.telephone_2) chaineTels += ` / ${patient.telephone_2}`;
 
@@ -1115,14 +909,16 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
                 const opaciteBilan = aUnBilan ? '1' : '0.5';
                 const texteBilan = aUnBilan ? '📋 Bilan' : '📋 Bilan (vide)';
 
+                // Bouton 1ere séance
+                const htmlPremiere = `<button class="badge-premiere ${rdv.premiere_seance ? 'active' : ''}" ${desactiveBouton} onclick="basculerPremiereSeance('${rdv.idPlanif}')">🆕 1ère</button>`;
+
                 card.innerHTML = `
                     <div class="patient-card-left">
                         ${!masquerFleches ? `
                         <div class="reorder-actions">
                             <button class="btn-reorder" onclick="deplacerRdv('${rdv.idPlanif}', -1)" ${idx === 0 ? 'disabled' : ''} title="Monter">🔼</button>
                             <button class="btn-reorder" onclick="deplacerRdv('${rdv.idPlanif}', 1)" ${idx === rdvAAfficher.length - 1 ? 'disabled' : ''} title="Descendre">🔽</button>
-                        </div>
-                        ` : ''}
+                        </div>` : ''}
                         <div class="patient-info">
                             <span style="display:flex; align-items:center; flex-wrap:wrap;">
                                 <span class="patient-name" style="cursor:pointer; color:var(--primary); text-decoration:underline;" onclick="ouvrirFormulairePatient('${patient.id}')">${patient.nom} ✏️</span>
@@ -1142,10 +938,14 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
                             </div>
                             
                             ${(kineVisionne === "TOUS" || groupeKines.length > 1) ? `<span class="kine-tag">Praticien : ${rdv.kineNom} ${rdv.verrouille ? '🔒' : ''}</span>` : ''}
-                            ${genererHtmlTla(rdv)}
+                            <div style="display:flex; align-items:center; gap:4px;">
+                                ${genererHtmlTla(rdv)}
+                                ${htmlPremiere}
+                            </div>
                         </div>
                     </div>
                     <div class="btn-group">
+                        <button class="btn-icon" style="font-size:1.1rem;" ${desactiveBouton} onclick="ouvrirDeplacerRdv('${rdv.idPlanif}')" title="Déplacer à un autre jour">➡️📅</button>
                         <button class="btn-status btn-vu ${rdv.statut === 'vu' ? 'active' : ''}" ${desactiveBouton} onclick="changerStatutRdv('${rdv.idPlanif}', 'vu')">✅</button>
                         <button class="btn-status btn-nonvu ${rdv.statut === 'non-vu' ? 'active' : ''}" ${desactiveBouton} onclick="changerStatutRdv('${rdv.idPlanif}', 'non-vu')">❌</button>
                         <button class="btn-icon" ${desactiveBouton} onclick="retirerDuPlanning('${rdv.idPlanif}')">🗑️</button>
@@ -1155,82 +955,199 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
             });
         }
 
-        function exporterRapportJour() {
-            if (!window.jspdf || !window.jspdf.jsPDF) { alert("Outil PDF en cours de chargement, veuillez patienter..."); return; }
+        // NOUVEAU: NOTES CABINET
+        function afficherNotesCabinet() {
+            const conteneur = document.getElementById('liste-notes-cabinet');
+            const groupeKines = getKinesAssocies(kineVisionne);
+            const notesAffichees = notesCabinet.filter(note => note.kine_cible === 'GLOBAL' || groupeKines.includes(note.kine_cible) || note.kine_cible === kineConnecte);
             
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF();
+            if (notesAffichees.length === 0) {
+                conteneur.innerHTML = '<p style="text-align:center; font-size:0.85rem; color:var(--neutral);">Aucune note importante pour le moment.</p>';
+            } else {
+                conteneur.innerHTML = notesAffichees.map(note => {
+                    const isMonMessage = note.auteur === kineConnecte || kineRole === 'secretariat';
+                    const cibleTxt = note.kine_cible === 'GLOBAL' ? '🌍 Pour tous' : `👤 Pour ${note.kine_cible}`;
+                    const auteurTxt = note.auteur ? ` (par ${note.auteur})` : '';
+                    return `
+                        <div style="background: white; padding: 8px; border-radius: 6px; border-left: 3px solid var(--orange); display:flex; justify-content:space-between; align-items:flex-start;">
+                            <div>
+                                <div style="font-size:0.75rem; font-weight:bold; color:var(--neutral); margin-bottom:4px;">${cibleTxt}${auteurTxt}</div>
+                                <div style="font-size:0.9rem; white-space:pre-wrap;">${note.texte}</div>
+                            </div>
+                            ${isMonMessage ? `<button class="btn-icon" style="color:var(--danger);" onclick="supprimerNoteCabinet('${note.id}')">🗑️</button>` : ''}
+                        </div>
+                    `;
+                }).join('');
+            }
+        }
+
+        async function ajouterNoteCabinet() {
+            const texte = document.getElementById('note-cabinet-texte').value.trim();
+            const cible = document.getElementById('note-cabinet-cible').value;
+            if(!texte) return;
+            if(!initialiserSupabase()) return;
+
+            const nouvelleNote = {
+                id: Math.floor(Math.random()*1000000000).toString(),
+                texte: texte,
+                kine_cible: cible,
+                auteur: kineConnecte
+            };
+
+            try {
+                await supabaseClient.from('notes_cabinet').insert([nouvelleNote]);
+                document.getElementById('note-cabinet-texte').value = '';
+                chargerDonneesDepuisServeur();
+                setTimeout(afficherNotesCabinet, 500);
+            } catch(e) { console.error(e); }
+        }
+
+        async function supprimerNoteCabinet(idNote) {
+            if(!confirm("Supprimer cette information ?")) return;
+            if(!initialiserSupabase()) return;
+            try {
+                await supabaseClient.from('notes_cabinet').delete().eq('id', idNote);
+                chargerDonneesDepuisServeur();
+                setTimeout(afficherNotesCabinet, 500);
+            } catch(e) { console.error(e); }
+        }
+
+        // NOUVEAU: GESTION TLA GLOBALE (Indépendante du planning)
+        function filtrerGestionTla() {
+            const term = document.getElementById('recherche-gestion-tla').value.toLowerCase();
+            const conteneur = document.getElementById('liste-gestion-tla');
+            
+            const triPatient = cataloguePatients.sort((a,b) => a.nom.localeCompare(b.nom));
+            let html = '';
+            
+            triPatient.forEach(p => {
+                if(p.nom.toLowerCase().includes(term) || (p.adresse && p.adresse.toLowerCase().includes(term))) {
+                    const isChecked = p.a_facturer_tla ? 'checked' : '';
+                    html += `
+                        <label style="display:flex; gap:12px; cursor:pointer; font-size:0.9rem; align-items:center; background:white; padding: 8px; border-radius:4px; margin:0; border:1px solid #e5e5ea;">
+                            <input type="checkbox" onchange="changerStatutGestionTla('${p.id}', this.checked)" ${isChecked} style="width: auto; margin: 0; transform: scale(1.3);">
+                            <div style="display:flex; flex-direction:column; flex:1;">
+                                <span style="font-weight:bold; color:var(--primary);">${p.nom}</span>
+                                <span style="font-size:0.75rem; color:var(--neutral);">${p.adresse || 'Sans adresse'}</span>
+                            </div>
+                        </label>
+                    `;
+                }
+            });
+            if(html === '') html = '<p style="text-align:center; font-size:0.85rem; color:var(--neutral);">Aucun patient.</p>';
+            conteneur.innerHTML = html;
+        }
+
+        function ouvrirGestionTla() {
+            document.getElementById('recherche-gestion-tla').value = '';
+            filtrerGestionTla();
+            ouvrirModal('modal-gestion-tla');
+        }
+
+        async function changerStatutGestionTla(patientId, isChecked) {
+            if(!initialiserSupabase()) return;
+            try {
+                await supabaseClient.from('catalogue_patients').update({ a_facturer_tla: isChecked }).eq('id', patientId);
+                // Mise à jour locale pour éviter de tout recharger et perdre le focus
+                const p = cataloguePatients.find(x => String(x.id) === String(patientId));
+                if(p) p.a_facturer_tla = isChecked;
+            } catch(e) { console.error(e); }
+        }
+
+        // NOUVEAU: PREMIERE SEANCE
+        async function basculerPremiereSeance(idPlanif) {
+            if (verifierVerrouillageBackend(idPlanif)) return;
+            if(!initialiserSupabase()) return;
             
             const dateSelectionnee = datesSemaineEnCours[indiceJourActuel];
             const cleDate = getCleDate(dateSelectionnee);
+            const rdv = planningsParDate[cleDate]?.find(r => String(r.idPlanif) === String(idPlanif));
+            if(!rdv) return;
+
+            const nouvelEtat = !rdv.premiere_seance;
+            try {
+                await supabaseClient.from('plannings_dates').update({ premiere_seance: nouvelEtat }).eq('id_planif', idPlanif);
+                chargerDonneesDepuisServeur();
+            } catch(e) { console.error(e); }
+        }
+
+        // NOUVEAU: DEPLACER UN RDV
+        let currentDeplacementId = null;
+        function ouvrirDeplacerRdv(idPlanif) {
+            currentDeplacementId = idPlanif;
+            const dateSelectionnee = datesSemaineEnCours[indiceJourActuel];
+            const cleDate = getCleDate(dateSelectionnee);
+            const rdv = planningsParDate[cleDate]?.find(r => String(r.idPlanif) === String(idPlanif));
+            if(!rdv) return;
+
+            const patient = cataloguePatients.find(p => String(p.id) === String(rdv.patientId));
+            document.getElementById('deplacer-rdv-nom').innerText = `Patient : ${patient ? patient.nom : 'Inconnu'}`;
+            document.getElementById('deplacer-rdv-id').value = idPlanif;
+            document.getElementById('deplacer-rdv-date').value = cleDate;
+
+            const selectKine = document.getElementById('deplacer-rdv-kine');
+            const praticiens = listeUtilisateursComplets.filter(u => u.role === 'kine' || u.role === 'remplacant').map(u => u.nom);
+            selectKine.innerHTML = praticiens.map(k => `<option value="${k}" ${k === rdv.kineNom ? 'selected' : ''}>${k}</option>`).join('');
+
+            ouvrirModal('modal-deplacer-rdv');
+        }
+
+        async function validerDeplacementRdv() {
+            const idPlanif = document.getElementById('deplacer-rdv-id').value;
+            const nouvelleDate = document.getElementById('deplacer-rdv-date').value;
+            const nouveauKine = document.getElementById('deplacer-rdv-kine').value;
+
+            if(!nouvelleDate) return alert("Choisissez une date.");
+            if(!initialiserSupabase()) return;
+
+            try {
+                await supabaseClient.from('plannings_dates')
+                    .update({ date_cle: nouvelleDate, kine_nom: nouveauKine, journee_verrouillee: false })
+                    .eq('id_planif', idPlanif);
+                fermerModal('modal-deplacer-rdv');
+                chargerDonneesDepuisServeur();
+            } catch(e) { console.error(e); alert("Erreur."); }
+        }
+
+        function exporterRapportJour() {
+            if (!window.jspdf || !window.jspdf.jsPDF) { alert("Outil PDF en chargement..."); return; }
+            const { jsPDF } = window.jspdf; const doc = new jsPDF();
+            const dateSelectionnee = datesSemaineEnCours[indiceJourActuel]; const cleDate = getCleDate(dateSelectionnee);
             const tousRdvDuJour = planningsParDate[cleDate] || [];
             
             const groupeKines = getKinesAssocies(kineVisionne);
-            let rdvFiltres = [];
-            
-            if (kineVisionne !== "TOUS") {
-                rdvFiltres = tousRdvDuJour.filter(r => groupeKines.includes(r.kineNom));
-            } else {
-                rdvFiltres = [...tousRdvDuJour];
-            }
-
-            if (typeof filtreTlaUniquementActif !== 'undefined' && filtreTlaUniquementActif) {
-                rdvFiltres = rdvFiltres.filter(r => r.tlaStatut === 'dans_tla' || r.tlaStatut === 'facture');
-            }
+            let rdvFiltres = (kineVisionne !== "TOUS") ? tousRdvDuJour.filter(r => groupeKines.includes(r.kineNom)) : [...tousRdvDuJour];
+            if (typeof filtreTlaUniquementActif !== 'undefined' && filtreTlaUniquementActif) rdvFiltres = rdvFiltres.filter(r => r.tlaStatut === 'dans_tla' || r.tlaStatut === 'facture');
 
             let kinesAExporter = kineVisionne === "TOUS" ? [...new Set(rdvFiltres.map(r => r.kineNom))] : groupeKines.filter(k => rdvFiltres.some(r => r.kineNom === k));
 
-            if (kinesAExporter.length === 0 || rdvFiltres.length === 0) {
-                alert("Aucun patient à exporter pour ce jour.");
-                return;
-            }
+            if (kinesAExporter.length === 0 || rdvFiltres.length === 0) { alert("Aucun patient à exporter."); return; }
 
-            doc.setFontSize(16);
-            doc.text(`Planning de Tournée - ${getLabelDate(dateSelectionnee)}`, 14, 15);
-            
+            doc.setFontSize(16); doc.text(`Planning de Tournée - ${getLabelDate(dateSelectionnee)}`, 14, 15);
             let currentY = 25;
 
             kinesAExporter.forEach(kine => {
-                let rdvKine = rdvFiltres.filter(r => r.kineNom === kine);
-                rdvKine.sort(trierPlannings);
-                
+                let rdvKine = rdvFiltres.filter(r => r.kineNom === kine); rdvKine.sort(trierPlannings);
                 if(rdvKine.length === 0) return;
 
-                doc.setFontSize(12);
-                doc.setFont("helvetica", "bold");
-                doc.text(`Praticien : ${kine}`, 14, currentY);
+                doc.setFontSize(12); doc.setFont("helvetica", "bold"); doc.text(`Praticien : ${kine}`, 14, currentY);
                 
                 const tableData = rdvKine.map(r => {
                     const p = cataloguePatients.find(x => String(x.id) === String(r.patientId));
                     if(!p) return ["-", "Inconnu", "-"];
                     
                     const evtAbs = estPatientAbsentA(cleDate, p.historique_absences);
-                    let prefix = "";
-                    if (evtAbs) {
-                        prefix = evtAbs.type === 'Hospitalisation' ? "[HOSPIT.] " : "[ABSENT] ";
-                    }
-                    const nomAffichage = prefix + p.nom;
+                    let prefix = ""; if (evtAbs) prefix = evtAbs.type === 'Hospitalisation' ? "[HOSPIT.] " : "[ABSENT] ";
+                    let nomAffichage = prefix + p.nom;
+                    if(r.premiere_seance) nomAffichage += " [1ère Séance]"; // NOUVEAU
+                    
                     const heure = (r.heure && r.heure !== "00:00") ? r.heure : "--:--";
-                    
-                    let pointage = "-";
-                    if(r.statut === 'vu') pointage = "Vu";
-                    else if(r.statut === 'non-vu') pointage = "Non vu";
-                    
+                    let pointage = "-"; if(r.statut === 'vu') pointage = "Vu"; else if(r.statut === 'non-vu') pointage = "Non vu";
                     return [heure, nomAffichage, pointage];
                 });
 
-                doc.autoTable({
-                    startY: currentY + 4,
-                    head: [['Heure', 'Patient', 'Pointage']],
-                    body: tableData,
-                    theme: 'striped',
-                    headStyles: { fillColor: [0, 122, 255] },
-                    styles: { fontSize: 10, cellPadding: 3 },
-                    columnStyles: { 0: { cellWidth: 25 }, 1: { cellWidth: 'auto' }, 2: { cellWidth: 35 } }
-                });
-                
+                doc.autoTable({ startY: currentY + 4, head: [['Heure', 'Patient', 'Pointage']], body: tableData, theme: 'striped', headStyles: { fillColor: [0, 122, 255] }, styles: { fontSize: 10, cellPadding: 3 }, columnStyles: { 0: { cellWidth: 25 }, 1: { cellWidth: 'auto' }, 2: { cellWidth: 35 } } });
                 currentY = doc.lastAutoTable.finalY + 12;
-                
                 if (currentY > 260) { doc.addPage(); currentY = 20; }
             });
 
@@ -1238,103 +1155,52 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
         }
 
         function exporterRapportSemaine() {
-            if (!window.jspdf || !window.jspdf.jsPDF) { alert("Outil PDF en cours de chargement..."); return; }
+            if (!window.jspdf || !window.jspdf.jsPDF) { alert("Outil PDF en chargement..."); return; }
+            const { jsPDF } = window.jspdf; const doc = new jsPDF();
             
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF();
-            
-            doc.setFontSize(16);
-            doc.text(`Rapport Hebdomadaire de Tournée`, 14, 15);
-            doc.setFontSize(11);
+            doc.setFontSize(16); doc.text(`Rapport Hebdomadaire de Tournée`, 14, 15); doc.setFontSize(11);
             doc.text(`Praticien : ${kineVisionne} | Semaine du ${datesSemaineEnCours[0].toLocaleDateString('fr-FR')} au ${datesSemaineEnCours[4].toLocaleDateString('fr-FR')}`, 14, 22);
             
-            let currentY = 32;
-            let aDesDonnees = false;
-
-            const groupeKines = getKinesAssocies(kineVisionne);
+            let currentY = 32; let aDesDonnees = false; const groupeKines = getKinesAssocies(kineVisionne);
 
             datesSemaineEnCours.forEach((dateObj) => {
-                const cleDate = getCleDate(dateObj);
-                const tousRdv = planningsParDate[cleDate] || [];
-                
-                let rdvFiltres = [];
-                if (kineVisionne !== "TOUS") {
-                    rdvFiltres = tousRdv.filter(r => groupeKines.includes(r.kineNom));
-                } else {
-                    rdvFiltres = [...tousRdv];
-                }
-
-                if (typeof filtreTlaUniquementActif !== 'undefined' && filtreTlaUniquementActif) {
-                    rdvFiltres = rdvFiltres.filter(r => r.tlaStatut === 'dans_tla' || r.tlaStatut === 'facture');
-                }
+                const cleDate = getCleDate(dateObj); const tousRdv = planningsParDate[cleDate] || [];
+                let rdvFiltres = (kineVisionne !== "TOUS") ? tousRdv.filter(r => groupeKines.includes(r.kineNom)) : [...tousRdv];
+                if (typeof filtreTlaUniquementActif !== 'undefined' && filtreTlaUniquementActif) rdvFiltres = rdvFiltres.filter(r => r.tlaStatut === 'dans_tla' || r.tlaStatut === 'facture');
 
                 let kinesAExporter = kineVisionne === "TOUS" ? [...new Set(rdvFiltres.map(r => r.kineNom))] : groupeKines.filter(k => rdvFiltres.some(r => r.kineNom === k));
                 let rdvsDuJourGlobaux = rdvFiltres.filter(r => kinesAExporter.includes(r.kineNom));
                 
                 if (rdvsDuJourGlobaux.length > 0) {
-                    aDesDonnees = true;
-                    doc.setFontSize(12);
-                    doc.setFont("helvetica", "bold");
-                    doc.setTextColor(0, 122, 255);
-                    doc.text(getLabelDate(dateObj), 14, currentY);
-                    doc.setTextColor(0, 0, 0);
-                    currentY += 6;
+                    aDesDonnees = true; doc.setFontSize(12); doc.setFont("helvetica", "bold"); doc.setTextColor(0, 122, 255); doc.text(getLabelDate(dateObj), 14, currentY); doc.setTextColor(0, 0, 0); currentY += 6;
 
                     kinesAExporter.forEach(kine => {
-                        let rdvKine = rdvsDuJourGlobaux.filter(r => r.kineNom === kine);
-                        rdvKine.sort(trierPlannings);
-                        
+                        let rdvKine = rdvsDuJourGlobaux.filter(r => r.kineNom === kine); rdvKine.sort(trierPlannings);
                         if(rdvKine.length === 0) return;
 
-                        if (kineVisionne === "TOUS" || kinesAExporter.length > 1) {
-                            doc.setFontSize(10);
-                            doc.setFont("helvetica", "italic");
-                            doc.text(`Praticien : ${kine}`, 14, currentY);
-                            currentY += 4;
-                        }
+                        if (kineVisionne === "TOUS" || kinesAExporter.length > 1) { doc.setFontSize(10); doc.setFont("helvetica", "italic"); doc.text(`Praticien : ${kine}`, 14, currentY); currentY += 4; }
 
                         const tableData = rdvKine.map(r => {
                             const p = cataloguePatients.find(x => String(x.id) === String(r.patientId));
                             if(!p) return ["-", "Inconnu", "-"];
-                            
                             const evtAbs = estPatientAbsentA(cleDate, p.historique_absences);
-                            let prefix = "";
-                            if (evtAbs) {
-                                prefix = evtAbs.type === 'Hospitalisation' ? "[HOSPIT.] " : "[ABSENT] ";
-                            }
-                            const nomAffichage = prefix + p.nom;
+                            let prefix = ""; if (evtAbs) prefix = evtAbs.type === 'Hospitalisation' ? "[HOSPIT.] " : "[ABSENT] ";
+                            let nomAffichage = prefix + p.nom;
+                            if(r.premiere_seance) nomAffichage += " [1ère Séance]"; // NOUVEAU
+                            
                             const heure = (r.heure && r.heure !== "00:00") ? r.heure : "--:--";
-                            
-                            let pointage = "-";
-                            if(r.statut === 'vu') pointage = "Vu";
-                            else if(r.statut === 'non-vu') pointage = "Non vu";
-                            
+                            let pointage = "-"; if(r.statut === 'vu') pointage = "Vu"; else if(r.statut === 'non-vu') pointage = "Non vu";
                             return [heure, nomAffichage, pointage];
                         });
                         
-                        doc.autoTable({
-                            startY: currentY,
-                            head: [['Heure', 'Patient', 'Pointage']],
-                            body: tableData,
-                            theme: 'grid',
-                            styles: { fontSize: 9, cellPadding: 2 },
-                            headStyles: { fillColor: [88, 86, 214] },
-                            margin: { bottom: 15 },
-                            columnStyles: { 0: { cellWidth: 25 }, 1: { cellWidth: 'auto' }, 2: { cellWidth: 35 } }
-                        });
-                        
-                        currentY = doc.lastAutoTable.finalY + 8;
-                        if (currentY > 260) { doc.addPage(); currentY = 20; }
+                        doc.autoTable({ startY: currentY, head: [['Heure', 'Patient', 'Pointage']], body: tableData, theme: 'grid', styles: { fontSize: 9, cellPadding: 2 }, headStyles: { fillColor: [88, 86, 214] }, margin: { bottom: 15 }, columnStyles: { 0: { cellWidth: 25 }, 1: { cellWidth: 'auto' }, 2: { cellWidth: 35 } } });
+                        currentY = doc.lastAutoTable.finalY + 8; if (currentY > 260) { doc.addPage(); currentY = 20; }
                     });
                     currentY += 4; 
                 }
             });
 
-            if(!aDesDonnees) {
-                alert("Aucun patient planifié sur cette semaine pour l'export.");
-                return;
-            }
-            
+            if(!aDesDonnees) { alert("Aucun patient planifié sur cette semaine pour l'export."); return; }
             doc.save(`Rapport_Hebdo_${getCleDate(datesSemaineEnCours[0])}_${kineVisionne}.pdf`);
         }
 
@@ -1342,18 +1208,13 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
             const dateSelectionnee = datesSemaineEnCours[indiceJourActuel];
             const cleDate = getCleDate(dateSelectionnee);
             const rdv = planningsParDate[cleDate]?.find(r => String(r.idPlanif) === String(idPlanif));
-            if (rdv && rdv.verrouille) {
-                alert("Action impossible : la journée est verrouillée. Veuillez déverrouiller pour faire des modifications.");
-                return true; 
-            }
+            if (rdv && rdv.verrouille) { alert("Action impossible : la journée est verrouillée."); return true; }
             return false; 
         }
 
         async function deplacerRdv(idPlanif, direction) {
             if (verifierVerrouillageBackend(idPlanif)) return;
-            const dateSelectionnee = datesSemaineEnCours[indiceJourActuel];
-            const cleDate = getCleDate(dateSelectionnee);
-            
+            const cleDate = getCleDate(datesSemaineEnCours[indiceJourActuel]);
             const groupeKines = getKinesAssocies(kineVisionne);
             let rdvDuJour = planningsParDate[cleDate].filter(r => groupeKines.includes(r.kineNom));
             rdvDuJour.sort(trierPlannings);
@@ -1364,16 +1225,11 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
             const cibleIndex = index + direction;
             if (cibleIndex < 0 || cibleIndex >= rdvDuJour.length) return;
 
-            const rdvA = rdvDuJour[index];
-            const rdvB = rdvDuJour[cibleIndex];
-            const ordreA = rdvA.ordre || 0;
-            const ordreB = rdvB.ordre || 0;
-
-            rdvA.ordre = ordreB;
-            rdvB.ordre = ordreA;
+            const rdvA = rdvDuJour[index]; const rdvB = rdvDuJour[cibleIndex];
+            const ordreA = rdvA.ordre || 0; const ordreB = rdvB.ordre || 0;
+            rdvA.ordre = ordreB; rdvB.ordre = ordreA;
 
             rafraichirAffichage();
-
             if (initialiserSupabase()) {
                 await supabaseClient.from('plannings_dates').update({ ordre: rdvA.ordre }).eq('id_planif', rdvA.idPlanif);
                 await supabaseClient.from('plannings_dates').update({ ordre: rdvB.ordre }).eq('id_planif', rdvB.idPlanif);
@@ -1384,54 +1240,33 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
         async function changerStatutRdv(idPlanif, nouveauStatut) {
             if (verifierVerrouillageBackend(idPlanif)) return;
             if (!initialiserSupabase()) return;
-            
             let statutFinal = nouveauStatut;
-            const dateSelectionnee = datesSemaineEnCours[indiceJourActuel];
-            const cleDate = getCleDate(dateSelectionnee);
+            const cleDate = getCleDate(datesSemaineEnCours[indiceJourActuel]);
             const rdv = planningsParDate[cleDate]?.find(r => String(r.idPlanif) === String(idPlanif));
-            
-            if (rdv && rdv.statut === nouveauStatut) {
-                statutFinal = null;
-            }
+            if (rdv && rdv.statut === nouveauStatut) statutFinal = null;
 
-            try {
-                await supabaseClient.from('plannings_dates').update({ statut: statutFinal }).eq('id_planif', idPlanif);
-                chargerDonneesDepuisServeur();
-            } catch (err) { console.error(err); }
+            try { await supabaseClient.from('plannings_dates').update({ statut: statutFinal }).eq('id_planif', idPlanif); chargerDonneesDepuisServeur(); } catch (err) { console.error(err); }
         }
 
         async function basculerTlaStatut(idPlanif, source) {
             if (!initialiserSupabase()) return;
-            const dateSelectionnee = datesSemaineEnCours[indiceJourActuel];
-            const cleDate = getCleDate(dateSelectionnee);
+            const cleDate = getCleDate(datesSemaineEnCours[indiceJourActuel]);
             const rdv = planningsParDate[cleDate]?.find(r => String(r.idPlanif) === String(idPlanif));
             if(!rdv) return;
 
             let nouveauStatut = null;
-            if (source === 'kine_click') {
-                nouveauStatut = (rdv.tlaStatut === 'dans_tla') ? null : 'dans_tla';
-            } else if (source === 'toggle_tla') {
-                nouveauStatut = (rdv.tlaStatut === 'dans_tla') ? null : 'dans_tla';
-            } else if (source === 'valider_facture') {
-                nouveauStatut = 'facture';
-            } else if (source === 'annuler_facture') {
-                nouveauStatut = 'dans_tla';
-            }
+            if (source === 'kine_click' || source === 'toggle_tla') nouveauStatut = (rdv.tlaStatut === 'dans_tla') ? null : 'dans_tla';
+            else if (source === 'valider_facture') nouveauStatut = 'facture';
+            else if (source === 'annuler_facture') nouveauStatut = 'dans_tla';
 
-            try {
-                await supabaseClient.from('plannings_dates').update({ tla_statut: nouveauStatut }).eq('id_planif', idPlanif);
-                chargerDonneesDepuisServeur();
-            } catch(e) { console.error(e); }
+            try { await supabaseClient.from('plannings_dates').update({ tla_statut: nouveauStatut }).eq('id_planif', idPlanif); chargerDonneesDepuisServeur(); } catch(e) { console.error(e); }
         }
 
         async function retirerDuPlanning(idPlanif) {
             if (verifierVerrouillageBackend(idPlanif)) return;
             if (!confirm("Retirer ce patient du planning pour ce jour ?")) return;
             if (!initialiserSupabase()) return;
-            try {
-                await supabaseClient.from('plannings_dates').delete().eq('id_planif', idPlanif);
-                chargerDonneesDepuisServeur();
-            } catch(e) { console.error(e); }
+            try { await supabaseClient.from('plannings_dates').delete().eq('id_planif', idPlanif); chargerDonneesDepuisServeur(); } catch(e) { console.error(e); }
         }
 
         function ouvrirNoteVolante(patientId) {
@@ -1444,14 +1279,9 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
         }
 
         async function sauvegarderNoteVolante() {
-            const patientId = document.getElementById('note-volante-patient-id').value;
-            const nouvellesNotes = document.getElementById('note-volante-corps').value;
+            const patientId = document.getElementById('note-volante-patient-id').value; const notes = document.getElementById('note-volante-corps').value;
             if (!initialiserSupabase()) return;
-            try {
-                await supabaseClient.from('catalogue_patients').update({ notes: nouvellesNotes }).eq('id', patientId);
-                fermerModal('modal-note-volante');
-                chargerDonneesDepuisServeur(); 
-            } catch(e) { console.error(e); }
+            try { await supabaseClient.from('catalogue_patients').update({ notes: notes }).eq('id', patientId); fermerModal('modal-note-volante'); chargerDonneesDepuisServeur(); } catch(e) {}
         }
 
         function ouvrirBilan(patientId) {
@@ -1464,26 +1294,27 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
         }
 
         async function sauvegarderBilan() {
-            const patientId = document.getElementById('bilan-patient-id').value;
-            const nouveauBilan = document.getElementById('bilan-corps').value;
+            const patientId = document.getElementById('bilan-patient-id').value; const bilan = document.getElementById('bilan-corps').value;
             if (!initialiserSupabase()) return;
-            try {
-                await supabaseClient.from('catalogue_patients').update({ bilan: nouveauBilan }).eq('id', patientId);
-                fermerModal('modal-bilan');
-                chargerDonneesDepuisServeur(); 
-            } catch(e) { console.error(e); }
+            try { await supabaseClient.from('catalogue_patients').update({ bilan: bilan }).eq('id', patientId); fermerModal('modal-bilan'); chargerDonneesDepuisServeur(); } catch(e) {}
         }
 
-        function filtrerPatientsPlanif(preselectedId = null) {
+        // GESTION REFONDUE DU PLANIFICATEUR (Garde les coches + selection semaines)
+        function filtrerPatientsPlanif() {
+            // Sauvegarder d'abord l'état actuel des cases affichées
+            document.querySelectorAll('.cb-planif-patient').forEach(cb => {
+                if(cb.checked) selectionPlanifMulti.add(cb.value);
+                else selectionPlanifMulti.delete(cb.value);
+            });
+
             const term = document.getElementById('recherche-planif-multi').value.toLowerCase();
             const container = document.getElementById('liste-patients-planif');
-            
             const sortedPatients = cataloguePatients.sort((a,b) => a.nom.localeCompare(b.nom));
             let html = '';
             
             sortedPatients.forEach(p => {
                 if(p.nom.toLowerCase().includes(term) || (p.adresse && p.adresse.toLowerCase().includes(term))) {
-                    const isChecked = String(p.id) === String(preselectedId) ? 'checked' : '';
+                    const isChecked = selectionPlanifMulti.has(String(p.id)) ? 'checked' : '';
                     html += `<label style="display:flex; gap:12px; cursor:pointer; font-size:0.9rem; align-items:center; justify-content: flex-start; text-align: left; padding: 8px; border-bottom: 1px solid #e5e5ea; background:white; border-radius:4px; margin:0;">
                         <input type="checkbox" class="cb-planif-patient" value="${p.id}" ${isChecked} style="width: auto; margin: 0; flex-shrink: 0; transform: scale(1.1);">
                         <div style="display:flex; flex-direction:column; justify-content:center; text-align: left;">
@@ -1493,54 +1324,74 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
                     </label>`;
                 }
             });
-            
             if(html === '') html = '<p style="text-align:center; font-size:0.85rem; color:var(--neutral);">Aucun patient trouvé.</p>';
             container.innerHTML = html;
         }
 
-        function ouvrirPlanificateur(preselectedPatientId = null, modeTla = false) {
+        function changerSemainePlanif(dir) {
+            offsetSemainePlanif += dir;
+            calculerSemainePlanif();
+        }
+
+        function calculerSemainePlanif() {
+            datesSemainePlanif = [];
+            let lundi = new Date(dateAncre);
+            lundi.setDate(dateAncre.getDate() - (dateAncre.getDay() === 0 ? 6 : dateAncre.getDay() - 1) + (offsetSemainePlanif * 7));
+            for (let i = 0; i < 5; i++) { 
+                let j = new Date(lundi); j.setDate(lundi.getDate() + i); datesSemainePlanif.push(j); 
+            }
+            
+            const joursContainer = document.getElementById('conteneur-jours-checkbox');
+            // Si on est sur la semaine en cours, on pré-coche le jour actuel
+            const isSemaineActuelle = offsetSemainePlanif === 0;
+            joursContainer.innerHTML = datesSemainePlanif.map((d, i) => `
+                <label>
+                    <input type="checkbox" value="${i}" ${(isSemaineActuelle && i === indiceJourActuel) ? 'checked' : ''}>
+                    ${getLabelDate(d)}
+                </label>
+            `).join('');
+        }
+
+        function ouvrirPlanificateur(preselectedPatientId = null) {
+            selectionPlanifMulti.clear();
+            if(preselectedPatientId) selectionPlanifMulti.add(String(preselectedPatientId));
+
             const selectKine = document.getElementById('planif-kine-affecte');
             const praticiens = listeUtilisateursComplets.filter(u => u.role === 'kine' || u.role === 'remplacant').map(u => u.nom);
             selectKine.innerHTML = praticiens.map(k => `<option value="${k}" ${k === kineVisionne ? 'selected' : ''}>${k}</option>`).join('');
             if (kineVisionne === "TOUS" && praticiens.length > 0) { selectKine.value = praticiens[0]; }
             
-            const joursContainer = document.getElementById('conteneur-jours-checkbox');
-            joursContainer.innerHTML = datesSemaineEnCours.map((d, i) => `
-                <label>
-                    <input type="checkbox" value="${i}" ${i === indiceJourActuel ? 'checked' : ''}>
-                    ${getLabelDate(d)}
-                </label>
-            `).join('');
-
             document.getElementById('planif-heure').value = '';
             document.getElementById('recherche-planif-multi').value = '';
             
-            // On coche automatiquement la case TLA si on vient du bouton TLA
-            document.getElementById('planif-tla-coche').checked = modeTla === true;
-            
-            filtrerPatientsPlanif(preselectedPatientId);
+            offsetSemainePlanif = 0;
+            calculerSemainePlanif();
+            filtrerPatientsPlanif();
             
             ouvrirModal('modal-planifier');
         }
 
         async function ajouterAuPlanningMultiJours() {
+            // Sauvegarde finale des coches
+            document.querySelectorAll('.cb-planif-patient').forEach(cb => {
+                if(cb.checked) selectionPlanifMulti.add(cb.value);
+                else selectionPlanifMulti.delete(cb.value);
+            });
+
             const kineAffecte = document.getElementById('planif-kine-affecte').value;
             const heure = document.getElementById('planif-heure').value;
-            const inclureTla = document.getElementById('planif-tla-coche').checked;
             const checkboxesJours = document.querySelectorAll('#conteneur-jours-checkbox input[type="checkbox"]:checked');
-            const checkboxesPatients = document.querySelectorAll('.cb-planif-patient:checked');
+            const patientsSelectionnes = Array.from(selectionPlanifMulti);
             
             if (checkboxesJours.length === 0) { alert("Veuillez sélectionner au moins un jour."); return; }
-            if (checkboxesPatients.length === 0) { alert("Veuillez sélectionner au moins un patient."); return; }
-
+            if (patientsSelectionnes.length === 0) { alert("Veuillez sélectionner au moins un patient."); return; }
             if (!initialiserSupabase()) return;
 
             let insertions = [];
             
-            Array.from(checkboxesPatients).forEach(cbP => {
-                const patientId = cbP.value;
+            patientsSelectionnes.forEach(patientId => {
                 Array.from(checkboxesJours).forEach(cbJ => {
-                    const dateCible = datesSemaineEnCours[parseInt(cbJ.value)];
+                    const dateCible = datesSemainePlanif[parseInt(cbJ.value)];
                     insertions.push({
                         id_planif: Math.floor(Math.random() * 1000000000).toString(),
                         patient_id: patientId,
@@ -1550,82 +1401,55 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
                         statut: null,
                         ordre: 99,
                         journee_verrouillee: false,
-                        tla_statut: inclureTla ? 'dans_tla' : null
+                        tla_statut: null,
+                        premiere_seance: false
                     });
                 });
             });
 
             try {
                 const { error } = await supabaseClient.from('plannings_dates').insert(insertions);
-                if (error) {
-                    console.error(error);
-                    alert("Erreur base de données : " + error.message);
-                    return;
-                }
+                if (error) { alert("Erreur BDD : " + error.message); return; }
                 fermerModal('modal-planifier');
                 chargerDonneesDepuisServeur();
-            } catch(e) { 
-                console.error(e); 
-                alert("Erreur lors de l'enregistrement.");
-            }
+            } catch(e) { alert("Erreur lors de l'enregistrement."); }
         }
 
         async function gererVerrouillageJour() {
             if (!initialiserSupabase()) return;
-            const dateSelectionnee = datesSemaineEnCours[indiceJourActuel];
-            const cleDate = getCleDate(dateSelectionnee);
-            
+            const cleDate = getCleDate(datesSemaineEnCours[indiceJourActuel]);
             const groupeKines = getKinesAssocies(kineVisionne);
             const rdvDuJour = planningsParDate[cleDate]?.filter(r => groupeKines.includes(r.kineNom)) || [];
             
             if(rdvDuJour.length === 0) return;
-
             const estDejaVerrouille = rdvDuJour.some(r => r.verrouille === true);
             
             if (estDejaVerrouille) {
                 const mdpSaisi = prompt("🔒 Cette tournée est verrouillée.\n\nVeuillez saisir votre mot de passe pour la déverrouiller :");
                 if (mdpSaisi === null) return; 
-                
                 const userActuel = listeUtilisateursComplets.find(u => u.nom === kineConnecte);
-                if (!userActuel || userActuel.mot_de_passe !== mdpSaisi) {
-                    alert("❌ Mot de passe incorrect. Déverrouillage annulé.");
-                    return;
-                }
-            } else {
-                if (!confirm("Verrouiller cette journée ? Plus aucune modification ne sera possible pour les kinés et le secrétariat.")) return;
-            }
+                if (!userActuel || userActuel.mot_de_passe !== mdpSaisi) { alert("❌ Mot de passe incorrect."); return; }
+            } else { if (!confirm("Verrouiller cette journée ?")) return; }
             
             try {
                 const idsToUpdate = rdvDuJour.map(r => r.idPlanif);
-                await supabaseClient.from('plannings_dates')
-                    .update({ journee_verrouillee: !estDejaVerrouille })
-                    .in('id_planif', idsToUpdate);
+                await supabaseClient.from('plannings_dates').update({ journee_verrouillee: !estDejaVerrouille }).in('id_planif', idsToUpdate);
                 chargerDonneesDepuisServeur();
-            } catch(e) { console.error(e); }
+            } catch(e) {}
         }
 
         async function reinitialiserJour() {
             if (!confirm(`Voulez-vous vraiment effacer TOUT le planning de votre tournée pour ce jour ?`)) return;
             if (!initialiserSupabase()) return;
-            
-            const dateSelectionnee = datesSemaineEnCours[indiceJourActuel];
-            const cleDate = getCleDate(dateSelectionnee);
+            const cleDate = getCleDate(datesSemaineEnCours[indiceJourActuel]);
             const groupeKines = getKinesAssocies(kineVisionne);
-            
-            try {
-                await supabaseClient.from('plannings_dates')
-                    .delete()
-                    .eq('date_cle', cleDate)
-                    .in('kine_nom', groupeKines);
-                chargerDonneesDepuisServeur();
-            } catch(e) { console.error(e); }
+            try { await supabaseClient.from('plannings_dates').delete().eq('date_cle', cleDate).in('kine_nom', groupeKines); chargerDonneesDepuisServeur(); } catch(e) {}
         }
 
         function basculerFiltreTlaUniquement() {
             filtreTlaUniquementActif = !filtreTlaUniquementActif;
             const btn = document.getElementById('btn-filtre-tla-uniquement');
-            if(filtreTlaUniquementActif) btn.classList.add('active');
-            else btn.classList.remove('active');
+            if(filtreTlaUniquementActif) btn.classList.add('active'); else btn.classList.remove('active');
             rafraichirAffichage();
         }
 
@@ -1639,11 +1463,8 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
                 conteneur.innerHTML = aPrevoir.map(p => `
                     <div class="item-prevoir-modal" style="flex-direction: column; align-items: stretch; gap: 8px;">
                         <div>
-                            <span style="display:flex; align-items:center; flex-wrap:wrap;">
-                                <strong style="font-size:1.1rem;">${p.nom}</strong>
-                                ${genererBadgeAbsenceGlobalHtml(p.historique_absences)}
-                            </span>
-                            <div style="font-size:0.9rem; color:#333; background-color:#fffcf3; border-left:3px solid var(--orange); padding:8px; margin-top:6px; border-radius:4px; max-height:120px; overflow-y:auto; white-space:pre-wrap;">${p.notes || 'Aucune note supplémentaire'}</div>
+                            <span style="display:flex; align-items:center; flex-wrap:wrap;"><strong style="font-size:1.1rem;">${p.nom}</strong>${genererBadgeAbsenceGlobalHtml(p.historique_absences)}</span>
+                            <div style="font-size:0.9rem; background-color:#fffcf3; border-left:3px solid var(--orange); padding:8px; margin-top:6px; border-radius:4px; max-height:120px; overflow-y:auto; white-space:pre-wrap;">${p.notes || 'Aucune note supplémentaire'}</div>
                         </div>
                         <div style="display: flex; gap: 6px;">
                             <button class="btn-success" style="padding:6px; font-size:0.85rem; flex: 1;" onclick="fermerModal('modal-liste-prevoir'); ouvrirPlanificateur('${p.id}')">📅 Planifier</button>
@@ -1651,37 +1472,24 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
                         </div>
                     </div>
                 `).join('');
-            }
-            ouvrirModal('modal-liste-prevoir');
+            } ouvrirModal('modal-liste-prevoir');
         }
 
         function filtrerFichierPatientsIntuitivement() {
             afficherCatalogue();
             const term = document.getElementById('recherche-patient-input').value.toLowerCase();
-            const nb = cataloguePatients.filter(p => p.nom.toLowerCase().includes(term) || p.adresse.toLowerCase().includes(term)).length;
+            const nb = cataloguePatients.filter(p => p.nom.toLowerCase().includes(term) || (p.adresse && p.adresse.toLowerCase().includes(term))).length;
             document.getElementById('compteur-recherche').innerText = `${nb} patient(s) trouvé(s)`;
         }
 
         function ouvrirVueGlobaleJour() {
-            const dateSelectionnee = datesSemaineEnCours[indiceJourActuel];
-            const cleDate = getCleDate(dateSelectionnee);
+            const dateSelectionnee = datesSemaineEnCours[indiceJourActuel]; const cleDate = getCleDate(dateSelectionnee);
             const tousRdvDuJour = planningsParDate[cleDate] || [];
-            
             const groupeKines = getKinesAssocies(kineVisionne);
-            let rdvAAfficher = [];
-            
-            if (kineVisionne === "TOUS") {
-                rdvAAfficher = [...tousRdvDuJour]; 
-            } else {
-                rdvAAfficher = tousRdvDuJour.filter(r => groupeKines.includes(r.kineNom));
-            }
-            
-            if (typeof filtreTlaUniquementActif !== 'undefined' && filtreTlaUniquementActif) {
-                rdvAAfficher = rdvAAfficher.filter(r => r.tlaStatut === 'dans_tla' || r.tlaStatut === 'facture');
-            }
+            let rdvAAfficher = (kineVisionne === "TOUS") ? [...tousRdvDuJour] : tousRdvDuJour.filter(r => groupeKines.includes(r.kineNom));
+            if (typeof filtreTlaUniquementActif !== 'undefined' && filtreTlaUniquementActif) rdvAAfficher = rdvAAfficher.filter(r => r.tlaStatut === 'dans_tla' || r.tlaStatut === 'facture');
 
             rdvAAfficher.sort(trierPlannings);
-
             const conteneur = document.getElementById('conteneur-vue-globale');
             const titreAffichage = kineVisionne === "TOUS" ? "Cabinet" : "Tournée de " + groupeKines[0];
             document.getElementById('titre-vue-globale').innerText = `📄 Vue Globale - ${getLabelDate(dateSelectionnee)} (${titreAffichage})`;
@@ -1695,153 +1503,94 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
                     
                     const evtAbsCeJour = estPatientAbsentA(cleDate, patient.historique_absences);
                     const badgeAbsentHtml = genererBadgeAbsenceGlobalHtml(patient.historique_absences);
-                    
                     const affichageHeure = (rdv.heure && rdv.heure !== "00:00") ? rdv.heure : "--:--";
                     const kineInfo = (kineVisionne === "TOUS" || groupeKines.length > 1) ? `<br><small style="color:var(--neutral);">👤 ${rdv.kineNom}</small>` : '';
+                    const badgePrem = rdv.premiere_seance ? `<span class="badge-premiere active" style="margin-left:0; margin-right:5px; padding:2px 4px; font-size:0.65rem; pointer-events:none;">🆕 1ère</span>` : '';
                     
-                    let iconeStatut = '';
-                    if (rdv.statut === 'vu') iconeStatut = '✅ ';
-                    else if (rdv.statut === 'non-vu') iconeStatut = '❌ ';
-                    
+                    let iconeStatut = rdv.statut === 'vu' ? '✅ ' : (rdv.statut === 'non-vu' ? '❌ ' : '');
                     let styleLigne = evtAbsCeJour ? 'opacity: 0.6; background: #f8fafc; text-decoration: line-through;' : 'background: white;';
                     
-                    // NOUVEAU : Zone du bas pour le secrétariat avec la case papier alignée à gauche du TLA
-                    let zoneActionsBasse = '';
-                    if (kineRole === 'secretariat') {
-                        zoneActionsBasse = `
-                            <div style="display: flex; align-items: center; gap: 12px; margin-top: 4px;">
-                                <input type="checkbox" style="width: 16px; height: 16px; margin: 0; cursor: pointer; flex-shrink: 0;" title="Pointage papier">
-                                <div style="margin-top: -4px;">${genererHtmlTla(rdv)}</div>
-                            </div>
-                        `;
-                    } else {
-                        zoneActionsBasse = `<div>${genererHtmlTla(rdv)}</div>`;
-                    }
+                    let zoneActionsBasse = (kineRole === 'secretariat') ? 
+                        `<div style="display: flex; align-items: center; gap: 12px; margin-top: 4px;"><input type="checkbox" style="width: 16px; height: 16px; margin: 0; cursor: pointer; flex-shrink: 0;" title="Pointage papier"><div style="margin-top: -4px;">${genererHtmlTla(rdv)}</div></div>` 
+                        : `<div>${genererHtmlTla(rdv)}</div>`;
                     
                     return `
                         <div style="${styleLigne} padding: 10px; border-radius: 6px; border-left: 4px solid var(--primary); display: flex; align-items: flex-start; gap: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); margin-bottom: 6px;">
                             <strong style="color: var(--primary); min-width: 45px; margin-top: 2px;">${affichageHeure}</strong>
                             <div style="flex: 1; width: 100%;">
-                                <div style="font-weight: bold; display:flex; align-items:center; flex-wrap:wrap;">
-                                    ${iconeStatut}${patient.nom} ${badgeAbsentHtml}
-                                </div>
+                                <div style="font-weight: bold; display:flex; align-items:center; flex-wrap:wrap;">${badgePrem}${iconeStatut}${patient.nom} ${badgeAbsentHtml}</div>
                                 <div style="font-size: 0.85rem; color: var(--neutral); margin-top: 2px;">${patient.adresse}${kineInfo}</div>
                                 ${zoneActionsBasse}
                             </div>
                         </div>
                     `;
                 }).join('');
-            }
-
-            ouvrirModal('modal-vue-globale');
+            } ouvrirModal('modal-vue-globale');
         }
-        function ouvrirVueAutresKines() {
-            const dateSelectionnee = datesSemaineEnCours[indiceJourActuel];
-            const cleDate = getCleDate(dateSelectionnee);
-            const tousRdvDuJour = planningsParDate[cleDate] || [];
 
+        function ouvrirVueAutresKines() {
+            const cleDate = getCleDate(datesSemaineEnCours[indiceJourActuel]); const tousRdvDuJour = planningsParDate[cleDate] || [];
             const monGroupe = getKinesAssocies(kineVisionne);
             let autresRdv = tousRdvDuJour.filter(r => !monGroupe.includes(r.kineNom));
-
-            if (typeof filtreTlaUniquementActif !== 'undefined' && filtreTlaUniquementActif) {
-                autresRdv = autresRdv.filter(r => r.tlaStatut === 'dans_tla' || r.tlaStatut === 'facture');
-            }
-
+            if (typeof filtreTlaUniquementActif !== 'undefined' && filtreTlaUniquementActif) autresRdv = autresRdv.filter(r => r.tlaStatut === 'dans_tla' || r.tlaStatut === 'facture');
             autresRdv.sort(trierPlannings);
 
             const conteneur = document.getElementById('conteneur-autres-kines');
-            document.getElementById('titre-autres-kines').innerText = `👥 Plannings des collègues - ${getLabelDate(dateSelectionnee)}`;
+            document.getElementById('titre-autres-kines').innerText = `👥 Plannings des collègues - ${getLabelDate(datesSemaineEnCours[indiceJourActuel])}`;
 
             if (autresRdv.length === 0) {
                 conteneur.innerHTML = '<p style="text-align:center; color:var(--neutral); margin-top:20px;">Aucun autre patient planifié ce jour pour les collègues.</p>';
             } else {
-                let html = '';
-                const groupes = {};
-                autresRdv.forEach(rdv => {
-                    const titulaire = getKinesAssocies(rdv.kineNom)[0] || rdv.kineNom;
-                    if (!groupes[titulaire]) groupes[titulaire] = [];
-                    groupes[titulaire].push(rdv);
-                });
-
+                let html = ''; const groupes = {};
+                autresRdv.forEach(rdv => { const titulaire = getKinesAssocies(rdv.kineNom)[0] || rdv.kineNom; if (!groupes[titulaire]) groupes[titulaire] = []; groupes[titulaire].push(rdv); });
                 for (const [titulaire, rdvs] of Object.entries(groupes)) {
                     html += `<h4 style="margin: 15px 0 6px 0; color: #475569; border-bottom: 2px solid #cbd5e1; padding-bottom: 4px;">Tournée de ${titulaire}</h4>`;
-                    
                     html += rdvs.map(rdv => {
-                        const patient = cataloguePatients.find(p => String(p.id) === String(rdv.patientId));
-                        if (!patient) return '';
-                        
-                        const evtAbsCeJour = estPatientAbsentA(cleDate, patient.historique_absences);
-                        const badgeAbsentHtml = genererBadgeAbsenceGlobalHtml(patient.historique_absences);
-                        
+                        const patient = cataloguePatients.find(p => String(p.id) === String(rdv.patientId)); if (!patient) return '';
+                        const evtAbsCeJour = estPatientAbsentA(cleDate, patient.historique_absences); const badgeAbsentHtml = genererBadgeAbsenceGlobalHtml(patient.historique_absences);
                         const affichageHeure = (rdv.heure && rdv.heure !== "00:00") ? rdv.heure : "--:--";
                         const kineInfo = rdv.kineNom !== titulaire ? `<br><small style="color:var(--neutral);">Effectué par : 👤 ${rdv.kineNom}</small>` : '';
+                        const badgePrem = rdv.premiere_seance ? `<span class="badge-premiere active" style="margin-left:0; margin-right:5px; padding:2px 4px; font-size:0.65rem; pointer-events:none;">🆕 1ère</span>` : '';
                         
-                        let iconeStatut = '';
-                    if (rdv.statut === 'vu') iconeStatut = '✅ ';
-                    else if (rdv.statut === 'non-vu') iconeStatut = '❌ ';
-                    
-                    let styleLigne = evtAbsCeJour ? 'opacity: 0.6; background: #f8fafc; text-decoration: line-through;' : 'background: white;';
-                    
-                    // NOUVEAU : Case à cocher pour le pointage visuel du secrétariat
-                    let casePointageSecretariat = '';
-                    if (kineRole === 'secretariat') {
-                        casePointageSecretariat = `<input type="checkbox" style="transform: scale(1.4); margin-right: 5px; margin-top: 4px; cursor: pointer;" title="Pointage papier">`;
-                    }
-                    
-                    return `
-                        <div style="${styleLigne} padding: 10px; border-radius: 6px; border-left: 4px solid var(--primary); display: flex; align-items: flex-start; gap: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
-                            ${casePointageSecretariat}
-                            <strong style="color: var(--primary); min-width: 45px; margin-top: 2px;">${affichageHeure}</strong>
-                            <div style="flex: 1; width: 100%;">
-                                <div style="font-weight: bold; display:flex; align-items:center; flex-wrap:wrap;">
-                                    ${iconeStatut}${patient.nom} ${badgeAbsentHtml}
-                                </div>
-                                <div style="font-size: 0.85rem; color: var(--neutral); margin-top: 2px;">${patient.adresse}${kineInfo}</div>
-                                <div>
-                                    ${genererHtmlTla(rdv)}
+                        let iconeStatut = rdv.statut === 'vu' ? '✅ ' : (rdv.statut === 'non-vu' ? '❌ ' : '');
+                        let styleLigne = evtAbsCeJour ? 'opacity: 0.6; background: #e2e8f0; text-decoration: line-through;' : 'background: white;';
+                        
+                        return `
+                            <div style="${styleLigne} padding: 8px 10px; border-radius: 6px; border-left: 4px solid var(--neutral); display: flex; align-items: flex-start; gap: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); margin-bottom: 6px;">
+                                <strong style="color: var(--primary); min-width: 45px; margin-top: 2px;">${affichageHeure}</strong>
+                                <div style="flex: 1; width: 100%;">
+                                    <div style="font-weight: bold; display:flex; align-items:center; flex-wrap:wrap; font-size: 0.95rem; color: #333;">${badgePrem}${iconeStatut}${patient.nom} ${badgeAbsentHtml}</div>
+                                    <div style="font-size: 0.8rem; color: var(--neutral); margin-top: 2px;">${patient.adresse}${kineInfo}</div>
+                                    <div>${genererHtmlTla(rdv)}</div>
                                 </div>
                             </div>
-                        </div>
-                    `;
-                }).join('');
+                        `;
+                    }).join('');
                 }
                 conteneur.innerHTML = html;
-            }
-            ouvrirModal('modal-autres-kines');
+            } ouvrirModal('modal-autres-kines');
         }
 
         function afficherCatalogue() {
             const conteneur = document.getElementById('view-fichier');
             const term = document.getElementById('recherche-patient-input').value.toLowerCase();
-            const patientsFiltres = cataloguePatients.filter(p => p.nom.toLowerCase().includes(term) || p.adresse.toLowerCase().includes(term)).sort((a,b) => a.nom.localeCompare(b.nom));
+            const patientsFiltres = cataloguePatients.filter(p => p.nom.toLowerCase().includes(term) || (p.adresse && p.adresse.toLowerCase().includes(term))).sort((a,b) => a.nom.localeCompare(b.nom));
             
             document.getElementById('compteur-recherche').innerText = `${patientsFiltres.length} patient(s) enregistré(s)`;
-
             const cleAujourdhui = getCleDate(new Date());
 
             conteneur.innerHTML = patientsFiltres.map(p => {
-                const aDesNotes = p.notes && p.notes.trim() !== '';
-                const texteNote = aDesNotes ? '📝 Note' : '📝 Note (vide)';
-                
-                const aUnBilan = p.bilan && p.bilan.trim() !== '';
-                const texteBilan = aUnBilan ? '📋 Bilan' : '📋 Bilan (vide)';
-
+                const aDesNotes = p.notes && p.notes.trim() !== ''; const texteNote = aDesNotes ? '📝 Note' : '📝 Note (vide)';
+                const aUnBilan = p.bilan && p.bilan.trim() !== ''; const texteBilan = aUnBilan ? '📋 Bilan' : '📋 Bilan (vide)';
                 const evtAbsAujourdhui = estPatientAbsentA(cleAujourdhui, p.historique_absences);
                 const badgeAbsentHtml = genererBadgeAbsenceGlobalHtml(p.historique_absences);
                 
                 return `
                 <div class="patient-card ${evtAbsAujourdhui ? 'absent' : ''}" style="border-left-color:${p.a_prevoir ? 'var(--danger)' : 'var(--purple)'}; flex-direction: row; flex-wrap: wrap; align-items: center;">
                     <div class="patient-info" style="flex: 1; width: 100%;">
-                        <span style="display:flex; align-items:center; flex-wrap:wrap;">
-                            <span class="patient-name" style="cursor:pointer; color:var(--primary); text-decoration:underline;" onclick="ouvrirFormulairePatient('${p.id}')">${p.nom} ✏️</span>
-                            ${badgeAbsentHtml}
-                        </span>
+                        <span style="display:flex; align-items:center; flex-wrap:wrap;"><span class="patient-name" style="cursor:pointer; color:var(--primary); text-decoration:underline;" onclick="ouvrirFormulairePatient('${p.id}')">${p.nom} ✏️</span>${badgeAbsentHtml}</span>
                         <span style="margin-top: 4px;">📍 ${p.adresse}</span>
-                        
-                        <div style="display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px;">
-                            ${p.a_prevoir ? `<span class="badge-card-prevoir">🚨 À prévoir</span>` : ''}
-                        </div>
-
+                        <div style="display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px;">${p.a_prevoir ? `<span class="badge-card-prevoir">🚨 À prévoir</span>` : ''}</div>
                         <div style="display:flex; gap:6px; margin-top:6px; flex-wrap: wrap;">
                             <span class="btn-note-declencheur" style="opacity: ${aDesNotes ? '1' : '0.5'}; margin-top:0;" onclick="ouvrirNoteVolante('${p.id}')">${texteNote}</span>
                             <span class="btn-bilan-declencheur" style="opacity: ${aUnBilan ? '1' : '0.5'}; margin-top:0;" onclick="ouvrirBilan('${p.id}')">${texteBilan}</span>
@@ -1853,35 +1602,22 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
 
         function renderAbsences() {
             const conteneur = document.getElementById('conteneur-liste-absences');
-            if(currentAbsences.length === 0) {
-                conteneur.innerHTML = '<p style="font-size:0.8rem; color:var(--neutral); text-align:center;">Aucun événement enregistré.</p>';
-            } else {
-                conteneur.innerHTML = currentAbsences.map((abs, idx) => {
-                    let texte = `<b>${abs.type}</b> du ${abs.debut.split('-').reverse().join('/')}`;
-                    if (abs.fin) texte += ` au ${abs.fin.split('-').reverse().join('/')}`;
-                    return `<div class="absence-item"><span>${texte}</span><button type="button" class="btn-icon" style="color:var(--danger);" onclick="supprimerEvenementAbsence(${idx})">🗑️</button></div>`;
-                }).join('');
-            }
+            if(currentAbsences.length === 0) conteneur.innerHTML = '<p style="font-size:0.8rem; color:var(--neutral); text-align:center;">Aucun événement enregistré.</p>';
+            else conteneur.innerHTML = currentAbsences.map((abs, idx) => {
+                let texte = `<b>${abs.type}</b> du ${abs.debut.split('-').reverse().join('/')}`; if (abs.fin) texte += ` au ${abs.fin.split('-').reverse().join('/')}`;
+                return `<div class="absence-item"><span>${texte}</span><button type="button" class="btn-icon" style="color:var(--danger);" onclick="supprimerEvenementAbsence(${idx})">🗑️</button></div>`;
+            }).join('');
             document.getElementById('patient-historique-absences').value = JSON.stringify(currentAbsences);
         }
 
         function ajouterEvenementAbsence() {
-            const type = document.getElementById('abs-type').value;
-            const debut = document.getElementById('abs-debut').value;
-            const fin = document.getElementById('abs-fin').value;
+            const type = document.getElementById('abs-type').value; const debut = document.getElementById('abs-debut').value; const fin = document.getElementById('abs-fin').value;
             if(!debut) { alert('La date de début est obligatoire'); return; }
             if(fin && debut > fin) { alert('La date de fin ne peut pas être avant la date de début'); return; }
-            
-            currentAbsences.push({ type, debut, fin });
-            document.getElementById('abs-debut').value = '';
-            document.getElementById('abs-fin').value = '';
-            renderAbsences();
+            currentAbsences.push({ type, debut, fin }); document.getElementById('abs-debut').value = ''; document.getElementById('abs-fin').value = ''; renderAbsences();
         }
 
-        function supprimerEvenementAbsence(idx) {
-            currentAbsences.splice(idx, 1);
-            renderAbsences();
-        }
+        function supprimerEvenementAbsence(idx) { currentAbsences.splice(idx, 1); renderAbsences(); }
 
         function ouvrirFormulairePatient(id = '') {
             const p = id ? cataloguePatients.find(x => String(x.id) === String(id)) : null;
@@ -1894,85 +1630,45 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
             document.getElementById('patient-notes').value = id ? (p.notes || '') : '';
             document.getElementById('patient-aprevoir').checked = id ? (p.a_prevoir || false) : false;
             
-            try { currentAbsences = id && p.historique_absences ? JSON.parse(p.historique_absences) : []; } 
-            catch(e) { currentAbsences = []; }
-            renderAbsences();
+            try { currentAbsences = id && p.historique_absences ? JSON.parse(p.historique_absences) : []; } catch(e) { currentAbsences = []; } renderAbsences();
 
             document.getElementById('btn-supprimer-fiche').style.display = id ? 'block' : 'none';
             document.getElementById('btn-save-new').style.display = id ? 'none' : 'block'; 
-            
-            ouvrirModal('modal-patient');
-            
-            setTimeout(() => document.getElementById('patient-nom').focus(), 100);
+            ouvrirModal('modal-patient'); setTimeout(() => document.getElementById('patient-nom').focus(), 100);
         }
 
         async function sauvegarderFichePatient(garderOuvert = false) {
-            const id = document.getElementById('patient-id').value;
-            const nomInput = document.getElementById('patient-nom');
-            const adresseInput = document.getElementById('patient-adresse');
-            
-            if(!nomInput.value.trim() || !adresseInput.value.trim()) {
-                alert("Le nom et l'adresse sont obligatoires.");
-                return;
-            }
+            const id = document.getElementById('patient-id').value; const nomInput = document.getElementById('patient-nom'); const adresseInput = document.getElementById('patient-adresse');
+            if(!nomInput.value.trim() || !adresseInput.value.trim()) { alert("Le nom et l'adresse sont obligatoires."); return; }
 
             const p = { 
-                nom: nomInput.value.trim(), 
-                adresse: adresseInput.value.trim(), 
-                telephone: document.getElementById('patient-telephone').value, 
-                telephone_2: document.getElementById('patient-telephone2').value, 
-                notes: document.getElementById('patient-notes').value, 
-                a_prevoir: document.getElementById('patient-aprevoir').checked,
-                historique_absences: document.getElementById('patient-historique-absences').value
+                nom: nomInput.value.trim(), adresse: adresseInput.value.trim(), telephone: document.getElementById('patient-telephone').value, 
+                telephone_2: document.getElementById('patient-telephone2').value, notes: document.getElementById('patient-notes').value, 
+                a_prevoir: document.getElementById('patient-aprevoir').checked, historique_absences: document.getElementById('patient-historique-absences').value
             };
             
-            if (id) {
-                await supabaseClient.from('catalogue_patients').update(p).eq('id', id);
-            } else {
-                await supabaseClient.from('catalogue_patients').insert([{...p, id: Math.floor(Math.random()*1000000000).toString()}]);
-            }
+            if (id) await supabaseClient.from('catalogue_patients').update(p).eq('id', id);
+            else await supabaseClient.from('catalogue_patients').insert([{...p, id: Math.floor(Math.random()*1000000000).toString(), a_facturer_tla: false}]);
             
             chargerDonneesDepuisServeur();
 
             if (garderOuvert) {
-                document.getElementById('patient-id').value = '';
-                nomInput.value = '';
-                adresseInput.value = '';
-                document.getElementById('patient-telephone').value = '';
-                document.getElementById('patient-telephone2').value = '';
-                document.getElementById('patient-notes').value = '';
-                document.getElementById('patient-aprevoir').checked = false;
-                
-                currentAbsences = [];
-                renderAbsences();
-                
-                nomInput.focus();
-                
-                const btn = document.getElementById('btn-save-new');
-                const textInit = btn.innerText;
-                btn.innerText = "✅ Enregistré !";
-                setTimeout(() => btn.innerText = textInit, 1500);
-            } else {
-                fermerModal('modal-patient');
-            }
+                document.getElementById('patient-id').value = ''; nomInput.value = ''; adresseInput.value = ''; document.getElementById('patient-telephone').value = ''; document.getElementById('patient-telephone2').value = ''; document.getElementById('patient-notes').value = ''; document.getElementById('patient-aprevoir').checked = false;
+                currentAbsences = []; renderAbsences(); nomInput.focus();
+                const btn = document.getElementById('btn-save-new'); const textInit = btn.innerText; btn.innerText = "✅ Enregistré !"; setTimeout(() => btn.innerText = textInit, 1500);
+            } else { fermerModal('modal-patient'); }
         }
 
         async function supprimerFichePatient() {
             const id = document.getElementById('patient-id').value;
             if(confirm("Voulez-vous vraiment supprimer ce patient définitivement ?")) { 
-                await supabaseClient.from('catalogue_patients').delete().eq('id', id); 
-                fermerModal('modal-patient'); 
-                chargerDonneesDepuisServeur(); 
+                await supabaseClient.from('catalogue_patients').delete().eq('id', id); fermerModal('modal-patient'); chargerDonneesDepuisServeur(); 
             }
         }
 
         function ouvrirModal(id) { document.getElementById(id).style.display = 'flex'; }
         function fermerModal(id) { document.getElementById(id).style.display = 'none'; }
-        
-        function getCleDate(d) { 
-            const tzOffset = d.getTimezoneOffset() * 60000;
-            return new Date(d - tzOffset).toISOString().split('T')[0]; 
-        }
+        function getCleDate(d) { const tzOffset = d.getTimezoneOffset() * 60000; return new Date(d - tzOffset).toISOString().split('T')[0]; }
         function getLabelDate(d) { return `${nomsJours[d.getDay() === 0 ? 4 : d.getDay()-1]} ${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}`; }
     </script>
 </body>
