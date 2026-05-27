@@ -373,7 +373,10 @@
             </div>
 
             <div id="header-fichier" style="display: none;">
-                <button class="btn-success" style="width: 100%; margin-bottom: 10px;" onclick="ouvrirFormulairePatient()">Nouveau patient 👤➕</button>
+                <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+                    <button class="btn-success" style="flex: 1; padding: 10px; font-size: 0.9rem;" onclick="ouvrirFormulairePatient()">Nouveau patient 👤➕</button>
+                    <button class="btn-filter-tla active" style="flex: 1; padding: 10px; font-size: 0.9rem; border-radius: 8px; font-weight: bold; color: white; background-color: #00c7b1; border: none; cursor: pointer;" onclick="ouvrirPlanificateur(null, true)">Planifier TLA 📱</button>
+                </div>
                 <div class="search-container">
                     <input type="text" id="recherche-patient-input" class="search-input" placeholder="🔍 Rechercher (Nom, adresse...)" oninput="filtrerFichierPatientsIntuitivement()">
                     <span id="compteur-recherche" class="search-counter">0 patient enregistré</span>
@@ -440,13 +443,20 @@
             <h3 style="margin-bottom:0; text-align:left;">Planifier des patients</h3>
             <label style="color:var(--neutral); font-size:0.8rem; margin-top:-5px; text-align:left;">Affecter plusieurs patients en une fois</label>
             
-            <div style="display:flex; gap:10px; flex-wrap:wrap;">
+            <div style="display:flex; gap:10px; flex-wrap:wrap; align-items: center; margin-bottom: 5px;">
                 <div style="flex:1; min-width:140px;">
                     <label>Praticien affecté</label><select id="planif-kine-affecte"></select>
                 </div>
                 <div style="flex:1; min-width:140px;">
                     <label>Heure (optionnel)</label><input type="time" id="planif-heure">
                 </div>
+            </div>
+
+            <div style="margin-bottom: 10px; padding: 8px 10px; background: #eefdfb; border-radius: 8px; border: 1px dashed #00c7b1;">
+                <label style="display: flex; gap: 8px; align-items: center; cursor: pointer; color: #008777; font-weight: bold; margin: 0; font-size: 0.9rem;">
+                    <input type="checkbox" id="planif-tla-coche" style="width: auto; margin: 0; transform: scale(1.2);">
+                    Préparer dans le TLA 📱 (À facturer)
+                </label>
             </div>
             
             <label>Jours :</label>
@@ -899,8 +909,13 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
         function rafraichirAffichage() { 
             const btnAutres = document.getElementById('btn-autres-kines');
             if(btnAutres) btnAutres.style.display = (kineRole === 'secretariat' || kineVisionne === "TOUS") ? 'none' : 'inline-block';
+            
             if(vueActuelle === 'planning') afficherPlanning(); 
             else afficherCatalogue(); 
+
+            // Si les modals globales sont ouvertes, on les rafraîchit
+            if (document.getElementById('modal-vue-globale').style.display === 'flex') ouvrirVueGlobaleJour();
+            if (document.getElementById('modal-autres-kines').style.display === 'flex') ouvrirVueAutresKines();
         }
 
         function trierPlannings(a, b) {
@@ -950,6 +965,37 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
             let d = evt.debut ? ` du ${evt.debut.split('-').reverse().join('/')}` : '';
             let f = evt.fin ? ` au ${evt.fin.split('-').reverse().join('/')}` : '';
             return `<span style="font-size: 0.7rem; background: ${bgCol}; color: white; padding: 2px 6px; border-radius: 4px; font-weight: bold; margin-left: 5px;" title="${evt.type}${d}${f}">${typeLabel}${d}${f}</span>`;
+        }
+
+        // FONCTION CENTRALE POUR GENERER LE MODULE TLA
+        function genererHtmlTla(rdv) {
+            const desactiveTla = rdv.verrouille ? 'disabled' : '';
+            if (kineRole === 'secretariat') {
+                if (rdv.tlaStatut === 'facture') {
+                    return `
+                        <div style="display:flex; align-items:center; gap:6px; margin-top:4px;">
+                            <span class="badge-tla-sec-facture" style="font-size:0.7rem;">✅ Facturé (TLA traité)</span>
+                            <button class="btn-icon" style="font-size:0.75rem; color:var(--danger); padding:0; font-weight:bold;" ${desactiveTla} onclick="basculerTlaStatut('${rdv.idPlanif}', 'annuler_facture'); event.stopPropagation();">🔄 Annuler</button>
+                        </div>`;
+                } else {
+                    const isCoché = rdv.tlaStatut === 'dans_tla' ? 'checked' : '';
+                    return `
+                        <div style="display:flex; align-items:center; gap:8px; margin-top:4px;">
+                            <label class="sec-tla-checkbox-container" style="padding:2px 6px; font-size:0.75rem;" onclick="event.stopPropagation();">
+                                <input type="checkbox" ${isCoché} ${desactiveTla} onchange="basculerTlaStatut('${rdv.idPlanif}', 'toggle_tla')"> TLA
+                            </label>
+                            ${rdv.tlaStatut === 'dans_tla' ? `<button class="btn-success" style="font-size:0.7rem; padding:2px 6px; border-radius:4px;" ${desactiveTla} onclick="basculerTlaStatut('${rdv.idPlanif}', 'valider_facture'); event.stopPropagation();">Facturer ✅</button>` : ''}
+                        </div>`;
+                }
+            } else {
+                if (rdv.tlaStatut === 'dans_tla') {
+                    return `<button class="badge-tla-kine" style="margin-top:4px;" ${desactiveTla} onclick="basculerTlaStatut('${rdv.idPlanif}', 'kine_click'); event.stopPropagation();">📱 TLA</button>`;
+                } else if (rdv.tlaStatut === 'facture') {
+                    return `<button class="badge-tla-kine facture" style="margin-top:4px;" ${desactiveTla} onclick="basculerTlaStatut('${rdv.idPlanif}', 'kine_click'); event.stopPropagation();">✓ TLA</button>`;
+                } else {
+                    return `<button class="badge-tla-kine" style="background:transparent; border:1px solid #00c7b1; color:#008777; margin-top:4px;" ${desactiveTla} onclick="basculerTlaStatut('${rdv.idPlanif}', 'kine_click'); event.stopPropagation();">+ 📱 TLA</button>`;
+                }
+            }
         }
 
         function afficherPlanning() {
@@ -1054,39 +1100,12 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
                 card.className = `patient-card ${rdv.statut || ''} ${evtAbsCeJour ? 'absent' : ''}`;
                 
                 const desactiveBouton = rdv.verrouille ? 'disabled' : '';
-                const desactiveTla = ''; 
 
                 let chaineTels = patient.telephone ? `📞 ${patient.telephone}` : '';
                 if(patient.telephone_2) chaineTels += ` / ${patient.telephone_2}`;
 
                 const masquerFleches = kineVisionne === "TOUS" || rdv.verrouille || termPlanning !== '';
                 const affichageHeure = (rdv.heure && rdv.heure !== "00:00") ? `🕒 ${rdv.heure}` : "⏰ Non spécifié";
-
-                let htmlModuleTla = '';
-                if (kineRole === 'secretariat') {
-                    if (rdv.tlaStatut === 'facture') {
-                        htmlModuleTla = `
-                            <div style="display:flex; flex-direction:column; gap:2px;">
-                                <span class="badge-tla-sec-facture">✅ Facturé (TLA traité)</span>
-                                <button class="btn-icon" style="font-size:0.75rem; color:var(--danger); text-align:left; padding:0; font-weight:bold;" ${desactiveTla} onclick="basculerTlaStatut('${rdv.idPlanif}', 'annuler_facture')">🔄 Annuler la facturation</button>
-                            </div>`;
-                    } else {
-                        const isCoché = rdv.tlaStatut === 'dans_tla' ? 'checked' : '';
-                        htmlModuleTla = `
-                            <div style="display:flex; align-items:center; gap:8px;">
-                                <label class="sec-tla-checkbox-container" onclick="event.stopPropagation();">
-                                    <input type="checkbox" ${isCoché} ${desactiveTla} onchange="basculerTlaStatut('${rdv.idPlanif}', 'toggle_tla')"> TLA
-                                </label>
-                                ${rdv.tlaStatut === 'dans_tla' ? `<button class="btn-success" style="font-size:0.7rem; padding:4px 6px; border-radius:4px;" ${desactiveTla} onclick="basculerTlaStatut('${rdv.idPlanif}', 'valider_facture')">Facturer ✅</button>` : ''}
-                            </div>`;
-                    }
-                } else {
-                    if (rdv.tlaStatut === 'dans_tla') {
-                        htmlModuleTla = `<button class="badge-tla-kine" ${desactiveTla} onclick="basculerTlaStatut('${rdv.idPlanif}', 'kine_click')">📱 TLA</button>`;
-                    } else if (rdv.tlaStatut === 'facture') {
-                        htmlModuleTla = `<button class="badge-tla-kine facture" ${desactiveTla} onclick="basculerTlaStatut('${rdv.idPlanif}', 'kine_click')">✓ TLA</button>`;
-                    }
-                }
 
                 const aDesNotes = patient.notes && patient.notes.trim() !== '';
                 const opaciteNote = aDesNotes ? '1' : '0.5';
@@ -1123,7 +1142,7 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
                             </div>
                             
                             ${(kineVisionne === "TOUS" || groupeKines.length > 1) ? `<span class="kine-tag">Praticien : ${rdv.kineNom} ${rdv.verrouille ? '🔒' : ''}</span>` : ''}
-                            ${htmlModuleTla}
+                            ${genererHtmlTla(rdv)}
                         </div>
                     </div>
                     <div class="btn-group">
@@ -1159,7 +1178,6 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
                 rdvFiltres = rdvFiltres.filter(r => r.tlaStatut === 'dans_tla' || r.tlaStatut === 'facture');
             }
 
-            // Exporter par le nom de l'affectation ou par titulaire. Faisons simple : on regroupe par le nom enregistré.
             let kinesAExporter = kineVisionne === "TOUS" ? [...new Set(rdvFiltres.map(r => r.kineNom))] : groupeKines.filter(k => rdvFiltres.some(r => r.kineNom === k));
 
             if (kinesAExporter.length === 0 || rdvFiltres.length === 0) {
@@ -1480,7 +1498,7 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
             container.innerHTML = html;
         }
 
-        function ouvrirPlanificateur(preselectedPatientId = null) {
+        function ouvrirPlanificateur(preselectedPatientId = null, modeTla = false) {
             const selectKine = document.getElementById('planif-kine-affecte');
             const praticiens = listeUtilisateursComplets.filter(u => u.role === 'kine' || u.role === 'remplacant').map(u => u.nom);
             selectKine.innerHTML = praticiens.map(k => `<option value="${k}" ${k === kineVisionne ? 'selected' : ''}>${k}</option>`).join('');
@@ -1497,6 +1515,9 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
             document.getElementById('planif-heure').value = '';
             document.getElementById('recherche-planif-multi').value = '';
             
+            // On coche automatiquement la case TLA si on vient du bouton TLA
+            document.getElementById('planif-tla-coche').checked = modeTla === true;
+            
             filtrerPatientsPlanif(preselectedPatientId);
             
             ouvrirModal('modal-planifier');
@@ -1505,6 +1526,7 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
         async function ajouterAuPlanningMultiJours() {
             const kineAffecte = document.getElementById('planif-kine-affecte').value;
             const heure = document.getElementById('planif-heure').value;
+            const inclureTla = document.getElementById('planif-tla-coche').checked;
             const checkboxesJours = document.querySelectorAll('#conteneur-jours-checkbox input[type="checkbox"]:checked');
             const checkboxesPatients = document.querySelectorAll('.cb-planif-patient:checked');
             
@@ -1528,7 +1550,7 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
                         statut: null,
                         ordre: 99,
                         journee_verrouillee: false,
-                        tla_statut: null
+                        tla_statut: inclureTla ? 'dans_tla' : null
                     });
                 });
             });
@@ -1681,20 +1703,19 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
                     if (rdv.statut === 'vu') iconeStatut = '✅ ';
                     else if (rdv.statut === 'non-vu') iconeStatut = '❌ ';
                     
-                    let iconeTla = '';
-                    if (rdv.tlaStatut === 'dans_tla') iconeTla = '📱 ';
-                    else if (rdv.tlaStatut === 'facture') iconeTla = '✓📱 ';
-                    
                     let styleLigne = evtAbsCeJour ? 'opacity: 0.6; background: #f8fafc; text-decoration: line-through;' : 'background: white;';
                     
                     return `
                         <div style="${styleLigne} padding: 10px; border-radius: 6px; border-left: 4px solid var(--primary); display: flex; align-items: flex-start; gap: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
                             <strong style="color: var(--primary); min-width: 45px; margin-top: 2px;">${affichageHeure}</strong>
-                            <div>
+                            <div style="flex: 1; width: 100%;">
                                 <div style="font-weight: bold; display:flex; align-items:center; flex-wrap:wrap;">
-                                    ${iconeStatut}${iconeTla}${patient.nom} ${badgeAbsentHtml}
+                                    ${iconeStatut}${patient.nom} ${badgeAbsentHtml}
                                 </div>
                                 <div style="font-size: 0.85rem; color: var(--neutral); margin-top: 2px;">${patient.adresse}${kineInfo}</div>
+                                <div>
+                                    ${genererHtmlTla(rdv)}
+                                </div>
                             </div>
                         </div>
                     `;
@@ -1704,7 +1725,6 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
             ouvrirModal('modal-vue-globale');
         }
 
-        // VUE DES AUTRES COLLÈGUES (NOUVEAU)
         function ouvrirVueAutresKines() {
             const dateSelectionnee = datesSemaineEnCours[indiceJourActuel];
             const cleDate = getCleDate(dateSelectionnee);
@@ -1750,20 +1770,19 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
                         if (rdv.statut === 'vu') iconeStatut = '✅ ';
                         else if (rdv.statut === 'non-vu') iconeStatut = '❌ ';
                         
-                        let iconeTla = '';
-                        if (rdv.tlaStatut === 'dans_tla') iconeTla = '📱 ';
-                        else if (rdv.tlaStatut === 'facture') iconeTla = '✓📱 ';
-                        
                         let styleLigne = evtAbsCeJour ? 'opacity: 0.6; background: #e2e8f0; text-decoration: line-through;' : 'background: white;';
                         
                         return `
                             <div style="${styleLigne} padding: 8px 10px; border-radius: 6px; border-left: 4px solid var(--neutral); display: flex; align-items: flex-start; gap: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); margin-bottom: 6px;">
                                 <strong style="color: var(--primary); min-width: 45px; margin-top: 2px;">${affichageHeure}</strong>
-                                <div>
+                                <div style="flex: 1; width: 100%;">
                                     <div style="font-weight: bold; display:flex; align-items:center; flex-wrap:wrap; font-size: 0.95rem; color: #333;">
-                                        ${iconeStatut}${iconeTla}${patient.nom} ${badgeAbsentHtml}
+                                        ${iconeStatut}${patient.nom} ${badgeAbsentHtml}
                                     </div>
                                     <div style="font-size: 0.8rem; color: var(--neutral); margin-top: 2px;">${patient.adresse}${kineInfo}</div>
+                                    <div>
+                                        ${genererHtmlTla(rdv)}
+                                    </div>
                                 </div>
                             </div>
                         `;
