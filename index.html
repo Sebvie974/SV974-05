@@ -764,6 +764,10 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
             if (document.getElementById('modal-vue-globale').style.display === 'flex') ouvrirVueGlobaleJour();
             if (document.getElementById('modal-autres-kines').style.display === 'flex') ouvrirVueAutresKines();
             if (document.getElementById('modal-notes-cabinet').style.display === 'flex') afficherNotesCabinet();
+            
+            // NOUVEAU : Met à jour la liste Gestion TLA en temps réel !
+            const modalTla = document.getElementById('modal-gestion-tla');
+            if (modalTla && modalTla.style.display === 'flex') filtrerGestionTla();
         }
 
         function trierPlannings(a, b) {
@@ -812,7 +816,8 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
                 } else {
                     const isCoche = rdv.tlaStatut === 'dans_tla' ? 'checked' : '';
                     const styleAttente = rdv.tlaStatut === 'dans_tla' ? 'background: #fff3cd; color: #856404; border: 1px solid #ffeeba;' : 'background: #f4f6f9; color: #333;';
-                    const texteAttente = rdv.tlaStatut === 'dans_tla' ? '⏳ En attente Kiné' : 'Ajouter au TLA';
+                    // Modification du texte ici :
+                    const texteAttente = rdv.tlaStatut === 'dans_tla' ? '⏳ A Facturer' : 'Ajouter au TLA';
                     return `
                         <div style="display:flex; align-items:center; gap:8px; margin-top:4px;">
                             <label class="sec-tla-checkbox-container" style="padding:2px 6px; font-size:0.75rem; ${styleAttente}" onclick="event.stopPropagation();">
@@ -1083,20 +1088,22 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
         }
 
         async function changerStatutGestionTla(patientId, isChecked) {
+            // 1. On modifie l'interface INSTANTANÉMENT pour l'utilisateur
+            const p = cataloguePatients.find(x => String(x.id) === String(patientId));
+            if(p) p.a_facturer_tla = isChecked;
+            filtrerGestionTla(); // Applique la couleur de fond immédiatement
+
             if(!initialiserSupabase()) return;
             try {
-                // 1. Mise à jour de la fiche patient
+                // 2. On envoie l'information dans la fiche patient en arrière-plan
                 await supabaseClient.from('catalogue_patients').update({ a_facturer_tla: isChecked }).eq('id', patientId);
-                const p = cataloguePatients.find(x => String(x.id) === String(patientId));
-                if(p) p.a_facturer_tla = isChecked;
                 
-                // 2. Mise à jour MASSIVE de tous les plannings de ce patient !
+                // 3. On répercute sur tous les plannings de ce patient (pour les kinés)
                 const newVal = isChecked ? 'dans_tla' : null;
                 await supabaseClient.from('plannings_dates').update({ tla_statut: newVal }).eq('patient_id', patientId);
                 
-                // On recharge l'affichage pour tout synchroniser
+                // 4. On lance une synchronisation générale de l'app sans gêner la vue
                 chargerDonneesDepuisServeur();
-                setTimeout(filtrerGestionTla, 300); // Rafraichit la fenêtre globale si elle est ouverte
             } catch(e) { console.error(e); }
         }
         // NOUVEAU: PREMIERE SEANCE
