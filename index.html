@@ -804,15 +804,30 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
             const desactiveTla = rdv.verrouille ? 'disabled' : '';
             if (kineRole === 'secretariat') {
                 if (rdv.tlaStatut === 'facture') {
-                    return `<div style="display:flex; align-items:center; gap:6px; margin-top:4px;"><span class="badge-tla-sec-facture" style="font-size:0.7rem;">✅ Facturé (TLA traité)</span><button class="btn-icon" style="font-size:0.75rem; color:var(--danger); padding:0; font-weight:bold;" ${desactiveTla} onclick="basculerTlaStatut('${rdv.idPlanif}', 'annuler_facture'); event.stopPropagation();">🔄 Annuler</button></div>`;
+                    return `
+                        <div style="display:flex; align-items:center; gap:6px; margin-top:4px;">
+                            <span class="badge-tla-sec-facture" style="font-size:0.7rem; background-color:var(--success);">✅ Facturé par Kiné</span>
+                            <button class="btn-primary" style="font-size:0.7rem; padding:4px 8px; border-radius:4px; font-weight:bold; cursor:pointer;" ${desactiveTla} onclick="basculerTlaStatut('${rdv.idPlanif}', 'sec_recupere'); event.stopPropagation();">📥 Facture Récupérée</button>
+                        </div>`;
                 } else {
-                    const isCoché = rdv.tlaStatut === 'dans_tla' ? 'checked' : '';
-                    return `<div style="display:flex; align-items:center; gap:8px; margin-top:4px;"><label class="sec-tla-checkbox-container" style="padding:2px 6px; font-size:0.75rem;" onclick="event.stopPropagation();"><input type="checkbox" ${isCoché} ${desactiveTla} onchange="basculerTlaStatut('${rdv.idPlanif}', 'toggle_tla')"> TLA</label>${rdv.tlaStatut === 'dans_tla' ? `<button class="btn-success" style="font-size:0.7rem; padding:2px 6px; border-radius:4px;" ${desactiveTla} onclick="basculerTlaStatut('${rdv.idPlanif}', 'valider_facture'); event.stopPropagation();">Facturer ✅</button>` : ''}</div>`;
+                    const isCoche = rdv.tlaStatut === 'dans_tla' ? 'checked' : '';
+                    const styleAttente = rdv.tlaStatut === 'dans_tla' ? 'background: #fff3cd; color: #856404; border: 1px solid #ffeeba;' : 'background: #f4f6f9; color: #333;';
+                    const texteAttente = rdv.tlaStatut === 'dans_tla' ? '⏳ En attente Kiné' : 'Ajouter au TLA';
+                    return `
+                        <div style="display:flex; align-items:center; gap:8px; margin-top:4px;">
+                            <label class="sec-tla-checkbox-container" style="padding:2px 6px; font-size:0.75rem; ${styleAttente}" onclick="event.stopPropagation();">
+                                <input type="checkbox" ${isCoche} ${desactiveTla} onchange="basculerTlaStatut('${rdv.idPlanif}', 'toggle_tla_global')"> ${texteAttente}
+                            </label>
+                        </div>`;
                 }
             } else {
-                if (rdv.tlaStatut === 'dans_tla') return `<button class="badge-tla-kine" style="margin-top:4px;" ${desactiveTla} onclick="basculerTlaStatut('${rdv.idPlanif}', 'kine_click'); event.stopPropagation();">📱 TLA</button>`;
-                else if (rdv.tlaStatut === 'facture') return `<button class="badge-tla-kine facture" style="margin-top:4px;" ${desactiveTla} onclick="basculerTlaStatut('${rdv.idPlanif}', 'kine_click'); event.stopPropagation();">✓ TLA</button>`;
-                else return `<button class="badge-tla-kine" style="background:transparent; border:1px solid #00c7b1; color:#008777; margin-top:4px;" ${desactiveTla} onclick="basculerTlaStatut('${rdv.idPlanif}', 'kine_click'); event.stopPropagation();">+ 📱 TLA</button>`;
+                if (rdv.tlaStatut === 'dans_tla') {
+                    return `<button class="badge-tla-kine" style="margin-top:4px; background-color: var(--orange);" ${desactiveTla} onclick="basculerTlaStatut('${rdv.idPlanif}', 'kine_click'); event.stopPropagation();">📱 À Facturer (Clic = Fait)</button>`;
+                } else if (rdv.tlaStatut === 'facture') {
+                    return `<button class="badge-tla-kine facture" style="margin-top:4px; background-color: var(--success); color: white; text-decoration: none;" ${desactiveTla} onclick="basculerTlaStatut('${rdv.idPlanif}', 'kine_click'); event.stopPropagation();">✅ TLA Validé</button>`;
+                } else {
+                    return `<button class="badge-tla-kine" style="background:transparent; border:1px solid #00c7b1; color:#008777; margin-top:4px;" ${desactiveTla} onclick="basculerTlaStatut('${rdv.idPlanif}', 'kine_click'); event.stopPropagation();">+ 📱 TLA</button>`;
+                }
             }
         }
 
@@ -1012,17 +1027,17 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
             } catch(e) { console.error(e); }
         }
 
-        // NOUVEAU: GESTION TLA GLOBALE (Indépendante du planning)
+        // NOUVEAU: GESTION TLA GLOBALE SYNCHRONISÉE
         function filtrerGestionTla() {
             const term = document.getElementById('recherche-gestion-tla').value.toLowerCase();
             const conteneur = document.getElementById('liste-gestion-tla');
             
-            // 1. On crée une COPIE de la liste pour ne pas perturber le fichier principal, puis on trie
+            // Tri : Les patients TLA en haut, puis ordre alphabétique
             const triPatient = [...cataloguePatients].sort((a,b) => {
                 const valA = a.a_facturer_tla ? 1 : 0;
                 const valB = b.a_facturer_tla ? 1 : 0;
-                if (valA !== valB) return valB - valA; // Les cochés (1) montent en premier
-                return a.nom.localeCompare(b.nom);     // Ensuite par ordre alphabétique
+                if (valA !== valB) return valB - valA;
+                return a.nom.localeCompare(b.nom);
             });
             
             let html = '';
@@ -1031,23 +1046,17 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
                 if(p.nom.toLowerCase().includes(term) || (p.adresse && p.adresse.toLowerCase().includes(term))) {
                     const isChecked = p.a_facturer_tla ? 'checked' : '';
                     
-                    // 2. Recherche si le patient a été facturé dans les plannings de cette semaine
-                    let infoFacturation = '';
-                    let joursFactures = [];
+                    // Vérifie si un Kiné a cliqué pour dire qu'il a facturé
+                    let isFactureByKine = false;
                     for (let dateCle in planningsParDate) {
-                        const rdvs = planningsParDate[dateCle].filter(r => String(r.patientId) === String(p.id) && r.tlaStatut === 'facture');
-                        if (rdvs.length > 0) {
-                            const d = new Date(dateCle);
-                            joursFactures.push(`${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}`);
+                        if (planningsParDate[dateCle].some(r => String(r.patientId) === String(p.id) && r.tlaStatut === 'facture')) {
+                            isFactureByKine = true;
+                            break;
                         }
                     }
                     
-                    if (joursFactures.length > 0) {
-                        infoFacturation = `<span style="font-size: 0.7rem; background-color: var(--success); color: white; padding: 2px 6px; border-radius: 4px; margin-left: 8px;">✅ Facturé dom. (${joursFactures.join(', ')})</span>`;
-                    }
-
-                    // 3. Style visuel (Fond bleuté si coché)
-                    const bgStyle = p.a_facturer_tla ? 'background:#eefdfb; border: 1px solid #00c7b1;' : 'background:white; border: 1px solid #e5e5ea;';
+                    let infoFacturation = isFactureByKine ? `<span style="font-size: 0.75rem; background-color: var(--success); color: white; padding: 2px 6px; border-radius: 4px; margin-left: 8px;">✅ Fait par le Kiné !</span>` : '';
+                    const bgStyle = p.a_facturer_tla ? (isFactureByKine ? 'background:#e6f8f5; border: 1px solid #34c759;' : 'background:#fff3cd; border: 1px solid #ff9500;') : 'background:white; border: 1px solid #e5e5ea;';
 
                     html += `
                         <label style="display:flex; gap:12px; cursor:pointer; font-size:0.9rem; align-items:center; ${bgStyle} padding: 8px; border-radius:4px; margin:0; transition: background 0.2s;">
@@ -1076,13 +1085,18 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
         async function changerStatutGestionTla(patientId, isChecked) {
             if(!initialiserSupabase()) return;
             try {
+                // 1. Mise à jour de la fiche patient
                 await supabaseClient.from('catalogue_patients').update({ a_facturer_tla: isChecked }).eq('id', patientId);
-                // Mise à jour locale
                 const p = cataloguePatients.find(x => String(x.id) === String(patientId));
                 if(p) p.a_facturer_tla = isChecked;
                 
-                // On rafraîchit la liste pour appliquer le changement de couleur immédiatement (sans réorganiser)
-                filtrerGestionTla();
+                // 2. Mise à jour MASSIVE de tous les plannings de ce patient !
+                const newVal = isChecked ? 'dans_tla' : null;
+                await supabaseClient.from('plannings_dates').update({ tla_statut: newVal }).eq('patient_id', patientId);
+                
+                // On recharge l'affichage pour tout synchroniser
+                chargerDonneesDepuisServeur();
+                setTimeout(filtrerGestionTla, 300); // Rafraichit la fenêtre globale si elle est ouverte
             } catch(e) { console.error(e); }
         }
         // NOUVEAU: PREMIERE SEANCE
@@ -1281,16 +1295,46 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
 
         async function basculerTlaStatut(idPlanif, source) {
             if (!initialiserSupabase()) return;
-            const cleDate = getCleDate(datesSemaineEnCours[indiceJourActuel]);
-            const rdv = planningsParDate[cleDate]?.find(r => String(r.idPlanif) === String(idPlanif));
-            if(!rdv) return;
+            
+            // Retrouver le patient concerné
+            let rdvTrouve = null;
+            for (const [cle, rdvs] of Object.entries(planningsParDate)) {
+                const r = rdvs.find(x => String(x.idPlanif) === String(idPlanif));
+                if (r) { rdvTrouve = r; break; }
+            }
+            if(!rdvTrouve) return;
 
-            let nouveauStatut = null;
-            if (source === 'kine_click' || source === 'toggle_tla') nouveauStatut = (rdv.tlaStatut === 'dans_tla') ? null : 'dans_tla';
-            else if (source === 'valider_facture') nouveauStatut = 'facture';
-            else if (source === 'annuler_facture') nouveauStatut = 'dans_tla';
+            const patientId = rdvTrouve.patientId;
 
-            try { await supabaseClient.from('plannings_dates').update({ tla_statut: nouveauStatut }).eq('id_planif', idPlanif); chargerDonneesDepuisServeur(); } catch(e) { console.error(e); }
+            try {
+                if (source === 'sec_recupere') {
+                    // Secrétariat valide la facture : On efface TOUT pour ce patient
+                    await changerStatutGestionTla(patientId, false);
+                    return;
+                }
+                
+                if (source === 'toggle_tla_global') {
+                    // Coche manuelle du secrétariat dans le planning
+                    const isChecked = (rdvTrouve.tlaStatut === null);
+                    await changerStatutGestionTla(patientId, isChecked);
+                    return;
+                }
+
+                if (source === 'kine_click') {
+                    if (rdvTrouve.tlaStatut === null) {
+                        // Le kiné ajoute au TLA -> Synchro Globale
+                        await changerStatutGestionTla(patientId, true);
+                    } else if (rdvTrouve.tlaStatut === 'dans_tla') {
+                        // Le kiné valide la facturation -> Met à jour TOUS les plannings du patient
+                        await supabaseClient.from('plannings_dates').update({ tla_statut: 'facture' }).eq('patient_id', patientId);
+                        chargerDonneesDepuisServeur();
+                    } else if (rdvTrouve.tlaStatut === 'facture') {
+                        // Annuler la validation (erreur) -> Remet en attente partout
+                        await supabaseClient.from('plannings_dates').update({ tla_statut: 'dans_tla' }).eq('patient_id', patientId);
+                        chargerDonneesDepuisServeur();
+                    }
+                }
+            } catch(e) { console.error(e); }
         }
 
         async function retirerDuPlanning(idPlanif) {
