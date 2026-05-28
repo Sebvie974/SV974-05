@@ -24,42 +24,46 @@
             --tla-color: #34c759;
         }
 
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: var(--bg-color); color: var(--text-color); margin: 0; padding: 15px; }
+        /* Réduction globale de l'espacement de la page */
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: var(--bg-color); color: var(--text-color); margin: 0; padding: 8px; }
 
         #login-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg-color); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 100; gap: 15px; }
-        .login-box { background: white; padding: 30px; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); text-align: center; width: 90%; max-width: 350px; display: flex; flex-direction: column; gap: 12px; position: relative; }
-        .btn-config-corner { position: absolute; top: 15px; right: 15px; background: transparent; font-size: 1.2rem; padding: 0; border: none; cursor: pointer; }
-        #config-panel { display: none; border-top: 2px dashed #e5e5ea; margin-top: 10px; padding-top: 15px; text-align: left; flex-direction: column; gap: 8px; }
-        .kine-list-item { display: flex; justify-content: space-between; align-items: center; background: #f4f6f9; padding: 6px 10px; border-radius: 6px; font-size: 0.85rem; }
+        .login-box { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); text-align: center; width: 90%; max-width: 350px; display: flex; flex-direction: column; gap: 10px; position: relative; }
+        .btn-config-corner { position: absolute; top: 10px; right: 10px; background: transparent; font-size: 1.1rem; padding: 0; border: none; cursor: pointer; }
+        #config-panel { display: none; border-top: 2px dashed #e5e5ea; margin-top: 5px; padding-top: 10px; text-align: left; flex-direction: column; gap: 6px; }
+        .kine-list-item { display: flex; justify-content: space-between; align-items: center; background: #f4f6f9; padding: 4px 8px; border-radius: 6px; font-size: 0.8rem; }
 
         #main-app { display: none; }
 
-        /* Nouveaux Bandeaux (À prévoir & Notes) */
-        .bandeau-alerte { color: white; text-align: center; padding: 10px; font-weight: bold; font-size: 0.95rem; border-radius: 8px; margin-bottom: 10px; cursor: pointer; box-shadow: 0 4px 8px rgba(0,0,0,0.15); transition: transform 0.1s; display: none; }
+        .bandeau-alerte { color: white; text-align: center; padding: 6px; font-weight: bold; font-size: 0.85rem; border-radius: 6px; margin-bottom: 6px; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.1); transition: transform 0.1s; display: none; }
         .bandeau-alerte:active { transform: scale(0.98); }
         #bandeau-a-prevoir { background-color: var(--danger); }
         #bandeau-notes-importantes { background-color: var(--orange); }
 
-        header { background: var(--card-bg); padding: 10px 12px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); margin-bottom: 10px; position: sticky; top: 0; z-index: 10; }
-        h1 { margin: 0; font-size: 1.25rem; color: var(--primary); }
+        /* En-tête aminci */
+        header { background: var(--card-bg); padding: 6px 8px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); margin-bottom: 6px; position: sticky; top: 0; z-index: 10; }
+        h1 { margin: 0; font-size: 1.1rem; color: var(--primary); }
 
-        .user-badge { font-size: 0.85rem; background: #e5e5ea; padding: 4px 10px; border-radius: 12px; font-weight: bold; color: var(--purple); }
-        .tla-location-badge { font-size: 0.85rem; background: #eefdfb; border: 1px solid #00c7b1; color: #008777; padding: 4px 10px; border-radius: 8px; font-weight: bold; display: flex; align-items: center; gap: 6px; margin-top: 4px; width: fit-content; }
-        .sync-indicator { font-size: 0.8rem; display: inline-flex; align-items: center; gap: 5px; padding: 4px 8px; border-radius: 12px; font-weight: bold; }
+        .user-badge { font-size: 0.75rem; background: #e5e5ea; padding: 2px 6px; border-radius: 8px; font-weight: bold; color: var(--purple); }
+        .tla-location-badge { font-size: 0.75rem; background: #eefdfb; border: 1px solid #00c7b1; color: #008777; padding: 2px 6px; border-radius: 6px; font-weight: bold; display: flex; align-items: center; gap: 4px; margin-top: 2px; width: fit-content; }
+        .sync-indicator { font-size: 0.7rem; display: inline-flex; align-items: center; gap: 4px; padding: 2px 6px; border-radius: 8px; font-weight: bold; }
         .sync-online { background: #d4edda; color: #155724; }
         .sync-offline { background: #f8d7da; color: #721c24; }
 
-        .week-selector { display: flex; align-items: center; justify-content: space-between; background: #e5e5ea; padding: 4px 8px; border-radius: 8px; margin-bottom: 8px; font-weight: bold; font-size: 0.85rem; }
-        .week-btn { background: transparent; color: var(--primary); padding: 4px 8px; font-size: 0.9rem; border: none; cursor: pointer; }
-        .days-nav { display: flex; gap: 4px; overflow-x: auto; padding-bottom: 5px; margin-bottom: 8px; }
-        .day-btn { background: #e5e5ea; color: var(--text-color); padding: 6px 10px; border-radius: 20px; font-size: 0.75rem; white-space: nowrap; border: none; cursor: pointer; }
+        /* Navigation de la semaine et filtre de jours amincis */
+        .week-selector { display: flex; align-items: center; justify-content: space-between; background: #e5e5ea; padding: 2px 6px; border-radius: 6px; margin-bottom: 4px; font-weight: bold; font-size: 0.8rem; }
+        .week-btn { background: transparent; color: var(--primary); padding: 2px 4px; font-size: 0.8rem; border: none; cursor: pointer; }
+        .days-nav { display: flex; gap: 4px; overflow-x: auto; padding-bottom: 2px; margin-bottom: 4px; }
+        .day-btn { background: #e5e5ea; color: var(--text-color); padding: 4px 8px; border-radius: 12px; font-size: 0.7rem; white-space: nowrap; border: none; cursor: pointer; }
         .day-btn.active { background: var(--primary); color: white; }
-        .stats { font-size: 0.85rem; color: var(--neutral); font-weight: bold; margin-bottom: 8px; }
+        .stats { font-size: 0.75rem; color: var(--neutral); font-weight: bold; margin-bottom: 4px; }
         
-        .actions-bar { display: flex; gap: 6px; flex-wrap: wrap; }
-        .actions-bar > button { padding: 6px 8px; font-size: 0.75rem; flex: auto; }
+        /* Barre d'action plus fine */
+        .actions-bar { display: flex; gap: 4px; flex-wrap: wrap; }
+        .actions-bar > button { padding: 4px 6px; font-size: 0.7rem; flex: auto; border-radius: 6px; }
 
-        button, select, input, textarea { border: none; padding: 8px 12px; border-radius: 8px; font-weight: bold; font-size: 0.85rem; }
+        /* Boutons et champs globaux réduits */
+        button, select, input, textarea { border: none; padding: 6px 8px; border-radius: 6px; font-weight: bold; font-size: 0.8rem; }
         button { cursor: pointer; }
         button:disabled { opacity: 0.5 !important; cursor: not-allowed !important; pointer-events: none !important; }
         
@@ -71,58 +75,63 @@
         .btn-orange { background-color: var(--orange); color: white; }
 
         .app-view { display: none; }
-        .app-view.active { display: flex; flex-direction: column; gap: 6px; }
+        .app-view.active { display: flex; flex-direction: column; gap: 4px; }
         
-        .patient-card { background: var(--card-bg); padding: 8px 10px; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.03); display: flex; justify-content: space-between; align-items: center; border-left: 5px solid var(--neutral); gap: 8px; transition: opacity 0.2s; }
+        /* Cartes patients beaucoup plus compactes */
+        .patient-card { background: var(--card-bg); padding: 6px 8px; border-radius: 6px; box-shadow: 0 1px 2px rgba(0,0,0,0.05); display: flex; justify-content: space-between; align-items: center; border-left: 4px solid var(--neutral); gap: 6px; transition: opacity 0.2s; }
         .patient-card.vu { border-left-color: var(--success); }
         .patient-card.non-vu { border-left-color: var(--danger); }
         .patient-card.absent { opacity: 0.60; background-image: repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(0,0,0,0.03) 10px, rgba(0,0,0,0.03) 20px); }
         
-        .patient-card-left { display: flex; align-items: center; gap: 8px; max-width: 70%; }
-        .reorder-actions { display: flex; flex-direction: column; gap: 4px; }
-        .btn-reorder { background: #e5e5ea; padding: 4px 6px; font-size: 0.75rem; border-radius: 4px; color: #555; display: flex; align-items: center; justify-content: center; }
+        .patient-card-left { display: flex; align-items: center; gap: 6px; max-width: 72%; }
+        .reorder-actions { display: flex; flex-direction: column; gap: 2px; }
+        .btn-reorder { background: #e5e5ea; padding: 2px 4px; font-size: 0.7rem; border-radius: 4px; color: #555; display: flex; align-items: center; justify-content: center; }
         
-        .patient-info { display: flex; flex-direction: column; gap: 2px; width: 100%; }
-        .patient-name { font-weight: 600; font-size: 1rem; }
-        .patient-address { font-size: 0.8rem; color: var(--neutral); text-decoration: none; }
-        .patient-phone { font-size: 0.8rem; color: var(--primary); text-decoration: none; font-weight: bold; }
-        .kine-tag { font-size: 0.75rem; background: #e5e5ea; color: #555; padding: 2px 6px; border-radius: 4px; font-weight: bold; width: fit-content; margin-top: 2px;}
-        .badge-card-prevoir { font-size: 0.7rem; background: var(--danger); color: white; padding: 2px 6px; border-radius: 4px; font-weight: bold; width: fit-content; }
+        .patient-info { display: flex; flex-direction: column; gap: 1px; width: 100%; }
+        .patient-name { font-weight: 600; font-size: 0.9rem; }
+        .patient-address { font-size: 0.75rem; color: var(--neutral); text-decoration: none; }
+        .patient-phone { font-size: 0.75rem; color: var(--primary); text-decoration: none; font-weight: bold; margin-bottom: 2px; }
+        .kine-tag { font-size: 0.65rem; background: #e5e5ea; color: #555; padding: 2px 4px; border-radius: 4px; font-weight: bold; width: fit-content; margin-top: 1px;}
+        .badge-card-prevoir { font-size: 0.65rem; background: var(--danger); color: white; padding: 2px 4px; border-radius: 4px; font-weight: bold; width: fit-content; }
         
-        .badge-tla-kine { font-size: 0.75rem; background-color: var(--tla-color); color: white; padding: 4px 8px; border-radius: 6px; font-weight: bold; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; width: fit-content; border: none; }
+        /* Badges TLA, Note et Bilan réduits */
+        .badge-tla-kine { font-size: 0.7rem; background-color: var(--tla-color); color: white; padding: 2px 6px; border-radius: 4px; font-weight: bold; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; width: fit-content; border: none; }
         .badge-tla-kine.facture { background-color: #e5e5ea; color: #8e8e93; text-decoration: line-through; }
-        .badge-tla-sec-facture { font-size: 0.7rem; background-color: var(--success); color: white; padding: 4px 6px; border-radius: 4px; font-weight: bold; width: fit-content; }
+        .badge-tla-sec-facture { font-size: 0.65rem; background-color: var(--success); color: white; padding: 2px 4px; border-radius: 4px; font-weight: bold; width: fit-content; }
         
-        /* Nouveau badge 1ere séance */
-        .badge-premiere { font-size: 0.75rem; background-color: #fff; border: 1px solid var(--purple); color: var(--purple); padding: 4px 6px; border-radius: 6px; font-weight: bold; cursor: pointer; display: inline-flex; align-items: center; margin-left: 5px;}
+        .badge-premiere { font-size: 0.65rem; background-color: #fff; border: 1px solid var(--purple); color: var(--purple); padding: 2px 4px; border-radius: 4px; font-weight: bold; cursor: pointer; display: inline-flex; align-items: center; margin-left: 4px;}
         .badge-premiere.active { background-color: var(--purple); color: white; }
 
         .btn-filter-tla { background-color: #e5e5ea; color: #555; transition: all 0.2s ease; }
         .btn-filter-tla.active { background-color: #00c7b1; color: white; }
 
-        .btn-note-declencheur { font-size: 0.75rem; background: #fff3cd; color: #856404; padding: 4px 8px; border-radius: 6px; font-weight: bold; width: fit-content; cursor: pointer; border: 1px solid #ffeeba; display: inline-block; }
-        .btn-bilan-declencheur { font-size: 0.75rem; background: #e0f2fe; color: #0284c7; padding: 4px 8px; border-radius: 6px; font-weight: bold; width: fit-content; cursor: pointer; border: 1px solid #bae6fd; display: inline-block; }
+        .btn-note-declencheur { font-size: 0.65rem; background: #fff3cd; color: #856404; padding: 2px 4px; border-radius: 4px; font-weight: bold; width: fit-content; cursor: pointer; border: 1px solid #ffeeba; display: inline-block; }
+        .btn-bilan-declencheur { font-size: 0.65rem; background: #e0f2fe; color: #0284c7; padding: 2px 4px; border-radius: 4px; font-weight: bold; width: fit-content; cursor: pointer; border: 1px solid #bae6fd; display: inline-block; }
 
-        .btn-group { display: flex; gap: 4px; align-items: center; flex-wrap: wrap; justify-content: flex-end; max-width: 80px;}
-        .btn-status { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1rem; background: #f0f0f5; }
+        /* Boutons circulaires d'actions rapides rétrécis */
+        .btn-group { display: flex; gap: 4px; align-items: center; flex-wrap: wrap; justify-content: flex-end; max-width: 75px;}
+        .btn-status { width: 26px; height: 26px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.85rem; background: #f0f0f5; }
         .btn-vu.active { background-color: var(--success); color: white; }
         .btn-nonvu.active { background-color: var(--danger); color: white; }
-        .btn-icon { background: transparent; font-size: 0.9rem; border: none; cursor: pointer; padding: 4px;}
+        .btn-icon { background: transparent; font-size: 0.85rem; border: none; cursor: pointer; padding: 2px;}
 
+        /* Modales (Pop-ups) amincies */
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 120; justify-content: center; align-items: center; padding: 10px; box-sizing: border-box; }
-        .modal-content { background: white; padding: 20px; border-radius: 16px; width: 100%; max-width: 450px; display: flex; flex-direction: column; gap: 12px; max-height: 90vh; overflow-y: auto; box-sizing: border-box;}
-        .modal-content input, .modal-content select, .modal-content textarea { width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #ccc; box-sizing: border-box; }
+        .modal-content { background: white; padding: 12px; border-radius: 10px; width: 100%; max-width: 450px; display: flex; flex-direction: column; gap: 6px; max-height: 90vh; overflow-y: auto; box-sizing: border-box;}
+        .modal-content input, .modal-content select, .modal-content textarea { width: 100%; padding: 8px; border-radius: 6px; border: 1px solid #ccc; box-sizing: border-box; }
         
-        .days-checkbox-grid { display: flex; flex-direction: row; flex-wrap: wrap; gap: 12px; background: #f4f6f9; padding: 10px; border-radius: 8px; justify-content: flex-start; }
-        .days-checkbox-grid label { display: flex; gap: 6px; cursor: pointer; font-size: 0.85rem; align-items: center; margin: 0; }
+        .days-checkbox-grid { display: flex; flex-direction: row; flex-wrap: wrap; gap: 6px; background: #f4f6f9; padding: 6px; border-radius: 6px; justify-content: flex-start; }
+        .days-checkbox-grid label { display: flex; gap: 4px; cursor: pointer; font-size: 0.8rem; align-items: center; margin: 0; }
         .days-checkbox-grid input[type="checkbox"] { width: auto; margin: 0; flex-shrink: 0; }
         
-        .item-prevoir-modal { background: #f4f6f9; padding: 10px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; gap: 10px; border-left: 4px solid var(--danger); }
-        .search-container { background: var(--card-bg); padding: 10px; border-radius: 12px; box-shadow: 0 2px 5px rgba(0,0,0,0.03); margin-bottom: 5px; display: flex; flex-direction: column; gap: 6px; }
-        .search-input { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; font-size: 0.95rem; background: #f9f9f9; }
-        .search-counter { font-size: 0.8rem; color: var(--neutral); font-weight: bold; padding-left: 4px; }
+        .item-prevoir-modal { background: #f4f6f9; padding: 8px; border-radius: 6px; display: flex; justify-content: space-between; align-items: center; gap: 8px; border-left: 4px solid var(--danger); }
         
-        .absence-item { display: flex; justify-content: space-between; align-items: center; background: white; padding: 6px 8px; border: 1px solid #cbd5e1; border-radius: 6px; margin-bottom: 6px; font-size: 0.8rem; }
+        /* Barre de recherche resserrée */
+        .search-container { background: var(--card-bg); padding: 6px; border-radius: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); margin-bottom: 4px; display: flex; flex-direction: column; gap: 4px; }
+        .search-input { width: 100%; padding: 6px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; font-size: 0.85rem; background: #f9f9f9; }
+        .search-counter { font-size: 0.7rem; color: var(--neutral); font-weight: bold; padding-left: 4px; }
+        
+        .absence-item { display: flex; justify-content: space-between; align-items: center; background: white; padding: 4px 6px; border: 1px solid #cbd5e1; border-radius: 4px; margin-bottom: 4px; font-size: 0.75rem; }
     </style>
 </head>
 <body>
