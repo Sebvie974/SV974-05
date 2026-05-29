@@ -845,13 +845,13 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
                         </div>`;
                 } else {
                     const isCoche = rdv.tlaStatut === 'dans_tla' ? 'checked' : '';
-                    const styleAttente = rdv.tlaStatut === 'dans_tla' ? 'background: #fff3cd; color: #856404; border: 1px solid #ffeeba;' : 'background: #f4f6f9; color: #333;';
-                    // Modification du texte ici :
+                    const styleAttente = rdv.tlaStatut === 'dans_tla' ? 'background: #fff3cd; color: #856404; border: 1px solid #ffeeba;' : 'background: #f4f6f9; color: #333; border: 1px solid #e5e5ea;';
                     const texteAttente = rdv.tlaStatut === 'dans_tla' ? '⏳ A Facturer' : 'Ajouter au TLA';
                     return `
-                        <div style="display:flex; align-items:center; gap:8px; margin-top:4px;">
-                            <label class="sec-tla-checkbox-container" style="padding:2px 6px; font-size:0.75rem; ${styleAttente}" onclick="event.stopPropagation();">
-                                <input type="checkbox" ${isCoche} ${desactiveTla} onchange="basculerTlaStatut('${rdv.idPlanif}', 'toggle_tla_global')"> ${texteAttente}
+                        <div style="display:flex; align-items:center; margin-top:4px;">
+                            <label style="display:flex; align-items:center; gap:6px; padding:4px 8px; font-size:0.75rem; border-radius:6px; cursor:pointer; margin:0; ${styleAttente}" onclick="event.stopPropagation();">
+                                <input type="checkbox" ${isCoche} ${desactiveTla} onchange="basculerTlaStatut('${rdv.idPlanif}', 'toggle_tla_global')" style="margin:0; width:14px; height:14px; flex-shrink:0;"> 
+                                <span style="white-space:nowrap; margin-top:1px;">${texteAttente}</span>
                             </label>
                         </div>`;
                 }
@@ -1898,6 +1898,60 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
         function fermerModal(id) { document.getElementById(id).style.display = 'none'; }
         function getCleDate(d) { const tzOffset = d.getTimezoneOffset() * 60000; return new Date(d - tzOffset).toISOString().split('T')[0]; }
         function getLabelDate(d) { return `${nomsJours[d.getDay() === 0 ? 4 : d.getDay()-1]} ${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}`; }
+
+	// NOUVELLES FONCTIONS DE LA BARRE D'OUTILS SECRÉTARIAT (Vue Globale)
+        function majCompteurPointage() {
+            const checkboxes = document.querySelectorAll('.cb-pointage-papier');
+            if (!checkboxes || checkboxes.length === 0) return;
+            
+            let coches = 0;
+            for (let i = 0; i < checkboxes.length; i++) {
+                if (checkboxes[i].checked) {
+                    coches++;
+                }
+            }
+            
+            const label = document.getElementById('compteur-pointage-papier');
+            if (label) {
+                label.innerText = `${coches} / ${checkboxes.length} cochés`;
+            }
+        }
+
+        function inverserSelectionPointage() {
+            const checkboxes = document.querySelectorAll('.cb-pointage-papier');
+            for (let i = 0; i < checkboxes.length; i++) {
+                checkboxes[i].checked = !checkboxes[i].checked;
+            }
+            majCompteurPointage();
+        }
+
+        async function supprimerErreursPlanning() {
+            const checkboxes = document.querySelectorAll('.cb-pointage-papier:checked');
+            if (checkboxes.length === 0) { 
+                alert("Veuillez d'abord cocher les patients que vous souhaitez retirer du planning."); 
+                return; 
+            }
+            
+            if (!confirm(`⚠️ Confirmez-vous vouloir SUPPRIMER définitivement les ${checkboxes.length} patients cochés du planning pour ce jour ?`)) return;
+            
+            if (!initialiserSupabase()) return;
+            const idsPlanif = Array.from(checkboxes).map(cb => cb.value);
+            
+            try {
+                // Ordre de suppression définitive
+                await supabaseClient.from('plannings_dates').delete().in('id_planif', idsPlanif);
+                
+                // Recharge les données et rafraîchit la fenêtre
+                chargerDonneesDepuisServeur();
+                setTimeout(() => {
+                    if (document.getElementById('modal-vue-globale').style.display === 'flex') {
+                        ouvrirVueGlobaleJour(); 
+                    }
+                }, 400);
+            } catch(e) { console.error(e); }
+        }
+
     </script>
+
 </body>
 </html>
