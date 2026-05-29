@@ -1708,11 +1708,11 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
             const titreAffichage = kineVisionne === "TOUS" ? "Cabinet" : "Tournée de " + groupeKines[0];
             document.getElementById('titre-vue-globale').innerText = `📄 Vue Globale - ${getLabelDate(dateSelectionnee)} (${titreAffichage})`;
 
-            // Barre d'outils Secrétariat (Compteur + Actions modifiées)
+            // Barre d'outils Secrétariat (Maintenant collée en haut / Sticky)
             let htmlBarreOutils = '';
             if (kineRole === 'secretariat' && rdvAAfficher.length > 0) {
                 htmlBarreOutils = `
-                    <div style="display: flex; align-items: center; justify-content: space-between; background: #e2e8f0; padding: 8px; border-radius: 6px; margin-bottom: 8px; box-shadow: inset 0 1px 2px rgba(0,0,0,0.05);">
+                    <div style="position: sticky; top: -10px; z-index: 10; display: flex; align-items: center; justify-content: space-between; background: #e2e8f0; padding: 10px; border-radius: 6px 6px 4px 4px; margin: -10px -10px 8px -10px; box-shadow: 0 4px 6px -2px rgba(0, 0, 0, 0.15); border-bottom: 2px solid #cbd5e1;">
                         <span id="compteur-pointage-papier" style="font-weight: bold; font-size: 0.8rem; color: #475569;">0 / ${rdvAAfficher.length} cochés</span>
                         <div style="display: flex; gap: 6px;">
                             <button class="btn-secondary" style="padding: 4px 8px; font-size: 0.75rem;" onclick="inverserSelectionPointage()">Inverser</button>
