@@ -1397,6 +1397,8 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
             if (verifierVerrouillageBackend(idPlanif)) return;
             const cleDate = getCleDate(datesSemaineEnCours[indiceJourActuel]);
             const groupeKines = getKinesAssocies(kineVisionne);
+            
+            // 1. On récupère la liste du jour et on la trie exactement comme à l'écran
             let rdvDuJour = planningsParDate[cleDate].filter(r => groupeKines.includes(r.kineNom));
             rdvDuJour.sort(trierPlannings);
             
@@ -1406,15 +1408,32 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
             const cibleIndex = index + direction;
             if (cibleIndex < 0 || cibleIndex >= rdvDuJour.length) return;
 
-            const rdvA = rdvDuJour[index]; const rdvB = rdvDuJour[cibleIndex];
-            const ordreA = rdvA.ordre || 0; const ordreB = rdvB.ordre || 0;
-            rdvA.ordre = ordreB; rdvB.ordre = ordreA;
+            // 2. On échange physiquement les deux patients ciblés dans la liste
+            const rdvA = rdvDuJour[index];
+            const rdvB = rdvDuJour[cibleIndex];
+            rdvDuJour[index] = rdvB;
+            rdvDuJour[cibleIndex] = rdvA;
 
+            // 3. On réécrit un numéro d'ordre STRICT pour tous (1, 2, 3...)
+            // Cela répare le bug des patients qui partageaient le même ordre "99" par défaut
+            rdvDuJour.forEach((r, idx) => {
+                r.ordre = idx + 1;
+            });
+
+            // 4. On rafraîchit l'interface pour que ce soit instantané visuellement
             rafraichirAffichage();
+
+            // 5. On envoie la mise à jour propre et complète à Supabase
             if (initialiserSupabase()) {
-                await supabaseClient.from('plannings_dates').update({ ordre: rdvA.ordre }).eq('id_planif', rdvA.idPlanif);
-                await supabaseClient.from('plannings_dates').update({ ordre: rdvB.ordre }).eq('id_planif', rdvB.idPlanif);
-                chargerDonneesDepuisServeur();
+                try {
+                    // Promise.all permet d'envoyer toutes les corrections d'ordre d'un coup très rapidement
+                    const requetes = rdvDuJour.map(r => 
+                        supabaseClient.from('plannings_dates').update({ ordre: r.ordre }).eq('id_planif', r.idPlanif)
+                    );
+                    await Promise.all(requetes);
+                    
+                    chargerDonneesDepuisServeur();
+                } catch(e) { console.error("Erreur de déplacement", e); }
             }
         }
 
