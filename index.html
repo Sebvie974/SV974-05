@@ -681,7 +681,7 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
                 const [p, r, n] = await Promise.all([
                     supabaseClient.from('catalogue_patients').select('*'), 
                     supabaseClient.from('plannings_dates').select('*'),
-                    supabaseClient.from('notes_cabinet').select('*') // NOUVEAU
+                    supabaseClient.from('notes_cabinet').select('*')
                 ]);
                 cataloguePatients = p.data || [];
                 notesCabinet = n.data || [];
@@ -689,6 +689,14 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
                 planningsParDate = {};
                 (r.data || []).forEach(x => {
                     if (!planningsParDate[x.date_cle]) planningsParDate[x.date_cle] = [];
+                    
+                    // NOUVEAU: Auto-correction si décalage entre Fiche Patient globale et Planning
+                    let statutTlaCorrige = x.tla_statut;
+                    const patientAssocie = cataloguePatients.find(pat => String(pat.id) === String(x.patient_id));
+                    if (patientAssocie && patientAssocie.a_facturer_tla && !statutTlaCorrige) {
+                        statutTlaCorrige = 'dans_tla';
+                    }
+
                     planningsParDate[x.date_cle].push({ 
                         idPlanif: x.id_planif, 
                         patientId: x.patient_id, 
@@ -697,8 +705,8 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
                         verrouille: x.journee_verrouillee, 
                         kineNom: x.kine_nom, 
                         ordre: x.ordre || 0, 
-                        tlaStatut: x.tla_statut,
-                        premiere_seance: x.premiere_seance // NOUVEAU
+                        tlaStatut: statutTlaCorrige, // Utilise le statut corrigé
+                        premiere_seance: x.premiere_seance 
                     });
                 });
                 
@@ -709,6 +717,26 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
                     if(nbAPrevoir > 0) document.getElementById('texte-bandeau-prevoir').innerText = `${nbAPrevoir} patient(s) à prévoir en attente`;
                 }
 
+                const mesKines = getKinesAssocies(kineConnecte);
+                const kinesVus = getKinesAssocies(kineVisionne);
+                
+                const notesAffichees = notesCabinet.filter(note => {
+                    if (note.kine_cible === 'GLOBAL') return true;
+                    if (note.auteur === kineConnecte) return true;
+                    if (mesKines.includes(note.kine_cible)) return true;
+                    if (kineRole === 'secretariat' && kinesVus.includes(note.kine_cible)) return true;
+                    return false;
+                });
+                
+                const bandeauNotes = document.getElementById('bandeau-notes-importantes');
+                if (bandeauNotes) {
+                    bandeauNotes.style.display = notesAffichees.length > 0 ? 'block' : 'none';
+                    if(notesAffichees.length > 0) document.getElementById('texte-bandeau-notes').innerText = `${notesAffichees.length} note(s) importante(s) - Cliquer pour lire`;
+                }
+
+                rafraichirAffichage();
+            } catch (e) { modifierBadgeReseau(false); console.error("Erreur", e); }
+        }
                 // GESTION NOUVEAU BANDEAU NOTES IMPORTANTES
                 const mesKines = getKinesAssocies(kineConnecte);
                 const kinesVus = getKinesAssocies(kineVisionne);
@@ -1594,6 +1622,10 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
             let insertions = [];
             
             patientsSelectionnes.forEach(patientId => {
+                // NOUVEAU : Récupération du statut TLA Global du patient
+                const patientData = cataloguePatients.find(p => String(p.id) === String(patientId));
+                const statutTlaHereditaire = (patientData && patientData.a_facturer_tla) ? 'dans_tla' : null;
+
                 Array.from(checkboxesJours).forEach(cbJ => {
                     const dateCible = datesSemainePlanif[parseInt(cbJ.value)];
                     insertions.push({
@@ -1605,7 +1637,7 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
                         statut: null,
                         ordre: 99,
                         journee_verrouillee: false,
-                        tla_statut: null,
+                        tla_statut: statutTlaHereditaire, // Applique le statut hérité
                         premiere_seance: false
                     });
                 });
@@ -1618,7 +1650,6 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
                 chargerDonneesDepuisServeur();
             } catch(e) { alert("Erreur lors de l'enregistrement."); }
         }
-
         async function gererVerrouillageJour() {
             if (!initialiserSupabase()) return;
             const cleDate = getCleDate(datesSemaineEnCours[indiceJourActuel]);
