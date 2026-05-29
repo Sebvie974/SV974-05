@@ -1575,6 +1575,10 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
             document.getElementById('planif-heure').value = '';
             document.getElementById('recherche-planif-multi').value = '';
             
+            // NOUVEAU : On vide le code HTML résiduel pour que la fonction suivante 
+            // ne relise pas les anciennes cases cochées par erreur.
+            document.getElementById('liste-patients-planif').innerHTML = '';
+            
             offsetSemainePlanif = 0;
             calculerSemainePlanif();
             filtrerPatientsPlanif();
