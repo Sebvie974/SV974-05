@@ -1708,7 +1708,7 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
             const titreAffichage = kineVisionne === "TOUS" ? "Cabinet" : "Tournée de " + groupeKines[0];
             document.getElementById('titre-vue-globale').innerText = `📄 Vue Globale - ${getLabelDate(dateSelectionnee)} (${titreAffichage})`;
 
-            // NOUVEAU: Barre d'outils Secrétariat (Compteur + Actions)
+            // Barre d'outils Secrétariat (Compteur + Actions modifiées)
             let htmlBarreOutils = '';
             if (kineRole === 'secretariat' && rdvAAfficher.length > 0) {
                 htmlBarreOutils = `
@@ -1716,7 +1716,7 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
                         <span id="compteur-pointage-papier" style="font-weight: bold; font-size: 0.8rem; color: #475569;">0 / ${rdvAAfficher.length} cochés</span>
                         <div style="display: flex; gap: 6px;">
                             <button class="btn-secondary" style="padding: 4px 8px; font-size: 0.75rem;" onclick="inverserSelectionPointage()">Inverser</button>
-                            <button class="btn-danger" style="padding: 4px 8px; font-size: 0.75rem;" onclick="effacerErreursPointage()" title="Efface le statut Vu/Non-Vu sur le planning">Corriger Pointage ❌</button>
+                            <button class="btn-danger" style="padding: 4px 8px; font-size: 0.75rem;" onclick="supprimerErreursPlanning()" title="Retire définitivement les patients cochés du planning">Supprimer sélection 🗑️</button>
                         </div>
                     </div>
                 `;
@@ -1738,7 +1738,6 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
                     let iconeStatut = rdv.statut === 'vu' ? '✅ ' : (rdv.statut === 'non-vu' ? '❌ ' : '');
                     let styleLigne = evtAbsCeJour ? 'opacity: 0.6; background: #f8fafc; text-decoration: line-through;' : 'background: white;';
                     
-                    // Remplacement de l'heure par la case à cocher réduite
                     let blocHeureOuCheckbox = `<strong style="color: var(--primary); min-width: 45px; margin-top: 2px;">${affichageHeure}</strong>`;
                     if (kineRole === 'secretariat') {
                         blocHeureOuCheckbox = `<input type="checkbox" class="cb-pointage-papier" value="${rdv.idPlanif}" onchange="majCompteurPointage()" style="width: 15px; height: 15px; margin-top: 2px; cursor: pointer; flex-shrink: 0;">`;
