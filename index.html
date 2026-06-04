@@ -589,20 +589,51 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
             return liste;
         }
 
-        function verifierConnexion() {
+        async function verifierConnexion() {
             const mdpSaisi = document.getElementById('password-input').value;
             const utilisateurSelectionne = document.getElementById('kine-select-login').value;
             const cible = listeUtilisateursComplets.find(u => u.nom === utilisateurSelectionne);
-            if (cible && cible.mot_de_passe === mdpSaisi) {
-                if(cible.actif === false) { alert("Ce compte a été désactivé."); return; }
-                localStorage.setItem('kine_connecte', 'true');
+            
+            if (!cible) return;
+            if (cible.actif === false) { alert("Ce compte a été désactivé."); return; }
+
+            // Traduction du Nom en Email fictif avec le bon domaine
+            const emailCalcule = cible.nom.normalize("NFD").replace(/[^a-zA-Z0-9]/g, "").toLowerCase() + "@app.local";
+
+            const btn = document.querySelector('.btn-primary[onclick="verifierConnexion()"]');
+            const texteOriginal = btn.innerText;
+            btn.innerText = "Vérification cryptée... 🔐";
+            btn.disabled = true;
+
+            try {
+                const { data, error } = await supabaseClient.auth.signInWithPassword({
+                    email: emailCalcule,
+                    password: mdpSaisi
+                });
+
+                if (error) {
+                    alert("Erreur d'accès : Mot de passe incorrect ou non déclaré dans le coffre Supabase.");
+                    btn.innerText = texteOriginal;
+                    btn.disabled = false;
+                    return;
+                }
+
                 localStorage.setItem('kine_nom_actif', cible.nom);
                 localStorage.setItem('kine_role_actif', cible.role);
                 localStorage.setItem('kine_remplace_actif', cible.kine_remplace || '');
-                kineConnecte = cible.nom; kineRole = cible.role; kineRemplace = cible.kine_remplace || '';
+                
+                kineConnecte = cible.nom; 
+                kineRole = cible.role; 
+                kineRemplace = cible.kine_remplace || '';
                 kineVisionne = (cible.role === 'remplacant' && cible.kine_remplace) ? cible.kine_remplace : (cible.role === 'secretariat' ? 'TOUS' : cible.nom);
+                
                 initialiserApplication();
-            } else alert("Erreur de mot de passe.");
+
+            } catch (err) {
+                alert("Erreur de communication avec le serveur.");
+            } finally {
+                if(btn) { btn.innerText = texteOriginal; btn.disabled = false; }
+            }
         }
 
         function deconnexion() { localStorage.clear(); window.location.reload(); }
@@ -612,12 +643,18 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
             await chargerListeKines();
             modifierBadgeReseau(navigator.onLine);
 
-            if (localStorage.getItem('kine_connecte') === 'true') {
+            // Vérifie s'il y a un vrai jeton de sécurité Supabase actif
+            const { data: { session } } = await supabaseClient.auth.getSession();
+
+            if (session && localStorage.getItem('kine_nom_actif')) {
                 kineConnecte = localStorage.getItem('kine_nom_actif');
                 kineRole = localStorage.getItem('kine_role_actif');
                 kineRemplace = localStorage.getItem('kine_remplace_actif');
                 kineVisionne = (kineRole === 'remplacant' && kineRemplace) ? kineRemplace : (kineRole === 'secretariat' ? 'TOUS' : kineConnecte);
                 initialiserApplication();
+            } else {
+                // Si pas de session valide, on s'assure de nettoyer les traces
+                localStorage.removeItem('kine_nom_actif');
             }
         });
 
