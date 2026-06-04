@@ -766,6 +766,7 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
         async function chargerDonneesDepuisServeur() {
             if (!initialiserSupabase()) return;
             
+            // NOUVEAU : Si on n'a pas internet, on charge depuis la mémoire du téléphone
             if (!navigator.onLine) {
                 chargerCacheLocal();
                 return;
@@ -778,7 +779,7 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
                     supabaseClient.from('notes_cabinet').select('*')
                 ]);
                 
-                // On met en mémoire les données fraîches pour le mode hors-ligne
+                // NOUVEAU : On met en mémoire les données fraîches pour le mode hors-ligne
                 localStorage.setItem('cache_patients', JSON.stringify(p.data || []));
                 localStorage.setItem('cache_plannings', JSON.stringify(r.data || []));
                 localStorage.setItem('cache_notes', JSON.stringify(n.data || []));
@@ -787,7 +788,14 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
                 notesCabinet = n.data || [];
                 
                 planningsParDate = {};
-                // ... (Conservez le reste de votre fonction exactement comme il est à partir d'ici)
+                (r.data || []).forEach(x => {
+                    if (!planningsParDate[x.date_cle]) planningsParDate[x.date_cle] = [];
+                    
+                    let statutTlaCorrige = x.tla_statut;
+                    const patientAssocie = cataloguePatients.find(pat => String(pat.id) === String(x.patient_id));
+                    if (patientAssocie && patientAssocie.a_facturer_tla && !statutTlaCorrige) {
+                        statutTlaCorrige = 'dans_tla';
+                    }
 
                     planningsParDate[x.date_cle].push({ 
                         idPlanif: x.id_planif, 
@@ -809,7 +817,6 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
                     if(nbAPrevoir > 0) document.getElementById('texte-bandeau-prevoir').innerText = `${nbAPrevoir} patient(s) à prévoir en attente`;
                 }
 
-                // GESTION BANDEAU NOTES IMPORTANTES
                 const mesKines = getKinesAssocies(kineConnecte);
                 const kinesVus = getKinesAssocies(kineVisionne);
                 
@@ -828,7 +835,10 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
                 }
 
                 rafraichirAffichage();
-            } catch (e) { modifierBadgeReseau(false); console.error("Erreur", e); }
+            } catch (e) { 
+                modifierBadgeReseau(false); 
+                console.error("Erreur", e); 
+            }
         }
 
         function brancherTempsReel() {
