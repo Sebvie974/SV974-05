@@ -690,6 +690,10 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
             await chargerListeKines();
             modifierBadgeReseau(navigator.onLine);
 
+	    // NOUVEAU : Détection automatique des coupures et retours réseau
+            window.addEventListener('online', () => { modifierBadgeReseau(true); synchroniserFileAttente(); });
+            window.addEventListener('offline', () => modifierBadgeReseau(false));
+
             // Vérifie s'il y a un vrai jeton de sécurité Supabase actif
             const { data: { session } } = await supabaseClient.auth.getSession();
 
@@ -761,25 +765,29 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
 
         async function chargerDonneesDepuisServeur() {
             if (!initialiserSupabase()) return;
+            
+            if (!navigator.onLine) {
+                chargerCacheLocal();
+                return;
+            }
+
             try {
                 const [p, r, n] = await Promise.all([
                     supabaseClient.from('catalogue_patients').select('*'), 
                     supabaseClient.from('plannings_dates').select('*'),
                     supabaseClient.from('notes_cabinet').select('*')
                 ]);
+                
+                // On met en mémoire les données fraîches pour le mode hors-ligne
+                localStorage.setItem('cache_patients', JSON.stringify(p.data || []));
+                localStorage.setItem('cache_plannings', JSON.stringify(r.data || []));
+                localStorage.setItem('cache_notes', JSON.stringify(n.data || []));
+
                 cataloguePatients = p.data || [];
                 notesCabinet = n.data || [];
                 
                 planningsParDate = {};
-                (r.data || []).forEach(x => {
-                    if (!planningsParDate[x.date_cle]) planningsParDate[x.date_cle] = [];
-                    
-                    // Auto-correction si décalage entre Fiche Patient globale et Planning
-                    let statutTlaCorrige = x.tla_statut;
-                    const patientAssocie = cataloguePatients.find(pat => String(pat.id) === String(x.patient_id));
-                    if (patientAssocie && patientAssocie.a_facturer_tla && !statutTlaCorrige) {
-                        statutTlaCorrige = 'dans_tla';
-                    }
+                // ... (Conservez le reste de votre fonction exactement comme il est à partir d'ici)
 
                     planningsParDate[x.date_cle].push({ 
                         idPlanif: x.id_planif, 
@@ -1523,13 +1531,34 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
 
         async function changerStatutRdv(idPlanif, nouveauStatut) {
             if (verifierVerrouillageBackend(idPlanif)) return;
-            if (!initialiserSupabase()) return;
+            
             let statutFinal = nouveauStatut;
             const cleDate = getCleDate(datesSemaineEnCours[indiceJourActuel]);
             const rdv = planningsParDate[cleDate]?.find(r => String(r.idPlanif) === String(idPlanif));
             if (rdv && rdv.statut === nouveauStatut) statutFinal = null;
 
-            try { await supabaseClient.from('plannings_dates').update({ statut: statutFinal }).eq('id_planif', idPlanif); chargerDonneesDepuisServeur(); } catch (err) { console.error(err); }
+            // 1. On modifie visuellement tout de suite (sans attendre le réseau)
+            if (rdv) rdv.statut = statutFinal;
+            rafraichirAffichage();
+
+            // 2. Si on n'a pas de réseau, on met dans la file d'attente locale
+            if (!navigator.onLine) {
+                let file = JSON.parse(localStorage.getItem('file_attente_sync')) || [];
+                // On retire les ordres précédents pour ce même RDV pour ne garder que le dernier
+                file = file.filter(action => action.id !== idPlanif); 
+                file.push({ type: 'statut_rdv', id: idPlanif, valeur: statutFinal });
+                localStorage.setItem('file_attente_sync', JSON.stringify(file));
+                return;
+            }
+
+            // 3. Si on a du réseau, on envoie normalement
+            if (!initialiserSupabase()) return;
+            try { 
+                await supabaseClient.from('plannings_dates').update({ statut: statutFinal }).eq('id_planif', idPlanif); 
+                chargerDonneesDepuisServeur(); 
+            } catch (err) { 
+                console.error(err); 
+            }
         }
 
         async function basculerTlaStatut(idPlanif, source) {
@@ -2056,6 +2085,56 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
                     }
                 }, 400);
             } catch(e) { console.error(e); }
+        }
+
+	// --- SYSTÈME HORS-LIGNE ---
+        function chargerCacheLocal() {
+            modifierBadgeReseau(false);
+            try {
+                cataloguePatients = JSON.parse(localStorage.getItem('cache_patients')) || [];
+                notesCabinet = JSON.parse(localStorage.getItem('cache_notes')) || [];
+                const planningsBruts = JSON.parse(localStorage.getItem('cache_plannings')) || [];
+                
+                planningsParDate = {};
+                planningsBruts.forEach(x => {
+                    if (!planningsParDate[x.date_cle]) planningsParDate[x.date_cle] = [];
+                    let statutTlaCorrige = x.tla_statut;
+                    const patientAssocie = cataloguePatients.find(pat => String(pat.id) === String(x.patient_id));
+                    if (patientAssocie && patientAssocie.a_facturer_tla && !statutTlaCorrige) statutTlaCorrige = 'dans_tla';
+
+                    planningsParDate[x.date_cle].push({ 
+                        idPlanif: x.id_planif, patientId: x.patient_id, 
+                        heure: x.heure ? x.heure.substring(0, 5) : "00:00", 
+                        statut: x.statut, verrouille: x.journee_verrouillee, 
+                        kineNom: x.kine_nom, ordre: x.ordre || 0, 
+                        tlaStatut: statutTlaCorrige, premiere_seance: x.premiere_seance 
+                    });
+                });
+                rafraichirAffichage();
+            } catch(e) { console.error("Cache vide ou corrompu."); }
+        }
+
+        async function synchroniserFileAttente() {
+            const file = JSON.parse(localStorage.getItem('file_attente_sync')) || [];
+            if (file.length === 0 || !initialiserSupabase()) return;
+            
+            const btnSync = document.getElementById('sync-badge');
+            btnSync.innerText = "Synchronisation... 🔄";
+            
+            try {
+                // On exécute toutes les requêtes en attente
+                for (const action of file) {
+                    if (action.type === 'statut_rdv') {
+                        await supabaseClient.from('plannings_dates').update({ statut: action.valeur }).eq('id_planif', action.id);
+                    }
+                }
+                // Si tout a réussi, on vide la file et on recharge les données fraîches
+                localStorage.setItem('file_attente_sync', JSON.stringify([]));
+                chargerDonneesDepuisServeur();
+            } catch(e) {
+                console.error("Erreur de synchro", e);
+                modifierBadgeReseau(true); // Remet le badge normal
+            }
         }
 
     </script>
