@@ -506,11 +506,44 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
             if(cibleNotes) cibleNotes.innerHTML = `<option value="GLOBAL">Pour tout le cabinet (Général)</option>` + praticiens.map(k => `<option value="${k}">Kiné: ${k}</option>`).join('');
         }
 
-        function basculerAffichageConfig(provenance) {
+        async function basculerAffichageConfig(provenance) {
             const panel = document.getElementById('config-panel');
             (provenance === 'login' ? document.querySelector('.login-box') : document.getElementById('integration-config-secretariat')).appendChild(panel);
-            if (panel.style.display === 'flex') { panel.style.display = 'none'; reinitialiserFormulaireKine(); }
-            else { const mdp = prompt("Mot de passe admin :"); if (mdp === MOT_DE_PASSE_CABINET) panel.style.display = 'flex'; else if(mdp !== null) alert("Erreur"); }
+            
+            if (panel.style.display === 'flex') { 
+                panel.style.display = 'none'; 
+                reinitialiserFormulaireKine(); 
+            } else { 
+                const mdp = prompt("Veuillez saisir le mot de passe de gestion (Admin) :"); 
+                if (mdp === null) return; // L'utilisateur a cliqué sur Annuler
+                
+                if (!initialiserSupabase()) {
+                    alert("Erreur de connexion au serveur.");
+                    return;
+                }
+
+                const btnDeclencheur = event ? event.target : null;
+                const texteOriginal = btnDeclencheur ? btnDeclencheur.innerText : '';
+                if(btnDeclencheur) btnDeclencheur.innerText = "Vérification... ⏳";
+
+                try {
+                    // Appel sécurisé au coffre-fort Supabase (la fonction ne renvoie que true ou false)
+                    const { data, error } = await supabaseClient.rpc('verifier_code_admin', { 
+                        p_code: mdp 
+                    });
+                    
+                    if (data === true) {
+                        panel.style.display = 'flex'; 
+                    } else {
+                        alert("❌ Mot de passe incorrect. Accès refusé.");
+                    }
+                } catch (err) {
+                    alert("Erreur lors de la vérification du code.");
+                    console.error(err);
+                } finally {
+                    if(btnDeclencheur) btnDeclencheur.innerText = texteOriginal;
+                }
+            }
         }
 
         function abrirEditionKine(id) {
