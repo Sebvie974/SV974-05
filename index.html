@@ -636,6 +636,20 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
             }
         }
 
+	async function deverrouillerConfig(codeSaisi) {
+    // Appel sécurisé au serveur Supabase
+    const { data, error } = await supabaseClient.rpc('verifier_code_admin', { 
+        p_code: codeSaisi 
+    });
+
+    if (data === true) {
+        alert("Accès autorisé : Paramètres déverrouillés.");
+        // Placez ici votre logique pour afficher les menus de gestion
+    } else {
+        alert("Code incorrect.");
+    }
+}
+
         function deconnexion() { localStorage.clear(); window.location.reload(); }
 
         window.addEventListener('DOMContentLoaded', async () => {
