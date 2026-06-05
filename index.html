@@ -1747,22 +1747,44 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
             let insertions = [];
             
             patientsSelectionnes.forEach(patientId => {
-                // NOUVEAU : Récupération du statut TLA Global du patient
+                // Récupération du statut TLA Global du patient
                 const patientData = cataloguePatients.find(p => String(p.id) === String(patientId));
                 const statutTlaHereditaire = (patientData && patientData.a_facturer_tla) ? 'dans_tla' : null;
 
                 Array.from(checkboxesJours).forEach(cbJ => {
                     const dateCible = datesSemainePlanif[parseInt(cbJ.value)];
+                    const cleDateCible = getCleDate(dateCible);
+
+                    // --- NOUVEAU : RECHERCHE DE LA POSITION LA SEMAINE PRÉCÉDENTE ---
+                    const dateMoins7 = new Date(dateCible);
+                    dateMoins7.setDate(dateMoins7.getDate() - 7);
+                    const cleDateMoins7 = getCleDate(dateMoins7);
+
+                    let ordreAAttribuer = 99; // Par défaut à la fin de la liste
+
+                    // On regarde si on a des plannings en mémoire pour le jour J - 7
+                    if (planningsParDate[cleDateMoins7]) {
+                        // On cherche si CE patient était prévu avec CE kiné ce jour-là
+                        const rdvPrecedent = planningsParDate[cleDateMoins7].find(r => 
+                            String(r.patientId) === String(patientId) && r.kineNom === kineAffecte
+                        );
+                        // Si oui, on récupère son numéro de position !
+                        if (rdvPrecedent && rdvPrecedent.ordre !== undefined && rdvPrecedent.ordre !== null) {
+                            ordreAAttribuer = rdvPrecedent.ordre;
+                        }
+                    }
+                    // -------------------------------------------------------------
+
                     insertions.push({
                         id_planif: Math.floor(Math.random() * 1000000000).toString(),
                         patient_id: patientId,
-                        date_cle: getCleDate(dateCible),
+                        date_cle: cleDateCible,
                         heure: heure || "00:00",
                         kine_nom: kineAffecte,
                         statut: null,
-                        ordre: 99,
+                        ordre: ordreAAttribuer, // On utilise l'ordre calculé ou 99
                         journee_verrouillee: false,
-                        tla_statut: statutTlaHereditaire, // Applique le statut hérité
+                        tla_statut: statutTlaHereditaire,
                         premiere_seance: false
                     });
                 });
