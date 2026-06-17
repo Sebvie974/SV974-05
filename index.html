@@ -295,7 +295,10 @@
 
     <div class="modal" id="modal-gestion-tla">
         <div class="modal-content" style="max-width: 550px; width: 95%;">
-            <h3 style="margin-bottom: 5px; color: #008777;">📱 Gestion des TLA à facturer</h3>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+                <h3 style="margin: 0; color: #008777;">📱 Gestion des TLA</h3>
+                <span id="compteur-total-tla" style="font-size: 0.8rem; background: #00c7b1; color: white; padding: 4px 8px; border-radius: 12px; font-weight: bold;">Calcul...</span>
+            </div>
             <p style="font-size: 0.85rem; color: var(--neutral); margin-top: 0;">Sélectionnez ici les patients qui doivent être facturés dans le lecteur, indépendamment du planning.</p>
             
             <input type="text" id="recherche-gestion-tla" placeholder="🔍 Rechercher un patient..." oninput="filtrerGestionTla()" style="margin-bottom: 5px;">
@@ -1256,43 +1259,62 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
             } catch(e) { console.error(e); }
         }
 
-        // NOUVEAU: GESTION TLA GLOBALE SYNCHRONISÉE
         // NOUVEAU: GESTION TLA GLOBALE SYNCHRONISÉE (AVEC RÉTROCOMPATIBILITÉ)
         function filtrerGestionTla() {
             const term = document.getElementById('recherche-gestion-tla').value.toLowerCase();
             const conteneur = document.getElementById('liste-gestion-tla');
             
-            // ÉTAPE 1 : Analyser les données pour assurer la rétrocompatibilité
+            // ÉTAPE 1 : Analyser les données pour récupérer le Kiné et la Date
             const patientsEnrichis = cataloguePatients.map(p => {
-                // Statut de base (nouveau système)
                 let dansCircuitTla = (p.a_facturer_tla === true);
                 let estFactureParKine = false;
-                let joursFactures = [];
+                let detailsFacturation = []; // NOUVEAU : On stocke "Kiné + Date"
 
-                // Recherche dans les plannings (pour rattraper les anciens cochages)
                 for (let dateCle in planningsParDate) {
                     const rdvsPatient = planningsParDate[dateCle].filter(r => String(r.patientId) === String(p.id));
                     rdvsPatient.forEach(r => {
                         if (r.tlaStatut === 'dans_tla') {
-                            dansCircuitTla = true; // Rétrocompatibilité : on force la détection
+                            dansCircuitTla = true;
                         }
                         if (r.tlaStatut === 'facture') {
                             dansCircuitTla = true;
                             estFactureParKine = true;
                             const d = new Date(dateCle);
-                            joursFactures.push(`${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}`);
+                            const dateFormatee = `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}`;
+                            // NOUVEAU : On enregistre qui a facturé et quand
+                            detailsFacturation.push(`par ${r.kineNom} le ${dateFormatee}`);
                         }
                     });
                 }
+
+                // On supprime les doublons (si le kiné a cliqué plusieurs fois la même journée)
+                const detailsUniques = [...new Set(detailsFacturation)];
 
                 return {
                     ...p,
                     vraiTla: dansCircuitTla,
                     estFacture: estFactureParKine,
-                    joursFactures: joursFactures,
-                    nomSecurise: p.nom || "Sans Nom" // Sécurité anti-bug si une fiche est vide
+                    detailsFacturation: detailsUniques,
+                    nomSecurise: p.nom || "Sans Nom" 
                 };
             });
+
+            // --- NOUVEAU : MISE À JOUR DU COMPTEUR ---
+            const totalFactures = patientsEnrichis.filter(p => p.estFacture).length;
+            const totalEnAttente = patientsEnrichis.filter(p => p.vraiTla && !p.estFacture).length;
+            const totalTla = totalFactures + totalEnAttente;
+            
+            const badgeCompteur = document.getElementById('compteur-total-tla');
+            if(badgeCompteur) {
+                if (totalTla === 0) {
+                    badgeCompteur.innerText = "TLA Vide";
+                    badgeCompteur.style.background = "var(--neutral)";
+                } else {
+                    badgeCompteur.innerText = `${totalFactures} facturé(s) / ${totalTla} au total`;
+                    badgeCompteur.style.background = totalFactures > 0 ? "var(--success)" : "#00c7b1";
+                }
+            }
+            // ----------------------------------------
 
             // ÉTAPE 2 : Tri (Les patients TLA en haut, puis ordre alphabétique)
             const triPatient = patientsEnrichis.sort((a,b) => {
@@ -1309,11 +1331,11 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
                 if(p.nomSecurise.toLowerCase().includes(term) || (p.adresse && p.adresse.toLowerCase().includes(term))) {
                     const isChecked = p.vraiTla ? 'checked' : '';
                     
+                    // NOUVEAU : Affichage des détails de facturation (Qui et Quand)
                     let infoFacturation = p.estFacture 
-                        ? `<span style="font-size: 0.75rem; background-color: var(--success); color: white; padding: 2px 6px; border-radius: 4px; margin-left: 8px;">✅ Fait par le Kiné (${p.joursFactures.join(', ')})</span>` 
+                        ? `<span style="font-size: 0.75rem; background-color: var(--success); color: white; padding: 2px 6px; border-radius: 4px; margin-left: 8px; margin-top: 2px;">✅ Facturé ${p.detailsFacturation.join(', ')}</span>` 
                         : '';
                         
-                    // Fond orange pour "En attente", Vert pour "Facturé", Blanc pour le reste
                     const bgStyle = p.vraiTla 
                         ? (p.estFacture ? 'background:#e6f8f5; border: 1px solid #34c759;' : 'background:#fff3cd; border: 1px solid #ff9500;') 
                         : 'background:white; border: 1px solid #e5e5ea;';
