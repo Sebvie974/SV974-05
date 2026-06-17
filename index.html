@@ -149,7 +149,7 @@
                 <div style="display: flex; flex-direction: column; gap: 5px; margin-bottom: 10px; background: #f4f6f9; padding: 8px; border-radius: 8px;">
                     <input type="hidden" id="kine-id-edite">
                     <input type="text" id="nouveau-kine-input" placeholder="Nom d'utilisateur" style="padding:6px; border:1px solid #ccc;">
-                    <input type="password" id="nouveau-mdp-input" placeholder="Mot de passe" style="padding:6px; border:1px solid #ccc;">
+                    <input type="text" id="nouveau-mdp-input" placeholder="Mot de passe du compte" style="padding:6px; border:1px solid #ccc;">
                     <select id="nouveau-role-input" style="padding:6px; border:1px solid #ccc; font-weight: bold;">
                         <option value="kine">Kiné</option><option value="remplacant">Remplaçant</option><option value="secretariat">Secrétariat</option>
                     </select>
@@ -552,7 +552,6 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
             document.getElementById('titre-form-kine').innerText = `⚙️ Modifier : ${u.nom}`;
             document.getElementById('kine-id-edite').value = u.id;
             document.getElementById('nouveau-kine-input').value = u.nom;
-            document.getElementById('nouveau-mdp-input').value = u.mot_de_passe;
             document.getElementById('nouveau-role-input').value = u.role;
             document.getElementById('nouveau-actif-input').checked = (u.actif !== false); 
             
@@ -565,35 +564,61 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
             }
             document.getElementById('btn-soumettre-kine').innerText = "Enregistrer 💾";
             document.getElementById('btn-annuler-kine').style.display = 'block';
+            document.getElementById('nouveau-mdp-input').style.display = 'none';
         }
 
         function reinitialiserFormulaireKine() {
             document.getElementById('titre-form-kine').innerText = "⚙️ Gestion des Comptes";
             document.getElementById('kine-id-edite').value = '';
             document.getElementById('nouveau-kine-input').value = '';
-            document.getElementById('nouveau-mdp-input').value = '';
             document.getElementById('nouveau-role-input').value = 'kine';
             document.getElementById('nouveau-actif-input').checked = true;
             document.getElementById('nouveau-kine-remplace-input').style.display = 'none';
             document.getElementById('btn-soumettre-kine').innerText = "Créer l'utilisateur";
             document.getElementById('btn-annuler-kine').style.display = 'none';
+            document.getElementById('nouveau-mdp-input').style.display = 'block';
+            document.getElementById('nouveau-mdp-input').value = '';
         }
 
         async function sauvegarderKine() {
             const id = document.getElementById('kine-id-edite').value;
             const nom = document.getElementById('nouveau-kine-input').value.trim();
-            const mdp = document.getElementById('nouveau-mdp-input').value.trim();
+            const mdp = document.getElementById('nouveau-mdp-input').value; // Récupère le mot de passe
             const role = document.getElementById('nouveau-role-input').value;
             const actif = document.getElementById('nouveau-actif-input').checked;
             const kine_remplace = role === 'remplacant' ? document.getElementById('nouveau-kine-remplace-input').value : null;
-            if (!nom || !mdp) { alert("Nom et mot de passe obligatoires."); return; }
+            
+            if (!nom) { alert("Le nom est obligatoire."); return; }
             if (!initialiserSupabase()) return;
-            const payload = { nom, mot_de_passe: mdp, role, kine_remplace, actif };
+            
+            const payload = { nom, role, kine_remplace, actif };
+            
             try {
-                if (id) await supabaseClient.from('practiciens').update(payload).eq('id', id);
-                else await supabaseClient.from('practiciens').insert([{...payload, id: Math.floor(Math.random() * 1000000000).toString(), detient_tla: false}]);
+                if (id) {
+                    // Si MODIFICATION : on met juste à jour le rôle ou le nom
+                    await supabaseClient.from('practiciens').update(payload).eq('id', id);
+                } else {
+                    // Si CRÉATION : On crée l'accès sécurisé ET le profil
+                    if (!mdp) { alert("Le mot de passe est obligatoire pour créer un nouveau compte."); return; }
+                    
+                    const emailCalcule = nom.normalize("NFD").replace(/[^a-zA-Z0-9]/g, "").toLowerCase() + "@app.local";
+
+                    // 1. Inscription silencieuse dans la sécurité Supabase (sans déconnecter l'utilisateur actuel)
+                    const tempSupabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, { auth: { persistSession: false } });
+                    const { data: authData, error: authError } = await tempSupabase.auth.signUp({ 
+                        email: emailCalcule, 
+                        password: mdp 
+                    });
+                    
+                    if (authError) { alert("Le serveur a refusé la création : " + authError.message); return; }
+
+                    // 2. Création de l'étiquette dans votre application
+                    await supabaseClient.from('practiciens').insert([{...payload, id: Math.floor(Math.random() * 1000000000).toString(), detient_tla: false}]);
+                }
+                
                 reinitialiserFormulaireKine();
                 await chargerListeKines();
+                alert("✅ Compte enregistré avec succès !");
             } catch(e) { alert("Erreur de sauvegarde."); }
         }
 
