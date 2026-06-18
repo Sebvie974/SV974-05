@@ -1856,9 +1856,27 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
             if (estDejaVerrouille) {
                 const mdpSaisi = prompt("🔒 Cette tournée est verrouillée.\n\nVeuillez saisir votre mot de passe pour la déverrouiller :");
                 if (mdpSaisi === null) return; 
-                const userActuel = listeUtilisateursComplets.find(u => u.nom === kineConnecte);
-                if (!userActuel || userActuel.mot_de_passe !== mdpSaisi) { alert("❌ Mot de passe incorrect."); return; }
-            } else { if (!confirm("Verrouiller cette journée ?")) return; }
+                
+                // --- NOUVELLE VÉRIFICATION SÉCURISÉE ---
+                // On recalcule l'adresse email fictive du kiné actuellement connecté
+                const emailCalcule = kineConnecte.normalize("NFD").replace(/[^a-zA-Z0-9]/g, "").toLowerCase() + "@app.local";
+                
+                // On interroge silencieusement le coffre-fort Supabase Auth
+                const tempSupabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, { auth: { persistSession: false } });
+                const { error } = await tempSupabase.auth.signInWithPassword({
+                    email: emailCalcule,
+                    password: mdpSaisi
+                });
+
+                if (error) { 
+                    alert("❌ Mot de passe incorrect."); 
+                    return; 
+                }
+                // ----------------------------------------
+                
+            } else { 
+                if (!confirm("Verrouiller cette journée ?")) return; 
+            }
             
             try {
                 const idsToUpdate = rdvDuJour.map(r => r.idPlanif);
