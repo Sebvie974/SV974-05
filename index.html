@@ -1268,31 +1268,26 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
             const patientsEnrichis = cataloguePatients.map(p => {
                 let dansCircuitTla = (p.a_facturer_tla === true);
                 let estFactureParKine = false;
-                let kinesFactureurs = []; // On stockera uniquement les noms des kinés
 
+                // On vérifie les plannings pour confirmer qu'il a bien été facturé
                 for (let dateCle in planningsParDate) {
                     const rdvsPatient = planningsParDate[dateCle].filter(r => String(r.patientId) === String(p.id));
                     rdvsPatient.forEach(r => {
-                        if (r.tlaStatut === 'dans_tla') {
-                            dansCircuitTla = true;
-                        }
+                        if (r.tlaStatut === 'dans_tla') dansCircuitTla = true;
                         if (r.tlaStatut === 'facture') {
                             dansCircuitTla = true;
                             estFactureParKine = true;
-                            kinesFactureurs.push(r.kineNom); // On retient qui a facturé
                         }
                     });
                 }
-
-                // On supprime les doublons pour n'afficher le nom qu'une seule fois (ex: "Thomas, Julie")
-                const kinesUniques = [...new Set(kinesFactureurs)];
 
                 return {
                     ...p,
                     vraiTla: dansCircuitTla,
                     estFacture: estFactureParKine,
-                    kinesFactureurs: kinesUniques,
-                    nomSecurise: p.nom || "Sans Nom" 
+                    nomSecurise: p.nom || "Sans Nom",
+                    facturePar: p.tla_facture_par || "Kiné",
+                    factureLe: p.tla_facture_le || ""
                 };
             });
 
@@ -1327,9 +1322,10 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
                 if(p.nomSecurise.toLowerCase().includes(term) || (p.adresse && p.adresse.toLowerCase().includes(term))) {
                     const isChecked = p.vraiTla ? 'checked' : '';
                     
-                    // NOUVEAU : Affichage simplifié sans les séances
+                    // NOUVEAU : Affichage de la date d'action et de l'acteur
+                    let txtDate = p.factureLe ? ` le ${p.factureLe}` : '';
                     let infoFacturation = p.estFacture 
-                        ? `<span style="font-size: 0.75rem; background-color: var(--success); color: white; padding: 2px 6px; border-radius: 4px; margin-left: 8px;">✅ Facturé par ${p.kinesFactureurs.join(', ')}</span>` 
+                        ? `<span style="font-size: 0.75rem; background-color: var(--success); color: white; padding: 2px 6px; border-radius: 4px; margin-left: 8px;">✅ Facturé par ${p.facturePar}${txtDate}</span>` 
                         : '';
                         
                     const bgStyle = p.vraiTla 
@@ -1364,19 +1360,30 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
         async function changerStatutGestionTla(patientId, isChecked) {
             // 1. On modifie l'interface INSTANTANÉMENT pour l'utilisateur
             const p = cataloguePatients.find(x => String(x.id) === String(patientId));
-            if(p) p.a_facturer_tla = isChecked;
+            if(p) {
+                p.a_facturer_tla = isChecked;
+                if (!isChecked) {
+                    p.tla_facture_par = null;
+                    p.tla_facture_le = null;
+                }
+            }
             filtrerGestionTla(); // Applique la couleur de fond immédiatement
 
             if(!initialiserSupabase()) return;
             try {
                 // 2. On envoie l'information dans la fiche patient en arrière-plan
-                await supabaseClient.from('catalogue_patients').update({ a_facturer_tla: isChecked }).eq('id', patientId);
+                const majPatient = { a_facturer_tla: isChecked };
+                if (!isChecked) {
+                    majPatient.tla_facture_par = null;
+                    majPatient.tla_facture_le = null;
+                }
+                await supabaseClient.from('catalogue_patients').update(majPatient).eq('id', patientId);
                 
                 // 3. On répercute sur tous les plannings de ce patient (pour les kinés)
                 const newVal = isChecked ? 'dans_tla' : null;
                 await supabaseClient.from('plannings_dates').update({ tla_statut: newVal }).eq('patient_id', patientId);
                 
-                // 4. On lance une synchronisation générale de l'app sans gêner la vue
+                // 4. On lance une synchronisation générale
                 chargerDonneesDepuisServeur();
             } catch(e) { console.error(e); }
         }
@@ -1648,11 +1655,22 @@ doc.setTextColor(0, 0, 0); currentY += 6;
                         // Le kiné ajoute au TLA -> Synchro Globale
                         await changerStatutGestionTla(patientId, true);
                     } else if (rdvTrouve.tlaStatut === 'dans_tla') {
-                        // Le kiné valide la facturation -> Met à jour TOUS les plannings du patient
+                        // NOUVEAU : Le kiné valide la facturation -> On enregistre QUI et QUAND
+                        const dateDuJour = new Date().toLocaleDateString('fr-FR');
+                        await supabaseClient.from('catalogue_patients').update({
+                            tla_facture_par: kineConnecte,
+                            tla_facture_le: dateDuJour
+                        }).eq('id', patientId);
+
                         await supabaseClient.from('plannings_dates').update({ tla_statut: 'facture' }).eq('patient_id', patientId);
                         chargerDonneesDepuisServeur();
                     } else if (rdvTrouve.tlaStatut === 'facture') {
-                        // Annuler la validation (erreur) -> Remet en attente partout
+                        // NOUVEAU : Annuler la validation (erreur) -> On efface le facturateur
+                        await supabaseClient.from('catalogue_patients').update({
+                            tla_facture_par: null,
+                            tla_facture_le: null
+                        }).eq('id', patientId);
+
                         await supabaseClient.from('plannings_dates').update({ tla_statut: 'dans_tla' }).eq('patient_id', patientId);
                         chargerDonneesDepuisServeur();
                     }
