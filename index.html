@@ -1264,11 +1264,11 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
             const term = document.getElementById('recherche-gestion-tla').value.toLowerCase();
             const conteneur = document.getElementById('liste-gestion-tla');
             
-            // ÉTAPE 1 : Analyser les données pour récupérer le Kiné et la Date
+            // ÉTAPE 1 : Analyser les données
             const patientsEnrichis = cataloguePatients.map(p => {
                 let dansCircuitTla = (p.a_facturer_tla === true);
                 let estFactureParKine = false;
-                let detailsFacturation = []; // NOUVEAU : On stocke "Kiné + Date"
+                let kinesFactureurs = []; // On stockera uniquement les noms des kinés
 
                 for (let dateCle in planningsParDate) {
                     const rdvsPatient = planningsParDate[dateCle].filter(r => String(r.patientId) === String(p.id));
@@ -1279,27 +1279,24 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
                         if (r.tlaStatut === 'facture') {
                             dansCircuitTla = true;
                             estFactureParKine = true;
-                            const d = new Date(dateCle);
-                            const dateFormatee = `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}`;
-                            // NOUVEAU : On enregistre qui a facturé et quand
-                            detailsFacturation.push(`par ${r.kineNom} le ${dateFormatee}`);
+                            kinesFactureurs.push(r.kineNom); // On retient qui a facturé
                         }
                     });
                 }
 
-                // On supprime les doublons (si le kiné a cliqué plusieurs fois la même journée)
-                const detailsUniques = [...new Set(detailsFacturation)];
+                // On supprime les doublons pour n'afficher le nom qu'une seule fois (ex: "Thomas, Julie")
+                const kinesUniques = [...new Set(kinesFactureurs)];
 
                 return {
                     ...p,
                     vraiTla: dansCircuitTla,
                     estFacture: estFactureParKine,
-                    detailsFacturation: detailsUniques,
+                    kinesFactureurs: kinesUniques,
                     nomSecurise: p.nom || "Sans Nom" 
                 };
             });
 
-            // --- NOUVEAU : MISE À JOUR DU COMPTEUR ---
+            // --- MISE À JOUR DU COMPTEUR ---
             const totalFactures = patientsEnrichis.filter(p => p.estFacture).length;
             const totalEnAttente = patientsEnrichis.filter(p => p.vraiTla && !p.estFacture).length;
             const totalTla = totalFactures + totalEnAttente;
@@ -1314,9 +1311,8 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
                     badgeCompteur.style.background = totalFactures > 0 ? "var(--success)" : "#00c7b1";
                 }
             }
-            // ----------------------------------------
 
-            // ÉTAPE 2 : Tri (Les patients TLA en haut, puis ordre alphabétique)
+            // ÉTAPE 2 : Tri 
             const triPatient = patientsEnrichis.sort((a,b) => {
                 const valA = a.vraiTla ? 1 : 0;
                 const valB = b.vraiTla ? 1 : 0;
@@ -1331,9 +1327,9 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
                 if(p.nomSecurise.toLowerCase().includes(term) || (p.adresse && p.adresse.toLowerCase().includes(term))) {
                     const isChecked = p.vraiTla ? 'checked' : '';
                     
-                    // NOUVEAU : Affichage des détails de facturation (Qui et Quand)
+                    // NOUVEAU : Affichage simplifié sans les séances
                     let infoFacturation = p.estFacture 
-                        ? `<span style="font-size: 0.75rem; background-color: var(--success); color: white; padding: 2px 6px; border-radius: 4px; margin-left: 8px; margin-top: 2px;">✅ Facturé ${p.detailsFacturation.join(', ')}</span>` 
+                        ? `<span style="font-size: 0.75rem; background-color: var(--success); color: white; padding: 2px 6px; border-radius: 4px; margin-left: 8px;">✅ Facturé par ${p.kinesFactureurs.join(', ')}</span>` 
                         : '';
                         
                     const bgStyle = p.vraiTla 
@@ -1502,7 +1498,9 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
                 let rdvsDuJourGlobaux = rdvFiltres.filter(r => kinesAExporter.includes(r.kineNom));
                 
                 if (rdvsDuJourGlobaux.length > 0) {
-                    aDesDonnees = true; doc.setFontSize(12); doc.setFont("helvetica", "bold"); doc.setTextColor(0, 122, 255); doc.text(getLabelDate(dateObj), 14, currentY); doc.setTextColor(0, 0, 0); currentY += 6;
+                    aDesDonnees = true; doc.setFontSize(12); doc.setFont("helvetica", "bold"); doc.setTextColor(0, 122, 255); 
+doc.text(`${getLabelDate(dateObj)} (Total : ${rdvsDuJourGlobaux.length} patient${rdvsDuJourGlobaux.length > 1 ? 's' : ''})`, 14, currentY); 
+doc.setTextColor(0, 0, 0); currentY += 6;
 
                     kinesAExporter.forEach(kine => {
                         let rdvKine = rdvsDuJourGlobaux.filter(r => r.kineNom === kine); rdvKine.sort(trierPlannings);
