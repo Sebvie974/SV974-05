@@ -848,9 +848,10 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
                 const mesKines = getKinesAssocies(kineConnecte);
                 const kinesVus = getKinesAssocies(kineVisionne);
                 
-                const notesAffichees = notesCabinet.filter(note => {
+                // --- NOUVEAU : On filtre pour que le bandeau orange ne s'allume que pour les messages REÇUS ---
+                const notesPourBandeau = notesCabinet.filter(note => {
                     if (note.kine_cible === 'GLOBAL') return true;
-                    if (note.auteur === kineConnecte) return true;
+                    // On ne met PLUS la ligne "auteur === kineConnecte" ici
                     if (mesKines.includes(note.kine_cible)) return true;
                     if (kineRole === 'secretariat' && kinesVus.includes(note.kine_cible)) return true;
                     return false;
@@ -858,8 +859,8 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
                 
                 const bandeauNotes = document.getElementById('bandeau-notes-importantes');
                 if (bandeauNotes) {
-                    bandeauNotes.style.display = notesAffichees.length > 0 ? 'block' : 'none';
-                    if(notesAffichees.length > 0) document.getElementById('texte-bandeau-notes').innerText = `${notesAffichees.length} note(s) importante(s) - Cliquer pour lire`;
+                    bandeauNotes.style.display = notesPourBandeau.length > 0 ? 'block' : 'none';
+                    if(notesPourBandeau.length > 0) document.getElementById('texte-bandeau-notes').innerText = `${notesPourBandeau.length} note(s) importante(s) en attente`;
                 }
 
                 rafraichirAffichage();
@@ -1163,8 +1164,16 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
                     const isMonMessage = note.auteur === kineConnecte;
                     const isSecretariat = kineRole === 'secretariat';
                     
-                    const cibleTxt = note.kine_cible === 'GLOBAL' ? '🌍 Pour tous' : `👤 Pour ${note.kine_cible}`;
-                    const auteurTxt = note.auteur ? ` (par ${note.auteur})` : '';
+                    let cibleTxt = '';
+                    if (note.kine_cible === 'GLOBAL') {
+                        cibleTxt = '🌍 Pour tous';
+                    } else if (isMonMessage) {
+                        cibleTxt = `➡️ Envoyé à ${note.kine_cible}`;
+                    } else {
+                        cibleTxt = `📥 Reçu pour ${note.kine_cible}`;
+                    }
+                    
+                    const auteurTxt = (!isMonMessage && note.auteur) ? ` (de ${note.auteur})` : '';
                     
                     let actionsHtml = '';
                     if (isMonMessage) {
