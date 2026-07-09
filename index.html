@@ -254,32 +254,39 @@
     </div>
 
     <div class="modal" id="modal-notes-cabinet" onclick="fermerModal('modal-notes-cabinet')">
-        <div style="display: flex; gap: 10px; align-items: center; justify-content: space-between; margin-bottom: 5px;">
+        <div class="modal-content" style="max-width: 550px; width: 95%;" onclick="event.stopPropagation()">
+            
+            <div style="display: flex; gap: 10px; align-items: center; justify-content: space-between; margin-bottom: 5px;">
                 <h3 style="margin: 0; color: var(--orange);" id="titre-fenetre-notes">⚠️ Messages actifs</h3>
                 <button class="btn-secondary" id="btn-toggle-histo-notes" onclick="basculerHistoriqueNotes()" style="padding: 4px 8px; font-size: 0.75rem; background: #64748b; color: white;">🗄️ Historique</button>
             </div>
             
             <div id="liste-notes-cabinet" style="max-height: 60vh; min-height: 100px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; background: #fffcf3; padding: 10px; border-radius: 8px; border: 1px solid #ffeeba;"></div>
             
-            <div id="zone-saisie-note">
+            <!-- Zone de saisie regroupée pour pouvoir être masquée dans l'historique -->
+            <div id="zone-saisie-note" style="display: flex; flex-direction: column; gap: 6px;">
                 <hr style="width: 100%; border: 0; border-top: 1px solid #ccc; margin: 8px 0;">
-                <label style="font-weight: bold;" id="label-action-note">Nouveau message :</label>
+                <label style="font-weight: bold; margin: 0;" id="label-action-note">Nouveau message :</label>
                 
                 <input type="hidden" id="note-cabinet-id-edite">
                 
-                <div style="display: flex; gap: 10px; margin-bottom: 6px;">
+                <div style="display: flex; gap: 10px;">
                     <select id="note-cabinet-cible" style="flex: 1; padding: 8px;" onchange="gererAffichageTypeNote()"></select>
                     <select id="note-cabinet-type" style="flex: 1; padding: 8px; display: none; font-weight: bold; color: var(--purple);">
                         <option value="info">ℹ️ Information simple</option>
                         <option value="action">🎯 Action à réaliser</option>
                     </select>
                 </div>
-            <textarea id="note-cabinet-texte" rows="3" placeholder="Saisissez l'information importante ici..."></textarea>
-            <div style="display: flex; gap: 10px; margin-top:5px;">
-                <button class="btn-success" id="btn-save-note" onclick="sauvegarderNoteCabinet()">Ajouter la note ➕</button>
-                <button class="btn-secondary" id="btn-cancel-note" style="display:none;" onclick="reinitialiserFormulaireNote()">Annuler</button>
-                <button class="btn-secondary" onclick="fermerModal('modal-notes-cabinet')">Fermer</button>
+                
+                <textarea id="note-cabinet-texte" rows="3" placeholder="Saisissez l'information importante ici..." style="width: 100%; box-sizing: border-box;"></textarea>
+                
+                <div style="display: flex; gap: 10px; margin-top:5px;">
+                    <button class="btn-success" id="btn-save-note" onclick="sauvegarderNoteCabinet()">Ajouter la note ➕</button>
+                    <button class="btn-secondary" id="btn-cancel-note" style="display:none;" onclick="reinitialiserFormulaireNote()">Annuler</button>
+                    <button class="btn-secondary" onclick="fermerModal('modal-notes-cabinet')">Fermer</button>
+                </div>
             </div>
+
         </div>
     </div>
 
