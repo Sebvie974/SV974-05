@@ -875,8 +875,10 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
                     const estDeMoi = note.auteur === kineConnecte;
 
                     if (note.kine_cible === 'GLOBAL' && status !== 'archive') {
-                        nbGlobalActif++;
-                    } else if (estPourMoi && status === 'attente') {
+                        // On ne déclenche pas l'alerte pour sa propre note globale
+                        if (!estDeMoi) nbGlobalActif++;
+                    } else if (estPourMoi && !estDeMoi && status === 'attente') {
+                        // LA CORRECTION : On exclut les messages qu'on vient d'envoyer (!estDeMoi)
                         nbAttenteMoi++;
                     } else if (estDeMoi && (status === 'vu' || status === 'fait')) {
                         nbRetoursMoi++;
