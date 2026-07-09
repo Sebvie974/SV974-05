@@ -1226,14 +1226,13 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
 
                 if (vueHistoriqueNotes) {
                     if (status === 'archive') return true;
-                    // Le destinataire voit ses tâches finies dans l'historique même si l'expéditeur ne les a pas encore archivées
                     if (estPourMoi && (status === 'vu' || status === 'fait')) return true; 
                     return false;
                 } else {
                     if (status === 'archive') return false;
                     if (estGlobal) return true;
-                    if (estDeMoi) return true; // L'expéditeur voit tout ce qu'il a envoyé tant qu'il n'archive pas
-                    if (estPourMoi && status === 'attente') return true; // Le destinataire ne voit que ce qui l'attend
+                    if (estDeMoi) return true; 
+                    if (estPourMoi && status === 'attente') return true;
                     return false;
                 }
             });
@@ -1263,15 +1262,17 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
                     const badgeType = !isGlobal ? (typeAction ? `<span style="font-size:0.65rem; background:var(--danger); color:white; padding:2px 4px; border-radius:4px; margin-left:5px;">🎯 ACTION</span>` : `<span style="font-size:0.65rem; background:var(--purple); color:white; padding:2px 4px; border-radius:4px; margin-left:5px;">ℹ️ INFO</span>`) : '';
 
                     let actionsHtml = '';
+                    // NOUVEAU : Création du bouton de modification (seulement si c'est notre message)
+                    let btnEdit = isMonMessage ? `<button class="btn-icon" style="color:var(--primary); font-size:1.1rem; margin-right:6px;" onclick="editerNoteCabinet('${note.id}')" title="Modifier">✏️</button>` : '';
                     
                     if (vueHistoriqueNotes) {
                         actionsHtml = `<span style="font-size:0.75rem; color:var(--neutral); font-weight:bold;">🗄️ Archivé</span>`;
                     } else {
                         if (isGlobal) {
-                            actionsHtml = `<button class="btn-icon" style="color:var(--neutral); font-size:1.1rem;" onclick="changerStatutNote('${note.id}', 'archive')" title="Archiver l'information">🗄️</button>`;
+                            actionsHtml = `${btnEdit}<button class="btn-icon" style="color:var(--neutral); font-size:1.1rem;" onclick="changerStatutNote('${note.id}', 'archive')" title="Archiver l'information">🗄️</button>`;
                         } else if (isMonMessage) {
                             if (status === 'attente') {
-                                actionsHtml = `<span style="font-size:0.75rem; color:var(--orange); font-weight:bold;">⏳ En attente du destinataire</span>`;
+                                actionsHtml = `${btnEdit}<span style="font-size:0.75rem; color:var(--orange); font-weight:bold;">⏳ En attente du destinataire</span>`;
                             } else {
                                 actionsHtml = `<div style="display:flex; flex-direction:column; align-items:flex-end; gap:4px;">
                                     <span style="font-size:0.75rem; color:var(--success); font-weight:bold;">✅ Le destinataire l'a ${status === 'fait' ? 'fait' : 'lu'}</span>
@@ -1279,7 +1280,6 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
                                 </div>`;
                             }
                         } else {
-                            // Je suis le destinataire
                             if (status === 'attente') {
                                 actionsHtml = `<div style="display:flex; gap:6px;">
                                     ${typeAction 
@@ -1291,7 +1291,6 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
                         }
                     }
 
-                    // Couleur de fond de la note selon son état
                     let bgCol = "white"; let borderCol = "var(--orange)";
                     if (vueHistoriqueNotes) { bgCol = "#f8fafc"; borderCol = "#cbd5e1"; }
                     else if (isMonMessage && (status === 'vu' || status === 'fait')) { bgCol = "#e6f8f5"; borderCol = "var(--success)"; }
@@ -1300,7 +1299,7 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
                         <div style="background: ${bgCol}; padding: 10px; border-radius: 6px; border-left: 4px solid ${borderCol}; display:flex; flex-direction:column; gap:6px; margin-bottom: 4px; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
                             <div style="font-size:0.75rem; font-weight:bold; color:var(--primary);">${enteteTxt}${auteurTxt}${badgeType}${dateTxt}</div>
                             <div style="font-size:0.95rem; white-space:pre-wrap; color:#333;">${note.texte}</div>
-                            <div style="display:flex; justify-content:flex-end; margin-top:4px;">${actionsHtml}</div>
+                            <div style="display:flex; justify-content:flex-end; margin-top:4px; align-items:center;">${actionsHtml}</div>
                         </div>
                     `;
                 }).join('');
@@ -1317,6 +1316,8 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
         }
 
         async function sauvegarderNoteCabinet() {
+            // On récupère l'ID caché pour savoir s'il s'agit d'une modification
+            const idEdite = document.getElementById('note-cabinet-id-edite').value;
             const texte = document.getElementById('note-cabinet-texte').value.trim();
             const cible = document.getElementById('note-cabinet-cible').value;
             const typeNote = document.getElementById('note-cabinet-type').value;
@@ -1328,16 +1329,27 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
             const dateStr = `${String(maintenant.getDate()).padStart(2,'0')}/${String(maintenant.getMonth()+1).padStart(2,'0')} à ${String(maintenant.getHours()).padStart(2,'0')}:${String(maintenant.getMinutes()).padStart(2,'0')}`;
 
             try {
-                const nouvelleNote = {
-                    id: Math.floor(Math.random()*1000000000).toString(),
-                    texte: texte,
-                    kine_cible: cible,
-                    auteur: kineConnecte,
-                    type_note: cible === 'GLOBAL' ? 'info' : typeNote,
-                    statut: 'attente',
-                    horodatage: dateStr
-                };
-                await supabaseClient.from('notes_cabinet').insert([nouvelleNote]);
+                if (idEdite) {
+                    // C'est une MODIFICATION
+                    await supabaseClient.from('notes_cabinet').update({
+                        texte: texte,
+                        kine_cible: cible,
+                        type_note: cible === 'GLOBAL' ? 'info' : typeNote,
+                        horodatage: dateStr + " (modifié)"
+                    }).eq('id', idEdite);
+                } else {
+                    // C'est une CRÉATION
+                    const nouvelleNote = {
+                        id: Math.floor(Math.random()*1000000000).toString(),
+                        texte: texte,
+                        kine_cible: cible,
+                        auteur: kineConnecte,
+                        type_note: cible === 'GLOBAL' ? 'info' : typeNote,
+                        statut: 'attente',
+                        horodatage: dateStr
+                    };
+                    await supabaseClient.from('notes_cabinet').insert([nouvelleNote]);
+                }
                 
                 reinitialiserFormulaireNote();
                 chargerDonneesDepuisServeur();
@@ -1345,11 +1357,37 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
             } catch(e) { console.error(e); }
         }
 
+        function editerNoteCabinet(idNote) {
+            // Retrouve le message exact
+            const note = notesCabinet.find(n => String(n.id) === String(idNote));
+            if(!note) return;
+            
+            // Remplit le formulaire avec les anciennes données
+            document.getElementById('note-cabinet-id-edite').value = note.id;
+            document.getElementById('note-cabinet-texte').value = note.texte;
+            document.getElementById('note-cabinet-cible').value = note.kine_cible;
+            
+            gererAffichageTypeNote(); // Vérifie si on doit afficher le choix Action/Info
+            
+            const selectType = document.getElementById('note-cabinet-type');
+            if (selectType) selectType.value = note.type_note || 'info';
+            
+            // Transforme l'interface en "Mode Édition"
+            document.getElementById('label-action-note').innerText = "✏️ Modifier le message :";
+            document.getElementById('btn-save-note').innerText = "Enregistrer 💾";
+            document.getElementById('btn-cancel-note').style.display = "inline-block";
+        }
+
         function reinitialiserFormulaireNote() {
+            // Vide complètement le formulaire pour un nouveau message
             document.getElementById('note-cabinet-id-edite').value = '';
             document.getElementById('note-cabinet-texte').value = '';
             document.getElementById('note-cabinet-cible').value = 'GLOBAL'; 
             gererAffichageTypeNote();
+            
+            document.getElementById('label-action-note').innerText = "Nouveau message :";
+            document.getElementById('btn-save-note').innerText = "Ajouter la note ➕";
+            document.getElementById('btn-cancel-note').style.display = "none";
         }
 
         // NOUVEAU: GESTION TLA GLOBALE SYNCHRONISÉE (AVEC RÉTROCOMPATIBILITÉ)
