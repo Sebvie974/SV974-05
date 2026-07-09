@@ -254,17 +254,26 @@
     </div>
 
     <div class="modal" id="modal-notes-cabinet" onclick="fermerModal('modal-notes-cabinet')">
-        <div class="modal-content" style="max-width: 550px; width: 95%;" onclick="event.stopPropagation()">
-            <h3 style="margin: 0 0 5px 0; color: var(--orange);">⚠️ Notes & Informations Cabinet</h3>
-            <div id="liste-notes-cabinet" style="max-height: 60vh; min-height: 100px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; background: #fffcf3; padding: 10px; border-radius: 8px; border: 1px solid #ffeeba;"></div>
-            <hr style="width: 100%; border: 0; border-top: 1px solid #ccc; margin: 5px 0;">
-            <label style="font-weight: bold;" id="label-action-note">Ajouter une note :</label>
-            
-            <input type="hidden" id="note-cabinet-id-edite">
-            
-            <div style="display: flex; gap: 10px;">
-                <select id="note-cabinet-cible" style="flex: 1; padding: 8px;"></select>
+        <div style="display: flex; gap: 10px; align-items: center; justify-content: space-between; margin-bottom: 5px;">
+                <h3 style="margin: 0; color: var(--orange);" id="titre-fenetre-notes">⚠️ Messages actifs</h3>
+                <button class="btn-secondary" id="btn-toggle-histo-notes" onclick="basculerHistoriqueNotes()" style="padding: 4px 8px; font-size: 0.75rem; background: #64748b; color: white;">🗄️ Historique</button>
             </div>
+            
+            <div id="liste-notes-cabinet" style="max-height: 60vh; min-height: 100px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; background: #fffcf3; padding: 10px; border-radius: 8px; border: 1px solid #ffeeba;"></div>
+            
+            <div id="zone-saisie-note">
+                <hr style="width: 100%; border: 0; border-top: 1px solid #ccc; margin: 8px 0;">
+                <label style="font-weight: bold;" id="label-action-note">Nouveau message :</label>
+                
+                <input type="hidden" id="note-cabinet-id-edite">
+                
+                <div style="display: flex; gap: 10px; margin-bottom: 6px;">
+                    <select id="note-cabinet-cible" style="flex: 1; padding: 8px;" onchange="gererAffichageTypeNote()"></select>
+                    <select id="note-cabinet-type" style="flex: 1; padding: 8px; display: none; font-weight: bold; color: var(--purple);">
+                        <option value="info">ℹ️ Information simple</option>
+                        <option value="action">🎯 Action à réaliser</option>
+                    </select>
+                </div>
             <textarea id="note-cabinet-texte" rows="3" placeholder="Saisissez l'information importante ici..."></textarea>
             <div style="display: flex; gap: 10px; margin-top:5px;">
                 <button class="btn-success" id="btn-save-note" onclick="sauvegarderNoteCabinet()">Ajouter la note ➕</button>
@@ -848,20 +857,40 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
                 const mesKines = getKinesAssocies(kineConnecte);
                 const kinesVus = getKinesAssocies(kineVisionne);
                 
-                // --- NOUVEAU : On filtre pour que le bandeau orange ne s'allume que pour les messages REÇUS ---
-                const notesPourBandeau = notesCabinet.filter(note => {
-                    if (note.kine_cible === 'GLOBAL') return true;
-                    // On ne met PLUS la ligne "auteur === kineConnecte" ici
-                    if (mesKines.includes(note.kine_cible)) return true;
-                    if (kineRole === 'secretariat' && kinesVus.includes(note.kine_cible)) return true;
-                    return false;
+                             
+                let nbAttenteMoi = 0; // Messages/Actions que JE dois traiter
+                let nbRetoursMoi = 0; // Retours de collègues qui ont validé MES messages
+                let nbGlobalActif = 0; // Infos globales du cabinet
+
+                notesCabinet.forEach(note => {
+                    const status = note.statut || 'attente';
+                    const estPourMoi = mesKines.includes(note.kine_cible) || (kineRole === 'secretariat' && kinesVus.includes(note.kine_cible));
+                    const estDeMoi = note.auteur === kineConnecte;
+
+                    if (note.kine_cible === 'GLOBAL' && status !== 'archive') {
+                        nbGlobalActif++;
+                    } else if (estPourMoi && status === 'attente') {
+                        nbAttenteMoi++;
+                    } else if (estDeMoi && (status === 'vu' || status === 'fait')) {
+                        nbRetoursMoi++;
+                    }
                 });
+                
+                const totalAlertes = nbAttenteMoi + nbRetoursMoi + nbGlobalActif;
                 
                 const bandeauNotes = document.getElementById('bandeau-notes-importantes');
                 if (bandeauNotes) {
-                    bandeauNotes.style.display = notesPourBandeau.length > 0 ? 'block' : 'none';
-                    if(notesPourBandeau.length > 0) document.getElementById('texte-bandeau-notes').innerText = `${notesPourBandeau.length} note(s) importante(s) en attente`;
+                    bandeauNotes.style.display = totalAlertes > 0 ? 'block' : 'none';
+                    if(totalAlertes > 0) {
+                        let txt = [];
+                        if (nbAttenteMoi > 0) txt.push(`${nbAttenteMoi} message(s) à traiter`);
+                        if (nbRetoursMoi > 0) txt.push(`${nbRetoursMoi} retour(s) validé(s)`);
+                        if (nbGlobalActif > 0) txt.push(`${nbGlobalActif} info(s) globale(s)`);
+                        document.getElementById('texte-bandeau-notes').innerText = `⚠️ ${txt.join(' | ')}`;
+                        bandeauNotes.style.backgroundColor = (nbAttenteMoi > 0 || nbRetoursMoi > 0) ? "var(--danger)" : "var(--orange)";
+                    }
                 }
+                // -----------------------------------------------------------------
 
                 rafraichirAffichage();
             } catch (e) { 
@@ -1143,129 +1172,175 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
             ouvrirModal('modal-notes-cabinet'); // ET ENSUITE on ouvre la fenêtre
         }
 
+        let vueHistoriqueNotes = false;
+
+        function basculerHistoriqueNotes() {
+            vueHistoriqueNotes = !vueHistoriqueNotes;
+            const btn = document.getElementById('btn-toggle-histo-notes');
+            const titre = document.getElementById('titre-fenetre-notes');
+            const zoneSaisie = document.getElementById('zone-saisie-note');
+            
+            if (vueHistoriqueNotes) {
+                btn.innerText = "🔙 Voir actifs";
+                titre.innerText = "🗄️ Historique des messages";
+                if(zoneSaisie) zoneSaisie.style.display = 'none'; 
+            } else {
+                btn.innerText = "🗄️ Historique";
+                titre.innerText = "⚠️ Messages actifs";
+                if(zoneSaisie) zoneSaisie.style.display = 'block';
+            }
+            afficherNotesCabinet();
+        }
+
+        function gererAffichageTypeNote() {
+            const cible = document.getElementById('note-cabinet-cible');
+            const selectType = document.getElementById('note-cabinet-type');
+            if(cible && selectType) {
+                if (cible.value === 'GLOBAL') {
+                    selectType.style.display = 'none'; selectType.value = 'info';
+                } else {
+                    selectType.style.display = 'block';
+                }
+            }
+        }
+
         function afficherNotesCabinet() {
             const conteneur = document.getElementById('liste-notes-cabinet');
             const mesKines = getKinesAssocies(kineConnecte);
             const kinesVus = getKinesAssocies(kineVisionne);
             
-            // Filtre identique à celui du bandeau
-            const notesAffichees = notesCabinet.filter(note => {
-                if (note.kine_cible === 'GLOBAL') return true;
-                if (note.auteur === kineConnecte) return true;
-                if (mesKines.includes(note.kine_cible)) return true;
-                if (kineRole === 'secretariat' && kinesVus.includes(note.kine_cible)) return true;
-                return false;
+            const notesFiltrees = notesCabinet.filter(note => {
+                const status = note.statut || 'attente';
+                const estPourMoi = mesKines.includes(note.kine_cible) || (kineRole === 'secretariat' && kinesVus.includes(note.kine_cible));
+                const estDeMoi = note.auteur === kineConnecte;
+                const estGlobal = note.kine_cible === 'GLOBAL';
+
+                if (vueHistoriqueNotes) {
+                    if (status === 'archive') return true;
+                    // Le destinataire voit ses tâches finies dans l'historique même si l'expéditeur ne les a pas encore archivées
+                    if (estPourMoi && (status === 'vu' || status === 'fait')) return true; 
+                    return false;
+                } else {
+                    if (status === 'archive') return false;
+                    if (estGlobal) return true;
+                    if (estDeMoi) return true; // L'expéditeur voit tout ce qu'il a envoyé tant qu'il n'archive pas
+                    if (estPourMoi && status === 'attente') return true; // Le destinataire ne voit que ce qui l'attend
+                    return false;
+                }
             });
             
-            if (notesAffichees.length === 0) {
-                conteneur.innerHTML = '<p style="text-align:center; font-size:0.85rem; color:var(--neutral);">Aucune note importante pour le moment.</p>';
+            // Tri : Les plus récents en premier
+            notesFiltrees.sort((a,b) => {
+                if(!a.horodatage) return 1; if(!b.horodatage) return -1;
+                return new Date(b.horodatage.split('/').reverse().join('-')) - new Date(a.horodatage.split('/').reverse().join('-'));
+            });
+
+            if (notesFiltrees.length === 0) {
+                conteneur.innerHTML = `<p style="text-align:center; font-size:0.85rem; color:var(--neutral);">${vueHistoriqueNotes ? 'Historique vide.' : 'Aucun message actif.'}</p>`;
             } else {
-                conteneur.innerHTML = notesAffichees.map(note => {
+                conteneur.innerHTML = notesFiltrees.map(note => {
                     const isMonMessage = note.auteur === kineConnecte;
-                    const isSecretariat = kineRole === 'secretariat';
+                    const status = note.statut || 'attente';
+                    const isGlobal = note.kine_cible === 'GLOBAL';
+                    const typeAction = note.type_note === 'action';
                     
-                    let cibleTxt = '';
-                    if (note.kine_cible === 'GLOBAL') {
-                        cibleTxt = '🌍 Pour tous';
-                    } else if (isMonMessage) {
-                        cibleTxt = `➡️ Envoyé à ${note.kine_cible}`;
-                    } else {
-                        cibleTxt = `📥 Reçu pour ${note.kine_cible}`;
-                    }
+                    let enteteTxt = '';
+                    if (isGlobal) { enteteTxt = '🌍 Pour tous'; } 
+                    else if (isMonMessage) { enteteTxt = `➡️ Envoyé à ${note.kine_cible}`; } 
+                    else { enteteTxt = `📥 Reçu pour ${note.kine_cible}`; }
                     
                     const auteurTxt = (!isMonMessage && note.auteur) ? ` (de ${note.auteur})` : '';
-                    
+                    const dateTxt = note.horodatage ? `<span style="font-weight:normal; font-size:0.7rem; color:#888; float:right;">${note.horodatage}</span>` : '';
+                    const badgeType = !isGlobal ? (typeAction ? `<span style="font-size:0.65rem; background:var(--danger); color:white; padding:2px 4px; border-radius:4px; margin-left:5px;">🎯 ACTION</span>` : `<span style="font-size:0.65rem; background:var(--purple); color:white; padding:2px 4px; border-radius:4px; margin-left:5px;">ℹ️ INFO</span>`) : '';
+
                     let actionsHtml = '';
-                    if (isMonMessage) {
-                        // L'auteur peut modifier ET supprimer
-                        actionsHtml = `
-                            <div style="display: flex; gap: 6px; flex-direction: column;">
-                                <button class="btn-icon" style="color:var(--primary); font-size:1.1rem;" onclick="editerNoteCabinet('${note.id}')" title="Modifier">✏️</button>
-                                <button class="btn-icon" style="color:var(--danger); font-size:1.1rem;" onclick="supprimerNoteCabinet('${note.id}')" title="Supprimer">🗑️</button>
-                            </div>
-                        `;
-                    } else if (isSecretariat) {
-                        // Le secrétariat peut faire le ménage et supprimer si besoin
-                        actionsHtml = `
-                            <div style="display: flex; gap: 6px; flex-direction: column;">
-                                <button class="btn-icon" style="color:var(--danger); font-size:1.1rem;" onclick="supprimerNoteCabinet('${note.id}')" title="Supprimer">🗑️</button>
-                            </div>
-                        `;
+                    
+                    if (vueHistoriqueNotes) {
+                        actionsHtml = `<span style="font-size:0.75rem; color:var(--neutral); font-weight:bold;">🗄️ Archivé</span>`;
+                    } else {
+                        if (isGlobal) {
+                            actionsHtml = `<button class="btn-icon" style="color:var(--neutral); font-size:1.1rem;" onclick="changerStatutNote('${note.id}', 'archive')" title="Archiver l'information">🗄️</button>`;
+                        } else if (isMonMessage) {
+                            if (status === 'attente') {
+                                actionsHtml = `<span style="font-size:0.75rem; color:var(--orange); font-weight:bold;">⏳ En attente du destinataire</span>`;
+                            } else {
+                                actionsHtml = `<div style="display:flex; flex-direction:column; align-items:flex-end; gap:4px;">
+                                    <span style="font-size:0.75rem; color:var(--success); font-weight:bold;">✅ Le destinataire l'a ${status === 'fait' ? 'fait' : 'lu'}</span>
+                                    <button class="btn-primary" style="font-size:0.7rem; padding:4px 8px; background:var(--success);" onclick="changerStatutNote('${note.id}', 'archive')">Clôturer et Archiver 🗄️</button>
+                                </div>`;
+                            }
+                        } else {
+                            // Je suis le destinataire
+                            if (status === 'attente') {
+                                actionsHtml = `<div style="display:flex; gap:6px;">
+                                    ${typeAction 
+                                        ? `<button class="btn-success" style="font-size:0.75rem; padding:6px 10px;" onclick="changerStatutNote('${note.id}', 'fait')">Marquer comme FAIT ✅</button>`
+                                        : `<button class="btn-primary" style="font-size:0.75rem; padding:6px 10px; background:var(--purple);" onclick="changerStatutNote('${note.id}', 'vu')">Marquer comme LU 👀</button>`
+                                    }
+                                </div>`;
+                            }
+                        }
                     }
 
+                    // Couleur de fond de la note selon son état
+                    let bgCol = "white"; let borderCol = "var(--orange)";
+                    if (vueHistoriqueNotes) { bgCol = "#f8fafc"; borderCol = "#cbd5e1"; }
+                    else if (isMonMessage && (status === 'vu' || status === 'fait')) { bgCol = "#e6f8f5"; borderCol = "var(--success)"; }
+
                     return `
-                        <div style="background: white; padding: 8px; border-radius: 6px; border-left: 3px solid var(--orange); display:flex; justify-content:space-between; align-items:flex-start; margin-bottom: 4px;">
-                            <div style="flex: 1; padding-right: 10px;">
-                                <div style="font-size:0.75rem; font-weight:bold; color:var(--neutral); margin-bottom:4px;">${cibleTxt}${auteurTxt}</div>
-                                <div style="font-size:0.95rem; white-space:pre-wrap;">${note.texte}</div>
-                            </div>
-                            ${actionsHtml}
+                        <div style="background: ${bgCol}; padding: 10px; border-radius: 6px; border-left: 4px solid ${borderCol}; display:flex; flex-direction:column; gap:6px; margin-bottom: 4px; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
+                            <div style="font-size:0.75rem; font-weight:bold; color:var(--primary);">${enteteTxt}${auteurTxt}${badgeType}${dateTxt}</div>
+                            <div style="font-size:0.95rem; white-space:pre-wrap; color:#333;">${note.texte}</div>
+                            <div style="display:flex; justify-content:flex-end; margin-top:4px;">${actionsHtml}</div>
                         </div>
                     `;
                 }).join('');
             }
         }
 
+        async function changerStatutNote(idNote, nouveauStatut) {
+            if(!initialiserSupabase()) return;
+            try {
+                await supabaseClient.from('notes_cabinet').update({ statut: nouveauStatut }).eq('id', idNote);
+                chargerDonneesDepuisServeur(); // Rafraîchit tout y compris les bandeaux
+                setTimeout(afficherNotesCabinet, 400);
+            } catch(e) { console.error(e); }
+        }
+
         async function sauvegarderNoteCabinet() {
-            const idEdite = document.getElementById('note-cabinet-id-edite').value;
             const texte = document.getElementById('note-cabinet-texte').value.trim();
             const cible = document.getElementById('note-cabinet-cible').value;
+            const typeNote = document.getElementById('note-cabinet-type').value;
             
             if(!texte) return;
             if(!initialiserSupabase()) return;
 
+            const maintenant = new Date();
+            const dateStr = `${String(maintenant.getDate()).padStart(2,'0')}/${String(maintenant.getMonth()+1).padStart(2,'0')} à ${String(maintenant.getHours()).padStart(2,'0')}:${String(maintenant.getMinutes()).padStart(2,'0')}`;
+
             try {
-                if (idEdite) {
-                    // Modification d'une note existante
-                    await supabaseClient.from('notes_cabinet').update({ texte: texte, kine_cible: cible }).eq('id', idEdite);
-                } else {
-                    // Création d'une nouvelle note
-                    const nouvelleNote = {
-                        id: Math.floor(Math.random()*1000000000).toString(),
-                        texte: texte,
-                        kine_cible: cible,
-                        auteur: kineConnecte
-                    };
-                    await supabaseClient.from('notes_cabinet').insert([nouvelleNote]);
-                }
+                const nouvelleNote = {
+                    id: Math.floor(Math.random()*1000000000).toString(),
+                    texte: texte,
+                    kine_cible: cible,
+                    auteur: kineConnecte,
+                    type_note: cible === 'GLOBAL' ? 'info' : typeNote,
+                    statut: 'attente',
+                    horodatage: dateStr
+                };
+                await supabaseClient.from('notes_cabinet').insert([nouvelleNote]);
                 
                 reinitialiserFormulaireNote();
                 chargerDonneesDepuisServeur();
-                setTimeout(afficherNotesCabinet, 400); // Laisse le temps à l'affichage de se mettre à jour
+                setTimeout(() => { if(!vueHistoriqueNotes) afficherNotesCabinet(); }, 400);
             } catch(e) { console.error(e); }
-        }
-
-        function editerNoteCabinet(idNote) {
-            const note = notesCabinet.find(n => String(n.id) === String(idNote));
-            if(!note) return;
-            
-            document.getElementById('note-cabinet-id-edite').value = note.id;
-            document.getElementById('note-cabinet-texte').value = note.texte;
-            document.getElementById('note-cabinet-cible').value = note.kine_cible;
-            
-            document.getElementById('label-action-note').innerText = "Modifier la note :";
-            document.getElementById('btn-save-note').innerText = "Enregistrer 💾";
-            document.getElementById('btn-cancel-note').style.display = "inline-block";
         }
 
         function reinitialiserFormulaireNote() {
             document.getElementById('note-cabinet-id-edite').value = '';
             document.getElementById('note-cabinet-texte').value = '';
             document.getElementById('note-cabinet-cible').value = 'GLOBAL'; 
-            
-            document.getElementById('label-action-note').innerText = "Ajouter une note :";
-            document.getElementById('btn-save-note').innerText = "Ajouter la note ➕";
-            document.getElementById('btn-cancel-note').style.display = "none";
-        }
-
-        async function supprimerNoteCabinet(idNote) {
-            if(!confirm("Supprimer cette information ?")) return;
-            if(!initialiserSupabase()) return;
-            try {
-                await supabaseClient.from('notes_cabinet').delete().eq('id', idNote);
-                chargerDonneesDepuisServeur();
-                setTimeout(afficherNotesCabinet, 400);
-            } catch(e) { console.error(e); }
+            gererAffichageTypeNote();
         }
 
         // NOUVEAU: GESTION TLA GLOBALE SYNCHRONISÉE (AVEC RÉTROCOMPATIBILITÉ)
