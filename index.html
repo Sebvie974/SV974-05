@@ -385,6 +385,18 @@
             <label style="display: flex; align-items: center; gap: 10px; background: #ffe5e5; padding: 10px; border-radius: 8px; margin-top: 5px; font-weight: bold; color: #b30000; cursor: pointer;">
                 <input type="checkbox" id="patient-aprevoir" style="width: auto;"> 🚨 Patient à prévoir
             </label>
+            
+            <div style="background: #f8fafc; padding: 10px; border-radius: 8px; margin-top: 5px; border: 1px dashed #cbd5e1;">
+                <label style="font-weight: bold; color: #475569; margin-bottom: 5px; display: block;">📄 Ordonnances en cours</label>
+                <div style="display:flex; flex-wrap:wrap; gap:5px; margin-bottom:10px;">
+                    <input type="text" id="ordo-motif" placeholder="Motif (ex: Épaule)" style="padding:4px; font-size:0.8rem; flex:2; min-width:90px;">
+                    <input type="number" id="ordo-nb" placeholder="Nb séances" style="padding:4px; font-size:0.8rem; flex:1; min-width:70px;">
+                    <input type="date" id="ordo-fin" title="Date de fin" style="padding:4px; font-size:0.8rem; flex:1;">
+                    <button type="button" class="btn-success" style="padding:4px 8px; font-size:0.8rem;" onclick="ajouterOrdonnance()">➕</button>
+                </div>
+                <div id="conteneur-liste-ordonnances" style="max-height: 120px; overflow-y: auto; display: flex; flex-direction: column; gap: 4px;"></div>
+                <input type="hidden" id="patient-ordonnances">
+            </div>
 
             <div style="background: #f1f5f9; padding: 10px; border-radius: 8px; margin-top: 5px; border: 1px dashed #cbd5e1;">
                 <label style="font-weight: bold; color: #475569; margin-bottom: 5px; display: block;">🏥 Historique Absences / Hospit.</label>
@@ -405,6 +417,23 @@
                     <button class="btn-danger" id="btn-supprimer-fiche" onclick="supprimerFichePatient()">Supprimer</button>
                     <button class="btn-secondary" onclick="fermerModal('modal-patient')">Annuler</button>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="modal-choix-ordo" onclick="fermerModal('modal-choix-ordo')">
+        <div class="modal-content" style="max-width: 400px;" onclick="event.stopPropagation()">
+            <h3 style="margin: 0 0 5px 0; color: var(--primary);">📄 Saisie de séance</h3>
+            <p style="font-size: 0.85rem; color: var(--neutral); margin-top: 0;">Ce patient a plusieurs ordonnances en cours. Laquelle traitez-vous ?</p>
+            
+            <input type="hidden" id="choix-ordo-id-planif">
+            <input type="hidden" id="choix-ordo-patient-id">
+            
+            <div id="liste-choix-ordo" style="display: flex; flex-direction: column; gap: 8px; margin: 15px 0; max-height: 40vh; overflow-y: auto;"></div>
+            
+            <div style="display: flex; gap: 10px;">
+                <button class="btn-success" onclick="validerChoixOrdonnance()" style="flex: 1;">Valider le pointage ✅</button>
+                <button class="btn-secondary" onclick="fermerModal('modal-choix-ordo')">Annuler</button>
             </div>
         </div>
     </div>
@@ -1148,6 +1177,7 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
                             ${chaineTels ? `<a href="tel:${patient.telephone}" class="patient-phone">${chaineTels}</a>` : ''}
                             
                             <div style="display: flex; flex-wrap: wrap; gap: 4px; margin-top: 2px;">
+                                ${genererBadgesOrdonnances(patient.ordonnances)}
                                 ${patient.a_prevoir ? `<span class="badge-card-prevoir">🚨 À prévoir</span>` : ''}
                             </div>
                             
@@ -1725,33 +1755,101 @@ doc.setTextColor(0, 0, 0); currentY += 6;
         async function changerStatutRdv(idPlanif, nouveauStatut) {
             if (verifierVerrouillageBackend(idPlanif)) return;
             
-            let statutFinal = nouveauStatut;
             const cleDate = getCleDate(datesSemaineEnCours[indiceJourActuel]);
             const rdv = planningsParDate[cleDate]?.find(r => String(r.idPlanif) === String(idPlanif));
-            if (rdv && rdv.statut === nouveauStatut) statutFinal = null;
+            if (!rdv) return;
 
-            // 1. On modifie visuellement tout de suite (sans attendre le réseau)
+            let statutFinal = nouveauStatut;
+            if (rdv.statut === nouveauStatut) statutFinal = null; 
+
+            // INTERCEPTION POUR LES ORDONNANCES (Uniquement si on le pointe "Vu")
+            if (statutFinal === 'vu') {
+                const patient = cataloguePatients.find(p => String(p.id) === String(rdv.patientId));
+                if (patient) {
+                    let ordos = [];
+                    try { ordos = patient.ordonnances ? JSON.parse(patient.ordonnances) : []; } catch(e) {}
+                    
+                    if (ordos.length > 1) {
+                        // Cas 1 : Plusieurs ordonnances. On bloque et on ouvre la fenêtre de choix
+                        document.getElementById('choix-ordo-id-planif').value = idPlanif;
+                        document.getElementById('choix-ordo-patient-id').value = patient.id;
+                        
+                        document.getElementById('liste-choix-ordo').innerHTML = ordos.map(o => `
+                            <label style="display:flex; gap:10px; padding:10px; background:#f4f6f9; border-radius:6px; cursor:pointer; align-items:center; border:1px solid #e5e5ea;">
+                                <input type="checkbox" class="cb-choix-ordo" value="${o.id}" style="width:18px; height:18px; flex-shrink:0;">
+                                <div style="flex:1;">
+                                    <strong style="color:var(--primary);">${o.motif}</strong>
+                                    <div style="font-size:0.75rem; color:var(--neutral);">${o.nb_seances ? `${o.faites || 0}/${o.nb_seances} séances faites` : 'Séances libres'}</div>
+                                </div>
+                            </label>
+                        `).join('');
+                        ouvrirModal('modal-choix-ordo');
+                        return; // On stoppe l'action ici !
+                    } else if (ordos.length === 1) {
+                        // Cas 2 : Une seule ordonnance. On l'incrémente silencieusement en arrière-plan.
+                        incrementerOrdonnanceEtSauver(patient, [ordos[0].id], idPlanif, statutFinal);
+                        return;
+                    }
+                }
+            } 
+            // Si pas d'ordonnance ou si on décoche, on poursuit normalement
+            appliquerChangementStatut(idPlanif, statutFinal);
+        }
+        
+        // --- NOUVELLES SOUS-FONCTIONS DE POINTAGE ---
+        async function validerChoixOrdonnance() {
+            const checkboxes = document.querySelectorAll('.cb-choix-ordo:checked');
+            if (checkboxes.length === 0) { alert("Veuillez sélectionner au moins une ordonnance traitée."); return; }
+            
+            const idsOrdoChoisis = Array.from(checkboxes).map(cb => cb.value);
+            const idPlanif = document.getElementById('choix-ordo-id-planif').value;
+            const patientId = document.getElementById('choix-ordo-patient-id').value;
+            const patient = cataloguePatients.find(p => String(p.id) === String(patientId));
+            
+            fermerModal('modal-choix-ordo');
+            await incrementerOrdonnanceEtSauver(patient, idsOrdoChoisis, idPlanif, 'vu');
+        }
+
+        async function incrementerOrdonnanceEtSauver(patient, idsOrdoChoisis, idPlanif, statutFinal) {
+            if (!patient) return appliquerChangementStatut(idPlanif, statutFinal);
+            let ordos = [];
+            try { ordos = JSON.parse(patient.ordonnances); } catch(e) { return appliquerChangementStatut(idPlanif, statutFinal); }
+            
+            ordos.forEach(o => {
+                if (idsOrdoChoisis.includes(String(o.id))) o.faites = (o.faites || 0) + 1;
+            });
+            
+            patient.ordonnances = JSON.stringify(ordos); 
+            
+            // On sauvegarde l'ordonnance en base
+            if (initialiserSupabase() && navigator.onLine) {
+                supabaseClient.from('catalogue_patients').update({ ordonnances: patient.ordonnances }).eq('id', patient.id).then(()=>{});
+            }
+            // Puis on valide le pointage planning
+            appliquerChangementStatut(idPlanif, statutFinal);
+        }
+
+        async function appliquerChangementStatut(idPlanif, statutFinal) {
+            // C'est l'ancienne suite de la fonction changerStatutRdv
+            const cleDate = getCleDate(datesSemaineEnCours[indiceJourActuel]);
+            const rdv = planningsParDate[cleDate]?.find(r => String(r.idPlanif) === String(idPlanif));
+            
             if (rdv) rdv.statut = statutFinal;
             rafraichirAffichage();
 
-            // 2. Si on n'a pas de réseau, on met dans la file d'attente locale
             if (!navigator.onLine) {
                 let file = JSON.parse(localStorage.getItem('file_attente_sync')) || [];
-                // On retire les ordres précédents pour ce même RDV pour ne garder que le dernier
                 file = file.filter(action => action.id !== idPlanif); 
                 file.push({ type: 'statut_rdv', id: idPlanif, valeur: statutFinal });
                 localStorage.setItem('file_attente_sync', JSON.stringify(file));
                 return;
             }
 
-            // 3. Si on a du réseau, on envoie normalement
             if (!initialiserSupabase()) return;
             try { 
                 await supabaseClient.from('plannings_dates').update({ statut: statutFinal }).eq('id_planif', idPlanif); 
                 chargerDonneesDepuisServeur(); 
-            } catch (err) { 
-                console.error(err); 
-            }
+            } catch (err) { console.error(err); }
         }
 
         async function basculerTlaStatut(idPlanif, source) {
@@ -2198,7 +2296,9 @@ doc.setTextColor(0, 0, 0); currentY += 6;
                     <div class="patient-info" style="flex: 1; width: 100%;">
                         <span style="display:flex; align-items:center; flex-wrap:wrap;"><span class="patient-name" style="cursor:pointer; color:var(--primary); text-decoration:underline;" onclick="ouvrirFormulairePatient('${p.id}')">${p.nom} ✏️</span>${badgeAbsentHtml}</span>
                         <span style="margin-top: 4px;">📍 ${p.adresse}</span>
-                        <div style="display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px;">${p.a_prevoir ? `<span class="badge-card-prevoir">🚨 À prévoir</span>` : ''}</div>
+                        <div style="display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px;">
+                            ${genererBadgesOrdonnances(patient.ordonnances)}
+                            ${p.a_prevoir ? `<span class="badge-card-prevoir">🚨 À prévoir</span>` : ''}</div>
                         <div style="display:flex; gap:6px; margin-top:6px; flex-wrap: wrap;">
                             <span class="btn-note-declencheur" style="opacity: ${aDesNotes ? '1' : '0.5'}; margin-top:0;" onclick="ouvrirNoteVolante('${p.id}')">${texteNote}</span>
                             <span class="btn-bilan-declencheur" style="opacity: ${aUnBilan ? '1' : '0.5'}; margin-top:0;" onclick="ouvrirBilan('${p.id}')">${texteBilan}</span>
@@ -2227,6 +2327,59 @@ doc.setTextColor(0, 0, 0); currentY += 6;
 
         function supprimerEvenementAbsence(idx) { currentAbsences.splice(idx, 1); renderAbsences(); }
 
+        let currentOrdonnances = [];
+
+        function renderOrdonnances() {
+            const conteneur = document.getElementById('conteneur-liste-ordonnances');
+            if(currentOrdonnances.length === 0) {
+                conteneur.innerHTML = '<p style="font-size:0.8rem; color:var(--neutral); text-align:center; margin:0;">Aucune ordonnance saisie.</p>';
+            } else {
+                conteneur.innerHTML = currentOrdonnances.map((o, idx) => {
+                    let infos = [];
+                    if (o.nb_seances) infos.push(`${o.faites || 0}/${o.nb_seances} fait`);
+                    if (o.date_fin) infos.push(`Fin: ${o.date_fin.split('-').reverse().join('/')}`);
+                    
+                    let alertColor = "#cbd5e1"; // Gris neutre par défaut
+                    if (o.nb_seances) {
+                        if (o.faites >= o.nb_seances) alertColor = "var(--danger)";
+                        else if (o.faites >= o.nb_seances - 2) alertColor = "var(--orange)";
+                    }
+                    
+                    return `<div style="display:flex; justify-content:space-between; align-items:center; background:white; padding:4px 8px; border:1px solid #cbd5e1; border-left:4px solid ${alertColor}; border-radius:4px; font-size:0.75rem;">
+                        <div><b style="color:var(--primary);">${o.motif}</b><br><span style="color:var(--neutral);">${infos.join(' | ')}</span></div>
+                        <button type="button" class="btn-icon" style="color:var(--danger);" onclick="supprimerOrdonnance(${idx})">🗑️</button>
+                    </div>`;
+                }).join('');
+            }
+            document.getElementById('patient-ordonnances').value = JSON.stringify(currentOrdonnances);
+        }
+
+        function ajouterOrdonnance() {
+            const motif = document.getElementById('ordo-motif').value.trim();
+            const nb_seances = document.getElementById('ordo-nb').value;
+            const date_fin = document.getElementById('ordo-fin').value;
+            
+            if(!motif) return alert('Le motif de l\'ordonnance est obligatoire.');
+            
+            currentOrdonnances.push({ 
+                id: Math.random().toString(36).substring(2, 9),
+                motif: motif, 
+                nb_seances: nb_seances ? parseInt(nb_seances) : null, 
+                date_fin: date_fin || null,
+                faites: 0 
+            });
+            
+            document.getElementById('ordo-motif').value = '';
+            document.getElementById('ordo-nb').value = '';
+            document.getElementById('ordo-fin').value = '';
+            renderOrdonnances();
+        }
+
+        function supprimerOrdonnance(idx) {
+            currentOrdonnances.splice(idx, 1);
+            renderOrdonnances();
+        }
+
         function ouvrirFormulairePatient(id = '') {
             const p = id ? cataloguePatients.find(x => String(x.id) === String(id)) : null;
             document.getElementById('patient-modal-title').innerText = id ? "Modifier la fiche" : "Nouveau patient";
@@ -2239,6 +2392,7 @@ doc.setTextColor(0, 0, 0); currentY += 6;
             document.getElementById('patient-aprevoir').checked = id ? (p.a_prevoir || false) : false;
             
             try { currentAbsences = id && p.historique_absences ? JSON.parse(p.historique_absences) : []; } catch(e) { currentAbsences = []; } renderAbsences();
+            try { currentOrdonnances = id && p.ordonnances ? JSON.parse(p.ordonnances) : []; } catch(e) { currentOrdonnances = []; } renderOrdonnances();
 
             document.getElementById('btn-supprimer-fiche').style.display = id ? 'block' : 'none';
             document.getElementById('btn-save-new').style.display = id ? 'none' : 'block'; 
@@ -2252,7 +2406,8 @@ doc.setTextColor(0, 0, 0); currentY += 6;
             const p = { 
                 nom: nomInput.value.trim(), adresse: adresseInput.value.trim(), telephone: document.getElementById('patient-telephone').value, 
                 telephone_2: document.getElementById('patient-telephone2').value, notes: document.getElementById('patient-notes').value, 
-                a_prevoir: document.getElementById('patient-aprevoir').checked, historique_absences: document.getElementById('patient-historique-absences').value
+                a_prevoir: document.getElementById('patient-aprevoir').checked, historique_absences: document.getElementById('patient-historique-absences').value,
+                ordonnances: document.getElementById('patient-ordonnances').value
             };
             
             if (id) await supabaseClient.from('catalogue_patients').update(p).eq('id', id);
@@ -2379,6 +2534,34 @@ doc.setTextColor(0, 0, 0); currentY += 6;
                 console.error("Erreur de synchro", e);
                 modifierBadgeReseau(true); // Remet le badge normal
             }
+        }
+
+        function genererBadgesOrdonnances(jsonStr) {
+            if (!jsonStr) return '';
+            try {
+                const ordos = JSON.parse(jsonStr);
+                if (ordos.length === 0) return '';
+                
+                return ordos.map(o => {
+                    let alertClass = "background: #f1f5f9; color: #64748b; border: 1px solid #cbd5e1;"; // Normal
+                    let texte = `📄 ${o.motif}`;
+                    
+                    if (o.nb_seances) {
+                        texte += ` (${o.faites || 0}/${o.nb_seances})`;
+                        if (o.faites >= o.nb_seances) alertClass = "background: var(--danger); color: white; border: none;";
+                        else if (o.faites >= o.nb_seances - 2) alertClass = "background: var(--orange); color: white; border: none;";
+                    }
+                    
+                    if (o.date_fin) {
+                        const dFin = new Date(o.date_fin); const now = new Date();
+                        const diffDays = Math.ceil((dFin - now) / (1000 * 60 * 60 * 24));
+                        if (diffDays <= 7 && diffDays >= 0) alertClass = "background: var(--orange); color: white; border: none;";
+                        else if (diffDays < 0) alertClass = "background: var(--danger); color: white; border: none;";
+                    }
+                    
+                    return `<span style="font-size: 0.65rem; padding: 2px 4px; border-radius: 4px; font-weight: bold; margin-right: 4px; white-space: nowrap; ${alertClass}">${texte}</span>`;
+                }).join('');
+            } catch(e) { return ''; }
         }
 
     </script>
