@@ -2297,7 +2297,7 @@ doc.setTextColor(0, 0, 0); currentY += 6;
                         <span style="display:flex; align-items:center; flex-wrap:wrap;"><span class="patient-name" style="cursor:pointer; color:var(--primary); text-decoration:underline;" onclick="ouvrirFormulairePatient('${p.id}')">${p.nom} ✏️</span>${badgeAbsentHtml}</span>
                         <span style="margin-top: 4px;">📍 ${p.adresse}</span>
                         <div style="display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px;">
-                            ${genererBadgesOrdonnances(patient.ordonnances)}
+                            ${genererBadgesOrdonnances(p.ordonnances)}
                             ${p.a_prevoir ? `<span class="badge-card-prevoir">🚨 À prévoir</span>` : ''}</div>
                         <div style="display:flex; gap:6px; margin-top:6px; flex-wrap: wrap;">
                             <span class="btn-note-declencheur" style="opacity: ${aDesNotes ? '1' : '0.5'}; margin-top:0;" onclick="ouvrirNoteVolante('${p.id}')">${texteNote}</span>
