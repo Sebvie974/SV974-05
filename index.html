@@ -389,11 +389,13 @@
             <div style="background: #f8fafc; padding: 10px; border-radius: 8px; margin-top: 5px; border: 1px dashed #cbd5e1;">
                 <label style="font-weight: bold; color: #475569; margin-bottom: 5px; display: block;">📄 Ordonnances en cours</label>
                 <div style="display:flex; flex-wrap:wrap; gap:5px; margin-bottom:10px;">
+                    <input type="hidden" id="ordo-index-edite" value="">
                     <input type="text" id="ordo-motif" placeholder="Motif (ex: Épaule)" style="padding:4px; font-size:0.8rem; flex:2; min-width:90px;">
                     <input type="date" id="ordo-date" title="Date de l'ordonnance" style="padding:4px; font-size:0.8rem; flex:1;">
                     <input type="number" id="ordo-nb" placeholder="Nb séances" style="padding:4px; font-size:0.8rem; flex:1; min-width:70px;">
                     <input type="date" id="ordo-fin" title="Date de fin" style="padding:4px; font-size:0.8rem; flex:1;">
-                    <button type="button" class="btn-success" style="padding:4px 8px; font-size:0.8rem;" onclick="ajouterOrdonnance()">➕</button>
+                    <button type="button" id="btn-save-ordo" class="btn-success" style="padding:4px 8px; font-size:0.8rem;" onclick="sauvegarderOrdonnance()">➕</button>
+                    <button type="button" id="btn-cancel-ordo" class="btn-secondary" style="display:none; padding:4px 8px; font-size:0.8rem;" onclick="reinitialiserFormulaireOrdo()">❌</button>
                 </div>
                 <div id="conteneur-liste-ordonnances" style="max-height: 120px; overflow-y: auto; display: flex; flex-direction: column; gap: 4px;"></div>
                 <input type="hidden" id="patient-ordonnances">
@@ -2349,36 +2351,69 @@ doc.setTextColor(0, 0, 0); currentY += 6;
                     
                     return `<div style="display:flex; justify-content:space-between; align-items:center; background:white; padding:4px 8px; border:1px solid #cbd5e1; border-left:4px solid ${alertColor}; border-radius:4px; font-size:0.75rem;">
                         <div><b style="color:var(--primary);">${o.motif}</b><br><span style="color:var(--neutral);">${infos.join(' | ')}</span></div>
-                        <button type="button" class="btn-icon" style="color:var(--danger);" onclick="supprimerOrdonnance(${idx})">🗑️</button>
+                        <div style="display:flex; gap:4px; align-items:center;">
+                            <button type="button" class="btn-icon" style="color:var(--primary); font-size:1rem;" onclick="editerOrdonnance(${idx})" title="Modifier">✏️</button>
+                            <button type="button" class="btn-icon" style="color:var(--danger); font-size:1rem;" onclick="supprimerOrdonnance(${idx})" title="Supprimer">🗑️</button>
+                        </div>
                     </div>`;
                 }).join('');
             }
             document.getElementById('patient-ordonnances').value = JSON.stringify(currentOrdonnances);
         }
 
-        function ajouterOrdonnance() {
+        function sauvegarderOrdonnance() {
+            const idxEdite = document.getElementById('ordo-index-edite').value;
             const motif = document.getElementById('ordo-motif').value.trim();
-            const date_ordo = document.getElementById('ordo-date').value; // NOUVEAU
+            const date_ordo = document.getElementById('ordo-date').value;
             const nb_seances = document.getElementById('ordo-nb').value;
             const date_fin = document.getElementById('ordo-fin').value;
             
             if(!motif) return alert('Le motif de l\'ordonnance est obligatoire.');
             
-            currentOrdonnances.push({ 
-                id: Math.random().toString(36).substring(2, 9),
-                motif: motif, 
-                date_ordo: date_ordo || null, // NOUVEAU
-                nb_seances: nb_seances ? parseInt(nb_seances) : null, 
-                date_fin: date_fin || null,
-                faites: 0 
-            });
+            if (idxEdite !== '') {
+                // Cas d'une MODIFICATION
+                currentOrdonnances[idxEdite].motif = motif;
+                currentOrdonnances[idxEdite].date_ordo = date_ordo || null;
+                currentOrdonnances[idxEdite].nb_seances = nb_seances ? parseInt(nb_seances) : null;
+                currentOrdonnances[idxEdite].date_fin = date_fin || null;
+            } else {
+                // Cas d'une CRÉATION
+                currentOrdonnances.push({ 
+                    id: Math.random().toString(36).substring(2, 9),
+                    motif: motif, 
+                    date_ordo: date_ordo || null,
+                    nb_seances: nb_seances ? parseInt(nb_seances) : null, 
+                    date_fin: date_fin || null,
+                    faites: 0 
+                });
+            }
             
-            // On vide tous les champs après l'ajout
+            reinitialiserFormulaireOrdo();
+            renderOrdonnances();
+        }
+
+        function editerOrdonnance(idx) {
+            const o = currentOrdonnances[idx];
+            
+            document.getElementById('ordo-index-edite').value = idx;
+            document.getElementById('ordo-motif').value = o.motif || '';
+            document.getElementById('ordo-date').value = o.date_ordo || '';
+            document.getElementById('ordo-nb').value = o.nb_seances || '';
+            document.getElementById('ordo-fin').value = o.date_fin || '';
+            
+            document.getElementById('btn-save-ordo').innerText = '💾';
+            document.getElementById('btn-cancel-ordo').style.display = 'inline-block';
+        }
+
+        function reinitialiserFormulaireOrdo() {
+            document.getElementById('ordo-index-edite').value = '';
             document.getElementById('ordo-motif').value = '';
             document.getElementById('ordo-date').value = '';
             document.getElementById('ordo-nb').value = '';
             document.getElementById('ordo-fin').value = '';
-            renderOrdonnances();
+            
+            document.getElementById('btn-save-ordo').innerText = '➕';
+            document.getElementById('btn-cancel-ordo').style.display = 'none';
         }
 
         function supprimerOrdonnance(idx) {
