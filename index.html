@@ -390,6 +390,7 @@
                 <label style="font-weight: bold; color: #475569; margin-bottom: 5px; display: block;">📄 Ordonnances en cours</label>
                 <div style="display:flex; flex-wrap:wrap; gap:5px; margin-bottom:10px;">
                     <input type="text" id="ordo-motif" placeholder="Motif (ex: Épaule)" style="padding:4px; font-size:0.8rem; flex:2; min-width:90px;">
+                    <input type="date" id="ordo-date" title="Date de l'ordonnance" style="padding:4px; font-size:0.8rem; flex:1;">
                     <input type="number" id="ordo-nb" placeholder="Nb séances" style="padding:4px; font-size:0.8rem; flex:1; min-width:70px;">
                     <input type="date" id="ordo-fin" title="Date de fin" style="padding:4px; font-size:0.8rem; flex:1;">
                     <button type="button" class="btn-success" style="padding:4px 8px; font-size:0.8rem;" onclick="ajouterOrdonnance()">➕</button>
@@ -2336,6 +2337,7 @@ doc.setTextColor(0, 0, 0); currentY += 6;
             } else {
                 conteneur.innerHTML = currentOrdonnances.map((o, idx) => {
                     let infos = [];
+                    if (o.date_ordo) infos.push(`Du: ${o.date_ordo.split('-').reverse().join('/')}`); // NOUVELLE LIGNE
                     if (o.nb_seances) infos.push(`${o.faites || 0}/${o.nb_seances} fait`);
                     if (o.date_fin) infos.push(`Fin: ${o.date_fin.split('-').reverse().join('/')}`);
                     
@@ -2356,6 +2358,7 @@ doc.setTextColor(0, 0, 0); currentY += 6;
 
         function ajouterOrdonnance() {
             const motif = document.getElementById('ordo-motif').value.trim();
+            const date_ordo = document.getElementById('ordo-date').value; // NOUVEAU
             const nb_seances = document.getElementById('ordo-nb').value;
             const date_fin = document.getElementById('ordo-fin').value;
             
@@ -2364,12 +2367,15 @@ doc.setTextColor(0, 0, 0); currentY += 6;
             currentOrdonnances.push({ 
                 id: Math.random().toString(36).substring(2, 9),
                 motif: motif, 
+                date_ordo: date_ordo || null, // NOUVEAU
                 nb_seances: nb_seances ? parseInt(nb_seances) : null, 
                 date_fin: date_fin || null,
                 faites: 0 
             });
             
+            // On vide tous les champs après l'ajout
             document.getElementById('ordo-motif').value = '';
+            document.getElementById('ordo-date').value = '';
             document.getElementById('ordo-nb').value = '';
             document.getElementById('ordo-fin').value = '';
             renderOrdonnances();
