@@ -1685,8 +1685,21 @@ doc.setTextColor(0, 0, 0); currentY += 6;
                             const evtAbs = estPatientAbsentA(cleDate, p.historique_absences);
                             let prefix = ""; if (evtAbs) prefix = evtAbs.type === 'Hospitalisation' ? "[HOSPIT.] " : "[ABSENT] ";
                             let nomAffichage = prefix + p.nom;
-                            if(r.premiere_seance) nomAffichage += " [1ère Séance]"; // NOUVEAU
+                            if(r.premiere_seance) nomAffichage += " [1ère Séance]"; 
                             
+                            // --- NOUVEAU : Ajout de l'ordonnance pour le PDF ---
+                            let ordoTextePdf = '';
+                            if (r.statut === 'vu' && r.ordos_choisies && p && p.ordonnances) {
+                                try {
+                                    let ordosP = typeof p.ordonnances === 'string' ? JSON.parse(p.ordonnances) : p.ordonnances;
+                                    let ids = String(r.ordos_choisies).split(',');
+                                    let m = ordosP.filter(o => ids.includes(String(o.id))).map(o => o.motif);
+                                    if (m.length > 0) ordoTextePdf = ` [✓ ${m.join(', ')}]`;
+                                } catch(e){}
+                            }
+                            nomAffichage += ordoTextePdf;
+                            // ----------------------------------------------------
+
                             const heure = (r.heure && r.heure !== "00:00") ? r.heure : "--:--";
                             let pointage = "-"; if(r.statut === 'vu') pointage = "Vu"; else if(r.statut === 'non-vu') pointage = "Non vu";
                             return [heure, nomAffichage, pointage];
@@ -1773,7 +1786,7 @@ doc.setTextColor(0, 0, 0); currentY += 6;
                     try { ordos = patient.ordonnances ? JSON.parse(patient.ordonnances) : []; } catch(e) {}
                     
                     if (ordos.length > 1) {
-                        // Cas 1 : Plusieurs ordonnances. On bloque et on ouvre la fenêtre de choix
+                        // Plusieurs ordonnances -> ouverture modale
                         document.getElementById('choix-ordo-id-planif').value = idPlanif;
                         document.getElementById('choix-ordo-patient-id').value = patient.id;
                         
@@ -1787,9 +1800,9 @@ doc.setTextColor(0, 0, 0); currentY += 6;
                             </label>
                         `).join('');
                         ouvrirModal('modal-choix-ordo');
-                        return; // On stoppe l'action ici !
+                        return;
                     } else if (ordos.length === 1) {
-                        // Cas 2 : Une seule ordonnance. On l'incrémente silencieusement en arrière-plan.
+                        // UNE SEULE ordonnance -> On enregistre immédiatement son ID !
                         incrementerOrdonnanceEtSauver(patient, [ordos[0].id], idPlanif, statutFinal);
                         return;
                     }
@@ -1862,14 +1875,23 @@ doc.setTextColor(0, 0, 0); currentY += 6;
         }
 
         function obtenirTexteOrdoChoisie(rdv, patient) {
-            if (rdv.statut !== 'vu' || !rdv.ordos_choisies || !patient || !patient.ordonnances) return '';
+            if (!rdv || rdv.statut !== 'vu' || !rdv.ordos_choisies || !patient || !patient.ordonnances) return '';
             try {
-                const ordosPatient = JSON.parse(patient.ordonnances);
-                const idsChoisies = rdv.ordos_choisies.split(',');
-                const motifs = ordosPatient.filter(o => idsChoisies.includes(String(o.id))).map(o => o.motif);
-                if (motifs.length > 0) return ` <span style="color: var(--success); font-weight: bold; font-size: 0.75rem;">[✓ ${motifs.join(', ')}]</span>`;
+                let ordosPatient = typeof patient.ordonnances === 'string' ? JSON.parse(patient.ordonnances) : patient.ordonnances;
+                let idsChoisies = String(rdv.ordos_choisies).split(',');
+                
+                let motifs = ordosPatient
+                    .filter(o => idsChoisies.includes(String(o.id)))
+                    .map(o => o.motif);
+                    
+                if (motifs.length > 0) {
+                    return ` <span style="color: var(--success); font-weight: bold; font-size: 0.75rem; background: #e6f8f5; padding: 2px 6px; border-radius: 4px; border: 1px solid #34c759;">[✓ ${motifs.join(', ')}]</span>`;
+                }
                 return '';
-            } catch(e) { return ''; }
+            } catch(e) { 
+                console.error("Erreur lecture ordo choisie:", e);
+                return ''; 
+            }
         }
 
         async function basculerTlaStatut(idPlanif, source) {
