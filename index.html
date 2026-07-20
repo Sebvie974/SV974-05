@@ -1696,7 +1696,8 @@ doc.setTextColor(0, 0, 0); currentY += 6;
                                     let ordosP = typeof p.ordonnances === 'string' ? JSON.parse(p.ordonnances) : p.ordonnances;
                                     let ids = String(r.ordos_choisies).split(',');
                                     let m = ordosP.filter(o => ids.includes(String(o.id))).map(o => o.motif);
-                                    if (m.length > 0) ordoTextePdf = ` [✓ ${m.join(', ')}]`;
+                                    // La magie opère ici avec le \n pour le saut de ligne :
+                                    if (m.length > 0) ordoTextePdf = `\n↳ Ordonnance : ${m.join(', ')}`;
                                 } catch(e){}
                             }
                             nomAffichage += ordoTextePdf;
