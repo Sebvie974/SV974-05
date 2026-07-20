@@ -1814,9 +1814,9 @@ doc.setTextColor(0, 0, 0); currentY += 6;
         }
 
         async function incrementerOrdonnanceEtSauver(patient, idsOrdoChoisis, idPlanif, statutFinal) {
-            if (!patient) return appliquerChangementStatut(idPlanif, statutFinal);
+            if (!patient) return appliquerChangementStatut(idPlanif, statutFinal, null);
             let ordos = [];
-            try { ordos = JSON.parse(patient.ordonnances); } catch(e) { return appliquerChangementStatut(idPlanif, statutFinal); }
+            try { ordos = JSON.parse(patient.ordonnances); } catch(e) { return appliquerChangementStatut(idPlanif, statutFinal, null); }
             
             ordos.forEach(o => {
                 if (idsOrdoChoisis.includes(String(o.id))) o.faites = (o.faites || 0) + 1;
@@ -1824,35 +1824,52 @@ doc.setTextColor(0, 0, 0); currentY += 6;
             
             patient.ordonnances = JSON.stringify(ordos); 
             
-            // On sauvegarde l'ordonnance en base
             if (initialiserSupabase() && navigator.onLine) {
                 supabaseClient.from('catalogue_patients').update({ ordonnances: patient.ordonnances }).eq('id', patient.id).then(()=>{});
             }
-            // Puis on valide le pointage planning
-            appliquerChangementStatut(idPlanif, statutFinal);
+            
+            // NOUVEAU : On passe la liste des ordonnances choisies à la fonction de statut
+            appliquerChangementStatut(idPlanif, statutFinal, idsOrdoChoisis.join(','));
         }
 
-        async function appliquerChangementStatut(idPlanif, statutFinal) {
-            // C'est l'ancienne suite de la fonction changerStatutRdv
+        async function appliquerChangementStatut(idPlanif, statutFinal, ordosChoisiesStr = null) {
             const cleDate = getCleDate(datesSemaineEnCours[indiceJourActuel]);
             const rdv = planningsParDate[cleDate]?.find(r => String(r.idPlanif) === String(idPlanif));
             
-            if (rdv) rdv.statut = statutFinal;
+            if (rdv) {
+                rdv.statut = statutFinal;
+                if (ordosChoisiesStr !== null) rdv.ordos_choisies = ordosChoisiesStr; // On l'ajoute en local
+            }
             rafraichirAffichage();
 
             if (!navigator.onLine) {
                 let file = JSON.parse(localStorage.getItem('file_attente_sync')) || [];
                 file = file.filter(action => action.id !== idPlanif); 
-                file.push({ type: 'statut_rdv', id: idPlanif, valeur: statutFinal });
+                let action = { type: 'statut_rdv', id: idPlanif, valeur: statutFinal };
+                if (ordosChoisiesStr !== null) action.ordos = ordosChoisiesStr;
+                file.push(action);
                 localStorage.setItem('file_attente_sync', JSON.stringify(file));
                 return;
             }
 
             if (!initialiserSupabase()) return;
             try { 
-                await supabaseClient.from('plannings_dates').update({ statut: statutFinal }).eq('id_planif', idPlanif); 
+                let updateData = { statut: statutFinal };
+                if (ordosChoisiesStr !== null) updateData.ordos_choisies = ordosChoisiesStr; // On l'envoie à Supabase
+                await supabaseClient.from('plannings_dates').update(updateData).eq('id_planif', idPlanif); 
                 chargerDonneesDepuisServeur(); 
             } catch (err) { console.error(err); }
+        }
+
+        function obtenirTexteOrdoChoisie(rdv, patient) {
+            if (rdv.statut !== 'vu' || !rdv.ordos_choisies || !patient || !patient.ordonnances) return '';
+            try {
+                const ordosPatient = JSON.parse(patient.ordonnances);
+                const idsChoisies = rdv.ordos_choisies.split(',');
+                const motifs = ordosPatient.filter(o => idsChoisies.includes(String(o.id))).map(o => o.motif);
+                if (motifs.length > 0) return ` <span style="color: var(--success); font-weight: bold; font-size: 0.75rem;">[✓ ${motifs.join(', ')}]</span>`;
+                return '';
+            } catch(e) { return ''; }
         }
 
         async function basculerTlaStatut(idPlanif, source) {
@@ -2228,7 +2245,7 @@ doc.setTextColor(0, 0, 0); currentY += 6;
                         <div style="${styleLigne} padding: 10px; border-radius: 6px; border-left: 4px solid var(--primary); display: flex; align-items: flex-start; gap: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); margin-bottom: 6px;">
                             ${blocHeureOuCheckbox}
                             <div style="flex: 1; width: 100%;">
-                                <div style="font-weight: bold; display:flex; align-items:center; flex-wrap:wrap;">${badgePrem}${iconeStatut}${patient.nom} ${badgeAbsentHtml}</div>
+                                <div style="font-weight: bold; display:flex; align-items:center; flex-wrap:wrap;">${badgePrem}${iconeStatut}${patient.nom} ${obtenirTexteOrdoChoisie(rdv, patient)} ${badgeAbsentHtml}</div>
                                 <div style="font-size: 0.85rem; color: var(--neutral); margin-top: 2px;">${patient.adresse}${kineInfo}</div>
                                 <div>${genererHtmlTla(rdv)}</div>
                             </div>
@@ -2268,7 +2285,7 @@ doc.setTextColor(0, 0, 0); currentY += 6;
                             <div style="${styleLigne} padding: 8px 10px; border-radius: 6px; border-left: 4px solid var(--neutral); display: flex; align-items: flex-start; gap: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); margin-bottom: 6px;">
                                 <strong style="color: var(--primary); min-width: 45px; margin-top: 2px;">${affichageHeure}</strong>
                                 <div style="flex: 1; width: 100%;">
-                                    <div style="font-weight: bold; display:flex; align-items:center; flex-wrap:wrap; font-size: 0.95rem; color: #333;">${badgePrem}${iconeStatut}${patient.nom} ${badgeAbsentHtml}</div>
+                                    <div style="font-weight: bold; display:flex; align-items:center; flex-wrap:wrap; font-size: 0.95rem; color: #333;">${badgePrem}${iconeStatut}${patient.nom} ${obtenirTexteOrdoChoisie(rdv, patient)} ${badgeAbsentHtml}</div>
                                     <div style="font-size: 0.8rem; color: var(--neutral); margin-top: 2px;">${patient.adresse}${kineInfo}</div>
                                     <div>${genererHtmlTla(rdv)}</div>
                                 </div>
@@ -2584,23 +2601,25 @@ doc.setTextColor(0, 0, 0); currentY += 6;
                 if (ordos.length === 0) return '';
                 
                 return ordos.map(o => {
-                    let alertClass = "background: #f1f5f9; color: #64748b; border: 1px solid #cbd5e1;"; // Normal
+                    let alertClass = "background: #f1f5f9; color: #64748b; border: 1px solid #cbd5e1;"; 
                     let texte = `📄 ${o.motif}`;
                     
                     if (o.nb_seances) {
-                        texte += ` (${o.faites || 0}/${o.nb_seances})`;
+                        const restantes = o.nb_seances - (o.faites || 0);
+                        texte += ` (Reste : ${restantes})`;
                         if (o.faites >= o.nb_seances) alertClass = "background: var(--danger); color: white; border: none;";
                         else if (o.faites >= o.nb_seances - 2) alertClass = "background: var(--orange); color: white; border: none;";
                     }
                     
                     if (o.date_fin) {
+                        texte += ` | Fin: ${o.date_fin.split('-').reverse().join('/')}`;
                         const dFin = new Date(o.date_fin); const now = new Date();
                         const diffDays = Math.ceil((dFin - now) / (1000 * 60 * 60 * 24));
                         if (diffDays <= 7 && diffDays >= 0) alertClass = "background: var(--orange); color: white; border: none;";
                         else if (diffDays < 0) alertClass = "background: var(--danger); color: white; border: none;";
                     }
                     
-                    return `<span style="font-size: 0.65rem; padding: 2px 4px; border-radius: 4px; font-weight: bold; margin-right: 4px; white-space: nowrap; ${alertClass}">${texte}</span>`;
+                    return `<span style="font-size: 0.65rem; padding: 2px 4px; border-radius: 4px; font-weight: bold; margin-right: 4px; white-space: nowrap; display: inline-block; margin-top: 2px; ${alertClass}">${texte}</span>`;
                 }).join('');
             } catch(e) { return ''; }
         }
