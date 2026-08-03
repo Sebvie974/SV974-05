@@ -1003,9 +1003,28 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
         }
 
         function trierPlannings(a, b) {
-            if (a.ordre !== b.ordre) return (a.ordre || 0) - (b.ordre || 0);
             const pA = cataloguePatients.find(x => String(x.id) === String(a.patientId));
             const pB = cataloguePatients.find(x => String(x.id) === String(b.patientId));
+            
+            // On identifie le titulaire de la tournée (pour gérer les remplaçants)
+            const titulaire = getKinesAssocies(kineVisionne)[0] || kineVisionne;
+
+            let ordreGlobalA = 999;
+            let ordreGlobalB = 999;
+
+            // On va chercher l'ordre mémorisé spécifiquement pour CE titulaire
+            if (pA && pA.ordres_tournees) {
+                try { const ordres = JSON.parse(pA.ordres_tournees); if (ordres[titulaire]) ordreGlobalA = ordres[titulaire]; } catch(e){}
+            }
+            if (pB && pB.ordres_tournees) {
+                try { const ordres = JSON.parse(pB.ordres_tournees); if (ordres[titulaire]) ordreGlobalB = ordres[titulaire]; } catch(e){}
+            }
+
+            const ordreA = (a.ordre && a.ordre > 0) ? a.ordre : ordreGlobalA;
+            const ordreB = (b.ordre && b.ordre > 0) ? b.ordre : ordreGlobalB;
+
+            if (ordreA !== ordreB) return ordreA - ordreB;
+
             const nomA = pA ? pA.nom.toLowerCase() : "";
             const nomB = pB ? pB.nom.toLowerCase() : "";
             return nomA.localeCompare(nomB);
@@ -1731,8 +1750,8 @@ doc.setTextColor(0, 0, 0); currentY += 6;
             if (verifierVerrouillageBackend(idPlanif)) return;
             const cleDate = getCleDate(datesSemaineEnCours[indiceJourActuel]);
             const groupeKines = getKinesAssocies(kineVisionne);
+            const titulaire = groupeKines[0] || kineVisionne;
             
-            // 1. On récupère la liste du jour et on la trie exactement comme à l'écran
             let rdvDuJour = planningsParDate[cleDate].filter(r => groupeKines.includes(r.kineNom));
             rdvDuJour.sort(trierPlannings);
             
@@ -1742,29 +1761,38 @@ doc.setTextColor(0, 0, 0); currentY += 6;
             const cibleIndex = index + direction;
             if (cibleIndex < 0 || cibleIndex >= rdvDuJour.length) return;
 
-            // 2. On échange physiquement les deux patients ciblés dans la liste
             const rdvA = rdvDuJour[index];
             const rdvB = rdvDuJour[cibleIndex];
             rdvDuJour[index] = rdvB;
             rdvDuJour[cibleIndex] = rdvA;
 
-            // 3. On réécrit un numéro d'ordre STRICT pour tous (1, 2, 3...)
-            // Cela répare le bug des patients qui partageaient le même ordre "99" par défaut
             rdvDuJour.forEach((r, idx) => {
                 r.ordre = idx + 1;
+                const patient = cataloguePatients.find(p => String(p.id) === String(r.patientId));
+                if (patient) {
+                    let ordres = {};
+                    try { if (patient.ordres_tournees && patient.ordres_tournees !== '{}') ordres = JSON.parse(patient.ordres_tournees); } catch(e){}
+                    
+                    // On enregistre la position spécifiquement pour le titulaire
+                    ordres[titulaire] = idx + 1;
+                    patient.ordres_tournees = JSON.stringify(ordres);
+                }
             });
 
-            // 4. On rafraîchit l'interface pour que ce soit instantané visuellement
             rafraichirAffichage();
 
-            // 5. On envoie la mise à jour propre et complète à Supabase
             if (initialiserSupabase()) {
                 try {
-                    // Promise.all permet d'envoyer toutes les corrections d'ordre d'un coup très rapidement
-                    const requetes = rdvDuJour.map(r => 
+                    const requetesPlannings = rdvDuJour.map(r => 
                         supabaseClient.from('plannings_dates').update({ ordre: r.ordre }).eq('id_planif', r.idPlanif)
                     );
-                    await Promise.all(requetes);
+                    
+                    const requetesPatients = rdvDuJour.map(r => {
+                        const p = cataloguePatients.find(x => String(x.id) === String(r.patientId));
+                        return supabaseClient.from('catalogue_patients').update({ ordres_tournees: p.ordres_tournees }).eq('id', r.patientId);
+                    });
+                    
+                    await Promise.all([...requetesPlannings, ...requetesPatients]);
                     
                     chargerDonneesDepuisServeur();
                 } catch(e) { console.error("Erreur de déplacement", e); }
