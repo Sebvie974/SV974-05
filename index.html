@@ -547,7 +547,7 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
             }).join('');
             
             const filtreSec = document.getElementById('filtre-view-kine');
-            const praticiens = listeUtilisateursComplets.filter(u => u.role === 'kine' || u.role === 'remplacant').map(u => u.nom);
+            const praticiens = listeUtilisateursComplets.filter(u => (u.role === 'kine' || u.role === 'remplacant') && u.actif !== false).map(u => u.nom);
             filtreSec.innerHTML = `<option value="TOUS">👥 Tous</option>` + praticiens.map(k => `<option value="${k}">👤 ${k}</option>`).join('');
             filtreSec.value = kineVisionne || "TOUS";
             
@@ -1604,7 +1604,7 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
             document.getElementById('deplacer-rdv-date').value = cleDate;
 
             const selectKine = document.getElementById('deplacer-rdv-kine');
-            const praticiens = listeUtilisateursComplets.filter(u => u.role === 'kine' || u.role === 'remplacant').map(u => u.nom);
+            const praticiens = listeUtilisateursComplets.filter(u => (u.role === 'kine' || u.role === 'remplacant') && u.actif !== false).map(u => u.nom);
             selectKine.innerHTML = praticiens.map(k => `<option value="${k}" ${k === rdv.kineNom ? 'selected' : ''}>${k}</option>`).join('');
 
             ouvrirModal('modal-deplacer-rdv');
@@ -2083,7 +2083,7 @@ doc.setTextColor(0, 0, 0); currentY += 6;
             if(preselectedPatientId) selectionPlanifMulti.add(String(preselectedPatientId));
 
             const selectKine = document.getElementById('planif-kine-affecte');
-            const praticiens = listeUtilisateursComplets.filter(u => u.role === 'kine' || u.role === 'remplacant').map(u => u.nom);
+            const praticiens = listeUtilisateursComplets.filter(u => (u.role === 'kine' || u.role === 'remplacant') && u.actif !== false).map(u => u.nom);
             selectKine.innerHTML = praticiens.map(k => `<option value="${k}" ${k === kineVisionne ? 'selected' : ''}>${k}</option>`).join('');
             if (kineVisionne === "TOUS" && praticiens.length > 0) { selectKine.value = praticiens[0]; }
             
