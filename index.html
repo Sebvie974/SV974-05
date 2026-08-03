@@ -1713,13 +1713,21 @@ doc.setTextColor(0, 0, 0); currentY += 6;
                             if (r.statut === 'vu' && r.ordos_choisies && p && p.ordonnances) {
                                 try {
                                     let ordosP = typeof p.ordonnances === 'string' ? JSON.parse(p.ordonnances) : p.ordonnances;
-                                    let ids = String(r.ordos_choisies).split(',');
-                                    let m = ordosP.filter(o => ids.includes(String(o.id))).map(o => o.motif);
-                                    // La magie opère ici avec le \n pour le saut de ligne :
-                                    if (m.length > 0) ordoTextePdf = `\n↳ Ordonnance : ${m.join(', ')}`;
+                                    
+                                    // Condition 1 : On ne fait l'affichage que si le patient a PLUSIEURS ordonnances
+                                    if (ordosP.length > 1) {
+                                        let ids = String(r.ordos_choisies).split(',');
+                                        let m = ordosP.filter(o => ids.includes(String(o.id))).map(o => o.motif);
+                                        
+                                        // Condition 2 : Un saut de ligne et un tiret classique pour CHAQUE ordonnance
+                                        if (m.length > 0) {
+                                            ordoTextePdf = '\n   - ' + m.join('\n   - '); 
+                                        }
+                                    }
                                 } catch(e){}
                             }
                             nomAffichage += ordoTextePdf;
+                            // ----------------------------------------------------
                             // ----------------------------------------------------
 
                             const heure = (r.heure && r.heure !== "00:00") ? r.heure : "--:--";
