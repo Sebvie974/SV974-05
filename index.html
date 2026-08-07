@@ -1195,6 +1195,7 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
                             <span style="display:flex; align-items:center; flex-wrap:wrap;">
                                 <span class="patient-name" style="cursor:pointer; color:var(--primary); text-decoration:underline;" onclick="ouvrirFormulairePatient('${patient.id}')">${patient.nom} ✏️</span>
                                 ${obtenirTexteOrdoChoisie(rdv, patient)}
+                                ${genererAlerteFinOrdo(patient)}
                                 ${badgeAbsentHtml}
                             </span>
                             <span style="font-size:0.85rem; font-weight:bold; color: ${rdv.heure && rdv.heure !== '00:00' ? 'var(--purple)' : 'var(--neutral)'};">${affichageHeure}</span>
@@ -1958,6 +1959,57 @@ doc.setTextColor(0, 0, 0); currentY += 6;
             } catch (err) { console.error(err); }
         }
 
+        function genererAlerteFinOrdo(patient) {
+            if (!patient || !patient.ordonnances) return '';
+            try {
+                let ordos = typeof patient.ordonnances === 'string' ? JSON.parse(patient.ordonnances) : patient.ordonnances;
+                let ordosActives = ordos.filter(o => o.actif !== false);
+                if (ordosActives.length === 0) return '';
+
+                // On compte combien de séances futures sont prévues dans le planning pour ce patient
+                let sessionsPlanifiees = 0;
+                for (let dateCle in planningsParDate) {
+                    planningsParDate[dateCle].forEach(r => {
+                        // On compte tous les RDV qui ne sont pas encore validés (ni 'vu', ni 'non-vu')
+                        if (String(r.patientId) === String(patient.id) && r.statut !== 'vu' && r.statut !== 'non-vu') {
+                            sessionsPlanifiees++;
+                        }
+                    });
+                }
+
+                let alertes = [];
+                ordosActives.forEach(o => {
+                    let alerteAjoutee = false;
+                    
+                    // Alerte sur le nombre de séances
+                    if (o.nb_seances) {
+                        let restantesReelles = o.nb_seances - (o.faites || 0);
+                        let restantesPrevisionnelles = restantesReelles - sessionsPlanifiees;
+                        if (restantesPrevisionnelles <= 5) {
+                            alertes.push(`⚠️ Reste ${restantesPrevisionnelles} séa. prévues`);
+                            alerteAjoutee = true;
+                        }
+                    }
+                    
+                    // Alerte sur la date (si on n'a pas déjà mis l'alerte de séances)
+                    if (!alerteAjoutee && o.date_fin) {
+                        const dFin = new Date(o.date_fin); 
+                        const now = new Date();
+                        const diffDays = Math.ceil((dFin - now) / (1000 * 60 * 60 * 24));
+                        if (diffDays <= 15 && diffDays >= 0) {
+                            alertes.push(`⚠️ Fin dans ${diffDays}j`);
+                        }
+                    }
+                });
+
+                if (alertes.length > 0) {
+                    // On retourne le badge visuel rouge
+                    return ` <span style="font-size:0.75rem; color:white; background:var(--danger); padding:2px 6px; border-radius:4px; font-weight:bold; margin-left:6px; white-space:nowrap; box-shadow: 0 1px 3px rgba(0,0,0,0.2);">${alertes[0]}</span>`; 
+                }
+                return '';
+            } catch(e) { return ''; }
+        }
+
         function obtenirTexteOrdoChoisie(rdv, patient) {
             if (!rdv || rdv.statut !== 'vu' || !rdv.ordos_choisies || !patient || !patient.ordonnances) return '';
             try {
@@ -2708,13 +2760,16 @@ doc.setTextColor(0, 0, 0); currentY += 6;
             if (!jsonStr) return '';
             try {
                 const ordos = JSON.parse(jsonStr);
-                if (ordos.length === 0) return '';
+                // On exclut les ordonnances désactivées
+                const ordosActives = ordos.filter(o => o.actif !== false);
+                if (ordosActives.length === 0) return '';
                 
-                return ordos.map(o => {
+                return ordosActives.map(o => {
                     let alertClass = "background: #f1f5f9; color: #64748b; border: 1px solid #cbd5e1;"; 
                     let texte = `📄 ${o.motif}`;
                     
                     if (o.nb_seances) {
+                        // Le calcul ici se fait bien uniquement sur les pointages validés (o.faites)
                         const restantes = o.nb_seances - (o.faites || 0);
                         texte += ` (Reste : ${restantes})`;
                         if (o.faites >= o.nb_seances) alertClass = "background: var(--danger); color: white; border: none;";
