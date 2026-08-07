@@ -388,12 +388,13 @@
             
             <div style="background: #f8fafc; padding: 10px; border-radius: 8px; margin-top: 5px; border: 1px dashed #cbd5e1;">
                 <label style="font-weight: bold; color: #475569; margin-bottom: 5px; display: block;">📄 Ordonnances en cours</label>
-                <div style="display:flex; flex-wrap:wrap; gap:5px; margin-bottom:10px;">
+                <div style="display:flex; flex-wrap:wrap; gap:5px; margin-bottom:10px; align-items:center;">
                     <input type="hidden" id="ordo-index-edite" value="">
                     <input type="text" id="ordo-motif" placeholder="Motif (ex: Épaule)" style="padding:4px; font-size:0.8rem; flex:2; min-width:90px;">
                     <input type="date" id="ordo-date" title="Date de l'ordonnance" style="padding:4px; font-size:0.8rem; flex:1;">
                     <input type="number" id="ordo-nb" placeholder="Nb séances" style="padding:4px; font-size:0.8rem; flex:1; min-width:70px;">
                     <input type="date" id="ordo-fin" title="Date de fin" style="padding:4px; font-size:0.8rem; flex:1;">
+                    <label style="display:flex; align-items:center; font-size:0.75rem; cursor:pointer; color:var(--neutral);"><input type="checkbox" id="ordo-actif" checked style="margin-right:4px;"> Active</label>
                     <button type="button" id="btn-save-ordo" class="btn-success" style="padding:4px 8px; font-size:0.8rem;" onclick="sauvegarderOrdonnance()">➕</button>
                     <button type="button" id="btn-cancel-ordo" class="btn-secondary" style="display:none; padding:4px 8px; font-size:0.8rem;" onclick="reinitialiserFormulaireOrdo()">❌</button>
                 </div>
@@ -1821,8 +1822,11 @@ doc.setTextColor(0, 0, 0); currentY += 6;
             if (statutFinal === 'vu') {
                 const patient = cataloguePatients.find(p => String(p.id) === String(rdv.patientId));
                 if (patient) {
-                    let ordos = [];
-                    try { ordos = patient.ordonnances ? JSON.parse(patient.ordonnances) : []; } catch(e) {}
+                    let toutesOrdos = [];
+                    try { toutesOrdos = patient.ordonnances ? JSON.parse(patient.ordonnances) : []; } catch(e) {}
+                    
+                    // --- NOUVEAU : ON NE GARDE QUE LES ORDONNANCES ACTIVES ---
+                    let ordos = toutesOrdos.filter(o => o.actif !== false);
                     
                     if (ordos.length > 1) {
                         // Plusieurs ordonnances -> ouverture modale
@@ -1870,17 +1874,58 @@ doc.setTextColor(0, 0, 0); currentY += 6;
             let ordos = [];
             try { ordos = JSON.parse(patient.ordonnances); } catch(e) { return appliquerChangementStatut(idPlanif, statutFinal, null); }
             
+            let alertMsg = "";
+            let notesGenerees = [];
+
             ordos.forEach(o => {
-                if (idsOrdoChoisis.includes(String(o.id))) o.faites = (o.faites || 0) + 1;
+                if (idsOrdoChoisis.includes(String(o.id))) {
+                    o.faites = (o.faites || 0) + 1;
+                    
+                    // NOUVEAU : Détection de la dernière séance
+                    if (o.nb_seances && o.faites >= o.nb_seances && o.actif !== false) {
+                        o.actif = false; // Désactivation automatique de l'ordonnance
+                        alertMsg += `⚠️ Dernière séance atteinte pour : ${o.motif} (${o.faites}/${o.nb_seances}). L'ordonnance est maintenant archivée.\n`;
+                        
+                        const dateDuJour = new Date().toLocaleDateString('fr-FR');
+                        const heure = new Date().toLocaleTimeString('fr-FR', {hour: '2-digit', minute:'2-digit'});
+                        
+                        // NOUVEAU : Création de la note silencieuse pour le secrétariat
+                        notesGenerees.push({
+                            id: Math.floor(Math.random()*1000000000).toString(),
+                            texte: `Fin d'ordonnance atteinte pour le patient ${patient.nom} (${o.motif}). Pointée par ${kineConnecte}.`,
+                            kine_cible: 'GLOBAL', // Ou 'Secrétariat' selon votre configuration
+                            auteur: 'Système',
+                            type_note: 'info',
+                            statut: 'attente',
+                            horodatage: `${dateDuJour} à ${heure}`
+                        });
+                    }
+                }
             });
-            
+
+            // NOUVEAU : Gérer le message et la proposition de suite pour le kiné
+            if (alertMsg !== "") {
+                const ordosRestantes = ordos.filter(o => o.actif !== false);
+                if (ordosRestantes.length > 0) {
+                    alertMsg += `\n💡 Info : Le patient a ${ordosRestantes.length} autre(s) ordonnance(s) en cours (ex: ${ordosRestantes[0].motif}). Le logiciel basculera dessus automatiquement à la prochaine séance !`;
+                } else {
+                    alertMsg += `\n❌ Le patient n'a plus aucune ordonnance valide en cours dans son dossier.`;
+                }
+                alert(alertMsg);
+            }
+
             patient.ordonnances = JSON.stringify(ordos); 
             
             if (initialiserSupabase() && navigator.onLine) {
+                // Sauvegarde du patient
                 supabaseClient.from('catalogue_patients').update({ ordonnances: patient.ordonnances }).eq('id', patient.id).then(()=>{});
+                
+                // NOUVEAU : Envoi automatique de la note au secrétariat
+                if (notesGenerees.length > 0) {
+                    supabaseClient.from('notes_cabinet').insert(notesGenerees).then(() => chargerDonneesDepuisServeur());
+                }
             }
             
-            // NOUVEAU : On passe la liste des ordonnances choisies à la fonction de statut
             appliquerChangementStatut(idPlanif, statutFinal, idsOrdoChoisis.join(','));
         }
 
@@ -2417,18 +2462,23 @@ doc.setTextColor(0, 0, 0); currentY += 6;
             } else {
                 conteneur.innerHTML = currentOrdonnances.map((o, idx) => {
                     let infos = [];
-                    if (o.date_ordo) infos.push(`Du: ${o.date_ordo.split('-').reverse().join('/')}`); // NOUVELLE LIGNE
+                    if (o.date_ordo) infos.push(`Du: ${o.date_ordo.split('-').reverse().join('/')}`);
                     if (o.nb_seances) infos.push(`${o.faites || 0}/${o.nb_seances} fait`);
                     if (o.date_fin) infos.push(`Fin: ${o.date_fin.split('-').reverse().join('/')}`);
                     
-                    let alertColor = "#cbd5e1"; // Gris neutre par défaut
+                    let alertColor = "#cbd5e1"; 
                     if (o.nb_seances) {
                         if (o.faites >= o.nb_seances) alertColor = "var(--danger)";
                         else if (o.faites >= o.nb_seances - 2) alertColor = "var(--orange)";
                     }
+
+                    // NOUVEAU : Effet visuel si désactivée
+                    const estInactif = o.actif === false;
+                    const opacite = estInactif ? '0.5' : '1';
+                    const badgeArchiv = estInactif ? '<span style="color:var(--danger); font-size:0.65rem;">[ARCHIVÉE] </span>' : '';
                     
-                    return `<div style="display:flex; justify-content:space-between; align-items:center; background:white; padding:4px 8px; border:1px solid #cbd5e1; border-left:4px solid ${alertColor}; border-radius:4px; font-size:0.75rem;">
-                        <div><b style="color:var(--primary);">${o.motif}</b><br><span style="color:var(--neutral);">${infos.join(' | ')}</span></div>
+                    return `<div style="display:flex; justify-content:space-between; align-items:center; background:white; padding:4px 8px; border:1px solid #cbd5e1; border-left:4px solid ${alertColor}; border-radius:4px; font-size:0.75rem; opacity:${opacite};">
+                        <div>${badgeArchiv}<b style="color:var(--primary);">${o.motif}</b><br><span style="color:var(--neutral);">${infos.join(' | ')}</span></div>
                         <div style="display:flex; gap:4px; align-items:center;">
                             <button type="button" class="btn-icon" style="color:var(--primary); font-size:1rem;" onclick="editerOrdonnance(${idx})" title="Modifier">✏️</button>
                             <button type="button" class="btn-icon" style="color:var(--danger); font-size:1rem;" onclick="supprimerOrdonnance(${idx})" title="Supprimer">🗑️</button>
@@ -2445,24 +2495,22 @@ doc.setTextColor(0, 0, 0); currentY += 6;
             const date_ordo = document.getElementById('ordo-date').value;
             const nb_seances = document.getElementById('ordo-nb').value;
             const date_fin = document.getElementById('ordo-fin').value;
+            const actif = document.getElementById('ordo-actif').checked; // NOUVEAU
             
             if(!motif) return alert('Le motif de l\'ordonnance est obligatoire.');
             
             if (idxEdite !== '') {
-                // Cas d'une MODIFICATION
                 currentOrdonnances[idxEdite].motif = motif;
                 currentOrdonnances[idxEdite].date_ordo = date_ordo || null;
                 currentOrdonnances[idxEdite].nb_seances = nb_seances ? parseInt(nb_seances) : null;
                 currentOrdonnances[idxEdite].date_fin = date_fin || null;
+                currentOrdonnances[idxEdite].actif = actif; // NOUVEAU
             } else {
-                // Cas d'une CRÉATION
                 currentOrdonnances.push({ 
                     id: Math.random().toString(36).substring(2, 9),
-                    motif: motif, 
-                    date_ordo: date_ordo || null,
-                    nb_seances: nb_seances ? parseInt(nb_seances) : null, 
-                    date_fin: date_fin || null,
-                    faites: 0 
+                    motif: motif, date_ordo: date_ordo || null,
+                    nb_seances: nb_seances ? parseInt(nb_seances) : null, date_fin: date_fin || null,
+                    faites: 0, actif: actif 
                 });
             }
             
@@ -2472,12 +2520,12 @@ doc.setTextColor(0, 0, 0); currentY += 6;
 
         function editerOrdonnance(idx) {
             const o = currentOrdonnances[idx];
-            
             document.getElementById('ordo-index-edite').value = idx;
             document.getElementById('ordo-motif').value = o.motif || '';
             document.getElementById('ordo-date').value = o.date_ordo || '';
             document.getElementById('ordo-nb').value = o.nb_seances || '';
             document.getElementById('ordo-fin').value = o.date_fin || '';
+            document.getElementById('ordo-actif').checked = o.actif !== false; // NOUVEAU
             
             document.getElementById('btn-save-ordo').innerText = '💾';
             document.getElementById('btn-cancel-ordo').style.display = 'inline-block';
@@ -2489,6 +2537,7 @@ doc.setTextColor(0, 0, 0); currentY += 6;
             document.getElementById('ordo-date').value = '';
             document.getElementById('ordo-nb').value = '';
             document.getElementById('ordo-fin').value = '';
+            document.getElementById('ordo-actif').checked = true; // NOUVEAU
             
             document.getElementById('btn-save-ordo').innerText = '➕';
             document.getElementById('btn-cancel-ordo').style.display = 'none';
