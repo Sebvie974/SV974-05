@@ -2867,7 +2867,6 @@ doc.setTextColor(0, 0, 0); currentY += 6;
             if (!jsonStr) return '';
             try {
                 const ordos = JSON.parse(jsonStr);
-                // On exclut les ordonnances désactivées
                 const ordosActives = ordos.filter(o => o.actif !== false);
                 if (ordosActives.length === 0) return '';
                 
@@ -2876,7 +2875,6 @@ doc.setTextColor(0, 0, 0); currentY += 6;
                     let texte = `📄 ${o.motif}`;
                     
                     if (o.nb_seances) {
-                        // Le calcul ici se fait bien uniquement sur les pointages validés (o.faites)
                         const restantes = o.nb_seances - (o.faites || 0);
                         texte += ` (Reste : ${restantes})`;
                         if (o.faites >= o.nb_seances) alertClass = "background: var(--danger); color: white; border: none;";
@@ -2891,7 +2889,12 @@ doc.setTextColor(0, 0, 0); currentY += 6;
                         else if (diffDays < 0) alertClass = "background: var(--danger); color: white; border: none;";
                     }
                     
-                    return `<span style="font-size: 0.65rem; padding: 2px 4px; border-radius: 4px; font-weight: bold; margin-right: 4px; white-space: nowrap; display: inline-block; margin-top: 2px; ${alertClass}">${texte}</span>`;
+                    // NOUVEAU : Ajout de l'icône de visualisation directement dans le badge
+                    // Le event.stopPropagation() évite d'ouvrir d'autres menus par erreur en cliquant dessus
+                    let btnVoir = o.fichier ? `<span onclick="voirOrdonnance('${o.fichier}'); event.stopPropagation();" style="cursor:pointer; margin-left:6px; font-size:0.9rem;" title="Voir la photo/PDF">👁️</span>` : '';
+                    
+                    // J'ai ajouté un "inline-flex" pour que le texte et l'œil soient bien alignés horizontalement
+                    return `<span style="font-size: 0.65rem; padding: 2px 4px; border-radius: 4px; font-weight: bold; margin-right: 4px; white-space: nowrap; display: inline-flex; align-items: center; margin-top: 2px; ${alertClass}">${texte}${btnVoir}</span>`;
                 }).join('');
             } catch(e) { return ''; }
         }
