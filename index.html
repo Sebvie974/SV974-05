@@ -394,6 +394,10 @@
                     <input type="date" id="ordo-date" title="Date de l'ordonnance" style="padding:4px; font-size:0.8rem; flex:1;">
                     <input type="number" id="ordo-nb" placeholder="Nb séances" style="padding:4px; font-size:0.8rem; flex:1; min-width:70px;">
                     <input type="date" id="ordo-fin" title="Date de fin" style="padding:4px; font-size:0.8rem; flex:1;">
+                    
+                    <!-- NOUVEAU : Le bouton Photo -->
+                    <input type="file" id="ordo-fichier" accept="image/*" capture="environment" style="padding:4px; font-size:0.75rem; flex:2; min-width:120px;" title="Prendre en photo l'ordonnance">
+                    
                     <label style="display:flex; align-items:center; font-size:0.75rem; cursor:pointer; color:var(--neutral);"><input type="checkbox" id="ordo-actif" checked style="margin-right:4px;"> Active</label>
                     <button type="button" id="btn-save-ordo" class="btn-success" style="padding:4px 8px; font-size:0.8rem;" onclick="sauvegarderOrdonnance()">➕</button>
                     <button type="button" id="btn-cancel-ordo" class="btn-secondary" style="display:none; padding:4px 8px; font-size:0.8rem;" onclick="reinitialiserFormulaireOrdo()">❌</button>
@@ -2541,33 +2545,89 @@ doc.setTextColor(0, 0, 0); currentY += 6;
             document.getElementById('patient-ordonnances').value = JSON.stringify(currentOrdonnances);
         }
 
-        function sauvegarderOrdonnance() {
-            const idxEdite = document.getElementById('ordo-index-edite').value;
-            const motif = document.getElementById('ordo-motif').value.trim();
-            const date_ordo = document.getElementById('ordo-date').value;
-            const nb_seances = document.getElementById('ordo-nb').value;
-            const date_fin = document.getElementById('ordo-fin').value;
-            const actif = document.getElementById('ordo-actif').checked; // NOUVEAU
-            
-            if(!motif) return alert('Le motif de l\'ordonnance est obligatoire.');
-            
-            if (idxEdite !== '') {
-                currentOrdonnances[idxEdite].motif = motif;
-                currentOrdonnances[idxEdite].date_ordo = date_ordo || null;
-                currentOrdonnances[idxEdite].nb_seances = nb_seances ? parseInt(nb_seances) : null;
-                currentOrdonnances[idxEdite].date_fin = date_fin || null;
-                currentOrdonnances[idxEdite].actif = actif; // NOUVEAU
-            } else {
-                currentOrdonnances.push({ 
-                    id: Math.random().toString(36).substring(2, 9),
-                    motif: motif, date_ordo: date_ordo || null,
-                    nb_seances: nb_seances ? parseInt(nb_seances) : null, date_fin: date_fin || null,
-                    faites: 0, actif: actif 
-                });
+        async function compresserEtUploaderImage(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    const img = new Image();
+                    img.onload = async function() {
+                        const canvas = document.createElement('canvas');
+                        // Réduction de la taille pour la lisibilité sans saturer le serveur (largeur max 1000px)
+                        const MAX_WIDTH = 1000; 
+                        let scaleSize = 1;
+                        if (img.width > MAX_WIDTH) { scaleSize = MAX_WIDTH / img.width; }
+                        
+                        canvas.width = img.width * scaleSize;
+                        canvas.height = img.height * scaleSize;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                        
+                        // Conversion en JPEG compressé (70% de qualité)
+                        canvas.toBlob(async (blob) => {
+                            const fileName = `ordo_${Math.random().toString(36).substring(2, 9)}_${Date.now()}.jpg`;
+                            
+                            // Envoi sécurisé au serveur Supabase
+                            const { data, error } = await supabaseClient.storage
+                                .from('ordonnances')
+                                .upload(fileName, blob, { contentType: 'image/jpeg' });
+                            
+                            if (error) { console.error(error); reject(error); }
+                            else resolve(fileName);
+                        }, 'image/jpeg', 0.7);
+                    }
+                    img.src = event.target.result;
+                }
+                reader.readAsDataURL(file);
+            });
+        }
+
+        async function sauvegarderOrdonnance() {
+            const btnSave = document.getElementById('btn-save-ordo');
+            btnSave.innerText = "⏳..."; // Indique que ça charge
+            btnSave.disabled = true;
+
+            try {
+                const idxEdite = document.getElementById('ordo-index-edite').value;
+                const motif = document.getElementById('ordo-motif').value.trim();
+                const date_ordo = document.getElementById('ordo-date').value;
+                const nb_seances = document.getElementById('ordo-nb').value;
+                const date_fin = document.getElementById('ordo-fin').value;
+                const actif = document.getElementById('ordo-actif').checked; 
+                const fichierInput = document.getElementById('ordo-fichier');
+                
+                if(!motif) { alert('Le motif de l\'ordonnance est obligatoire.'); return; }
+
+                // Gestion de l'image
+                let fichierNom = null;
+                if (fichierInput.files.length > 0) {
+                    fichierNom = await compresserEtUploaderImage(fichierInput.files[0]);
+                }
+                
+                if (idxEdite !== '') {
+                    currentOrdonnances[idxEdite].motif = motif;
+                    currentOrdonnances[idxEdite].date_ordo = date_ordo || null;
+                    currentOrdonnances[idxEdite].nb_seances = nb_seances ? parseInt(nb_seances) : null;
+                    currentOrdonnances[idxEdite].date_fin = date_fin || null;
+                    currentOrdonnances[idxEdite].actif = actif;
+                    if (fichierNom) currentOrdonnances[idxEdite].fichier = fichierNom; // Garde l'ancienne image si non modifiée
+                } else {
+                    currentOrdonnances.push({ 
+                        id: Math.random().toString(36).substring(2, 9),
+                        motif: motif, date_ordo: date_ordo || null,
+                        nb_seances: nb_seances ? parseInt(nb_seances) : null, date_fin: date_fin || null,
+                        faites: 0, actif: actif, fichier: fichierNom 
+                    });
+                }
+                
+                reinitialiserFormulaireOrdo();
+                renderOrdonnances();
+            } catch (e) {
+                alert("Erreur réseau lors de l'envoi de la photo.");
+            } finally {
+                btnSave.innerText = '➕';
+                btnSave.disabled = false;
+                document.getElementById('ordo-fichier').value = '';
             }
-            
-            reinitialiserFormulaireOrdo();
-            renderOrdonnances();
         }
 
         function editerOrdonnance(idx) {
