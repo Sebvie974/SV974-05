@@ -2533,9 +2533,15 @@ doc.setTextColor(0, 0, 0); currentY += 6;
                     const opacite = estInactif ? '0.5' : '1';
                     const badgeArchiv = estInactif ? '<span style="color:var(--danger); font-size:0.65rem;">[ARCHIVÉE] </span>' : '';
                     
+                    // NOUVEAU : On ajoute le bouton de visionnage si un fichier existe
+                    const btnVoir = o.fichier 
+                        ? `<button type="button" class="btn-icon" style="color:#00c7b1; font-size:1.1rem;" onclick="voirOrdonnance('${o.fichier}')" title="Voir la photo">👁️</button>` 
+                        : '';
+                    
                     return `<div style="display:flex; justify-content:space-between; align-items:center; background:white; padding:4px 8px; border:1px solid #cbd5e1; border-left:4px solid ${alertColor}; border-radius:4px; font-size:0.75rem; opacity:${opacite};">
                         <div>${badgeArchiv}<b style="color:var(--primary);">${o.motif}</b><br><span style="color:var(--neutral);">${infos.join(' | ')}</span></div>
                         <div style="display:flex; gap:4px; align-items:center;">
+                            ${btnVoir}
                             <button type="button" class="btn-icon" style="color:var(--primary); font-size:1rem;" onclick="editerOrdonnance(${idx})" title="Modifier">✏️</button>
                             <button type="button" class="btn-icon" style="color:var(--danger); font-size:1rem;" onclick="supprimerOrdonnance(${idx})" title="Supprimer">🗑️</button>
                         </div>
@@ -2579,6 +2585,36 @@ doc.setTextColor(0, 0, 0); currentY += 6;
                 }
                 reader.readAsDataURL(file);
             });
+        }
+
+        async function voirOrdonnance(nomFichier) {
+            if (!initialiserSupabase()) return;
+            
+            const btn = event.target;
+            const texteInit = btn.innerText;
+            btn.innerText = "⏳";
+            btn.disabled = true;
+
+            try {
+                // On demande un lien sécurisé valable 60 secondes (60)
+                const { data, error } = await supabaseClient.storage
+                    .from('ordonnances')
+                    .createSignedUrl(nomFichier, 60);
+
+                if (error) {
+                    alert("Erreur lors de la récupération de l'image.");
+                    console.error(error);
+                    return;
+                }
+
+                // Ouvre l'image sécurisée dans un nouvel onglet du navigateur
+                window.open(data.signedUrl, '_blank');
+            } catch (e) {
+                alert("Impossible de contacter le serveur.");
+            } finally {
+                btn.innerText = texteInit;
+                btn.disabled = false;
+            }
         }
 
         async function sauvegarderOrdonnance() {
