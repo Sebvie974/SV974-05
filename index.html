@@ -1889,16 +1889,27 @@ doc.setTextColor(0, 0, 0); currentY += 6;
                     // NOUVEAU : Détection de la dernière séance
                     if (o.nb_seances && o.faites >= o.nb_seances && o.actif !== false) {
                         o.actif = false; // Désactivation automatique de l'ordonnance
+                        
                         alertMsg += `⚠️ Dernière séance atteinte pour : ${o.motif} (${o.faites}/${o.nb_seances}). L'ordonnance est maintenant archivée.\n`;
+                        
+                        // NOUVEAU : Fenêtre de choix pour la suppression du fichier
+                        if (o.fichier) {
+                            const veutSupprimer = confirm(`La dernière séance pour l'ordonnance "${o.motif}" a été pointée.\n\nVeux-tu supprimer son fichier (photo/PDF) du serveur maintenant ?\n\n(Clique sur "Annuler" pour le conserver et le supprimer plus tard).`);
+                            
+                            if (veutSupprimer) {
+                                supprimerFichierOrdonnance(o.fichier);
+                                o.fichier = null; // On efface la mémoire du fichier
+                            }
+                        }
                         
                         const dateDuJour = new Date().toLocaleDateString('fr-FR');
                         const heure = new Date().toLocaleTimeString('fr-FR', {hour: '2-digit', minute:'2-digit'});
                         
-                        // NOUVEAU : Création de la note silencieuse pour le secrétariat
+                        // Création de la note silencieuse pour le secrétariat
                         notesGenerees.push({
                             id: Math.floor(Math.random()*1000000000).toString(),
                             texte: `Fin d'ordonnance atteinte pour le patient ${patient.nom} (${o.motif}). Pointée par ${kineConnecte}.`,
-                            kine_cible: 'GLOBAL', // Ou 'Secrétariat' selon votre configuration
+                            kine_cible: 'GLOBAL', 
                             auteur: 'Système',
                             type_note: 'info',
                             statut: 'attente',
@@ -1908,7 +1919,7 @@ doc.setTextColor(0, 0, 0); currentY += 6;
                 }
             });
 
-            // NOUVEAU : Gérer le message et la proposition de suite pour le kiné
+            // Gérer le message et la proposition de suite pour le kiné
             if (alertMsg !== "") {
                 const ordosRestantes = ordos.filter(o => o.actif !== false);
                 if (ordosRestantes.length > 0) {
@@ -1925,7 +1936,7 @@ doc.setTextColor(0, 0, 0); currentY += 6;
                 // Sauvegarde du patient
                 supabaseClient.from('catalogue_patients').update({ ordonnances: patient.ordonnances }).eq('id', patient.id).then(()=>{});
                 
-                // NOUVEAU : Envoi automatique de la note au secrétariat
+                // Envoi automatique de la note au secrétariat
                 if (notesGenerees.length > 0) {
                     supabaseClient.from('notes_cabinet').insert(notesGenerees).then(() => chargerDonneesDepuisServeur());
                 }
@@ -2628,6 +2639,16 @@ doc.setTextColor(0, 0, 0); currentY += 6;
             }
         }
 
+        async function supprimerFichierOrdonnance(nomFichier) {
+            if (!nomFichier || !initialiserSupabase()) return;
+            try {
+                // On demande à Supabase de supprimer définitivement le fichier du bucket
+                await supabaseClient.storage.from('ordonnances').remove([nomFichier]);
+            } catch (e) {
+                console.error("Erreur lors de la suppression du fichier:", e);
+            }
+        }
+
         async function sauvegarderOrdonnance() {
             const btnSave = document.getElementById('btn-save-ordo');
             btnSave.innerText = "⏳..."; 
@@ -2656,6 +2677,12 @@ doc.setTextColor(0, 0, 0); currentY += 6;
                     currentOrdonnances[idxEdite].date_fin = date_fin || null;
                     currentOrdonnances[idxEdite].actif = actif;
                     if (fichierNom) currentOrdonnances[idxEdite].fichier = fichierNom; 
+                    
+                    // NOUVEAU : Si on désactive manuellement et qu'il y a un fichier, on détruit le fichier
+                    if (actif === false && currentOrdonnances[idxEdite].fichier) {
+                        supprimerFichierOrdonnance(currentOrdonnances[idxEdite].fichier);
+                        currentOrdonnances[idxEdite].fichier = null; // On efface la mémoire du fichier pour cacher l'œil
+                    }
                 } else {
                     currentOrdonnances.push({ 
                         id: Math.random().toString(36).substring(2, 9),
@@ -2703,6 +2730,13 @@ doc.setTextColor(0, 0, 0); currentY += 6;
         }
 
         function supprimerOrdonnance(idx) {
+            const o = currentOrdonnances[idx];
+            
+            // NOUVEAU : S'il y a une photo/PDF lié, on la supprime du serveur
+            if (o.fichier) {
+                supprimerFichierOrdonnance(o.fichier);
+            }
+            
             currentOrdonnances.splice(idx, 1);
             renderOrdonnances();
         }
