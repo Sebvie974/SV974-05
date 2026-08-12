@@ -395,8 +395,8 @@
                     <input type="number" id="ordo-nb" placeholder="Nb séances" style="padding:4px; font-size:0.8rem; flex:1; min-width:70px;">
                     <input type="date" id="ordo-fin" title="Date de fin" style="padding:4px; font-size:0.8rem; flex:1;">
                     
-                    <!-- NOUVEAU : Le bouton Photo -->
-                    <input type="file" id="ordo-fichier" accept="image/*" capture="environment" style="padding:4px; font-size:0.75rem; flex:2; min-width:120px;" title="Prendre en photo l'ordonnance">
+                    <!-- NOUVEAU : Le bouton Photo / PDF -->
+                    <input type="file" id="ordo-fichier" accept="image/*,application/pdf" capture="environment" style="padding:4px; font-size:0.75rem; flex:2; min-width:120px;" title="Joindre l'ordonnance">
                     
                     <label style="display:flex; align-items:center; font-size:0.75rem; cursor:pointer; color:var(--neutral);"><input type="checkbox" id="ordo-actif" checked style="margin-right:4px;"> Active</label>
                     <button type="button" id="btn-save-ordo" class="btn-success" style="padding:4px 8px; font-size:0.8rem;" onclick="sauvegarderOrdonnance()">➕</button>
@@ -2552,38 +2552,49 @@ doc.setTextColor(0, 0, 0); currentY += 6;
         }
 
         async function compresserEtUploaderImage(file) {
-            return new Promise((resolve, reject) => {
-                const reader = new FileReader();
-                reader.onload = function(event) {
-                    const img = new Image();
-                    img.onload = async function() {
-                        const canvas = document.createElement('canvas');
-                        // Réduction de la taille pour la lisibilité sans saturer le serveur (largeur max 1000px)
-                        const MAX_WIDTH = 1000; 
-                        let scaleSize = 1;
-                        if (img.width > MAX_WIDTH) { scaleSize = MAX_WIDTH / img.width; }
+            return new Promise(async (resolve, reject) => {
+                try {
+                    // 1. SI C'EST UN PDF : On l'envoie directement sans le modifier
+                    if (file.type === 'application/pdf') {
+                        const fileName = `ordo_${Math.random().toString(36).substring(2, 9)}_${Date.now()}.pdf`;
+                        const { data, error } = await supabaseClient.storage
+                            .from('ordonnances')
+                            .upload(fileName, file, { contentType: 'application/pdf' });
                         
-                        canvas.width = img.width * scaleSize;
-                        canvas.height = img.height * scaleSize;
-                        const ctx = canvas.getContext('2d');
-                        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-                        
-                        // Conversion en JPEG compressé (70% de qualité)
-                        canvas.toBlob(async (blob) => {
-                            const fileName = `ordo_${Math.random().toString(36).substring(2, 9)}_${Date.now()}.jpg`;
-                            
-                            // Envoi sécurisé au serveur Supabase
-                            const { data, error } = await supabaseClient.storage
-                                .from('ordonnances')
-                                .upload(fileName, blob, { contentType: 'image/jpeg' });
-                            
-                            if (error) { console.error(error); reject(error); }
-                            else resolve(fileName);
-                        }, 'image/jpeg', 0.7);
+                        if (error) { reject(error); } else { resolve(fileName); }
+                        return;
                     }
-                    img.src = event.target.result;
-                }
-                reader.readAsDataURL(file);
+
+                    // 2. SI C'EST UNE IMAGE : On la compresse
+                    const reader = new FileReader();
+                    reader.onload = function(event) {
+                        const img = new Image();
+                        img.onload = async function() {
+                            const canvas = document.createElement('canvas');
+                            const MAX_WIDTH = 1000; 
+                            let scaleSize = 1;
+                            if (img.width > MAX_WIDTH) { scaleSize = MAX_WIDTH / img.width; }
+                            
+                            canvas.width = img.width * scaleSize;
+                            canvas.height = img.height * scaleSize;
+                            const ctx = canvas.getContext('2d');
+                            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                            
+                            canvas.toBlob(async (blob) => {
+                                const fileName = `ordo_${Math.random().toString(36).substring(2, 9)}_${Date.now()}.jpg`;
+                                const { data, error } = await supabaseClient.storage
+                                    .from('ordonnances')
+                                    .upload(fileName, blob, { contentType: 'image/jpeg' });
+                                
+                                if (error) { reject(error); } else { resolve(fileName); }
+                            }, 'image/jpeg', 0.7);
+                        };
+                        img.onerror = function() { reject(new Error("Fichier invalide")); };
+                        img.src = event.target.result;
+                    };
+                    reader.onerror = function() { reject(new Error("Erreur de lecture")); };
+                    reader.readAsDataURL(file);
+                } catch (err) { reject(err); }
             });
         }
 
@@ -2619,7 +2630,7 @@ doc.setTextColor(0, 0, 0); currentY += 6;
 
         async function sauvegarderOrdonnance() {
             const btnSave = document.getElementById('btn-save-ordo');
-            btnSave.innerText = "⏳..."; // Indique que ça charge
+            btnSave.innerText = "⏳..."; 
             btnSave.disabled = true;
 
             try {
@@ -2633,7 +2644,6 @@ doc.setTextColor(0, 0, 0); currentY += 6;
                 
                 if(!motif) { alert('Le motif de l\'ordonnance est obligatoire.'); return; }
 
-                // Gestion de l'image
                 let fichierNom = null;
                 if (fichierInput.files.length > 0) {
                     fichierNom = await compresserEtUploaderImage(fichierInput.files[0]);
@@ -2645,7 +2655,7 @@ doc.setTextColor(0, 0, 0); currentY += 6;
                     currentOrdonnances[idxEdite].nb_seances = nb_seances ? parseInt(nb_seances) : null;
                     currentOrdonnances[idxEdite].date_fin = date_fin || null;
                     currentOrdonnances[idxEdite].actif = actif;
-                    if (fichierNom) currentOrdonnances[idxEdite].fichier = fichierNom; // Garde l'ancienne image si non modifiée
+                    if (fichierNom) currentOrdonnances[idxEdite].fichier = fichierNom; 
                 } else {
                     currentOrdonnances.push({ 
                         id: Math.random().toString(36).substring(2, 9),
@@ -2658,7 +2668,8 @@ doc.setTextColor(0, 0, 0); currentY += 6;
                 reinitialiserFormulaireOrdo();
                 renderOrdonnances();
             } catch (e) {
-                alert("Erreur réseau lors de l'envoi de la photo.");
+                console.error(e);
+                alert("Erreur lors de l'envoi : " + (e.message || "Accès refusé par le serveur."));
             } finally {
                 btnSave.innerText = '➕';
                 btnSave.disabled = false;
