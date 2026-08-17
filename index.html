@@ -1025,8 +1025,8 @@ const SUPABASE_URL = "https://fzlyucjfbjvbodqykihf.supabase.co";
                 try { const ordres = JSON.parse(pB.ordres_tournees); if (ordres[titulaire]) ordreGlobalB = ordres[titulaire]; } catch(e){}
             }
 
-            const ordreA = (a.ordre && a.ordre > 0) ? a.ordre : ordreGlobalA;
-            const ordreB = (b.ordre && b.ordre > 0) ? b.ordre : ordreGlobalB;
+            const ordreA = (a.ordre && a.ordre > 0 && a.ordre !== 99) ? a.ordre : ordreGlobalA;
+            const ordreB = (b.ordre && b.ordre > 0 && b.ordre !== 99) ? b.ordre : ordreGlobalB;
 
             if (ordreA !== ordreB) return ordreA - ordreB;
 
@@ -1798,7 +1798,11 @@ doc.setTextColor(0, 0, 0); currentY += 6;
             if (initialiserSupabase()) {
                 try {
                     const requetesPlannings = rdvDuJour.map(r => 
-                        supabaseClient.from('plannings_dates').update({ ordre: r.ordre }).eq('id_planif', r.idPlanif)
+                        supabaseClient.from('plannings_dates')
+                            .update({ ordre: r.ordre })
+                            .eq('patient_id', r.patientId)
+                            .in('kine_nom', groupeKines)
+                            .gte('date_cle', cleDate) 
                     );
                     
                     const requetesPatients = rdvDuJour.map(r => {
@@ -2245,15 +2249,14 @@ doc.setTextColor(0, 0, 0); currentY += 6;
                     dateMoins7.setDate(dateMoins7.getDate() - 7);
                     const cleDateMoins7 = getCleDate(dateMoins7);
 
-                    let ordreAAttribuer = 99; // Par défaut à la fin de la liste
+                    let ordreAAttribuer = 0; // CORRECTION : 0 au lieu de 99 pour activer la mémoire
+                    const groupe = getKinesAssocies(kineAffecte); // CORRECTION : On englobe titulaire ET remplaçant
 
-                    // On regarde si on a des plannings en mémoire pour le jour J - 7
                     if (planningsParDate[cleDateMoins7]) {
-                        // On cherche si CE patient était prévu avec CE kiné ce jour-là
+                        // On cherche n'importe quel membre de l'équipe (pas juste le nom exact)
                         const rdvPrecedent = planningsParDate[cleDateMoins7].find(r => 
-                            String(r.patientId) === String(patientId) && r.kineNom === kineAffecte
+                            String(r.patientId) === String(patientId) && groupe.includes(r.kineNom)
                         );
-                        // Si oui, on récupère son numéro de position !
                         if (rdvPrecedent && rdvPrecedent.ordre !== undefined && rdvPrecedent.ordre !== null) {
                             ordreAAttribuer = rdvPrecedent.ordre;
                         }
