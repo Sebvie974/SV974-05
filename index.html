@@ -2983,7 +2983,8 @@ doc.setTextColor(0, 0, 0); currentY += 6;
             cataloguePatients.forEach(p => {
                 if (p.ordonnances) {
                     try {
-                        let ordos = JSON.parse(p.ordonnances).filter(o => o.actif !== false && o.nb_seances);
+                        // CORRECTION : On retire la condition "&& o.nb_seances" pour tout inclure
+                        let ordos = JSON.parse(p.ordonnances).filter(o => o.actif !== false);
                         ordos.forEach(o => {
                             catalogueOrdonnancesActives.push({
                                 patientId: p.id,
@@ -3015,20 +3016,23 @@ doc.setTextColor(0, 0, 0); currentY += 6;
             catalogueOrdonnancesActives.forEach(item => {
                 const { patientId, patientNom, ordo } = item;
                 const faites = ordo.faites || 0;
-                const limit = ordo.nb_seances;
-                const restantes = limit - faites;
+                
+                // CORRECTION : Gestion des ordonnances non quantifiées
+                const limit = ordo.nb_seances || '∞';
+                const aUneLimite = (ordo.nb_seances !== null && ordo.nb_seances !== undefined && ordo.nb_seances !== "");
+                const restantes = aUneLimite ? (limit - faites) : null;
                 
                 // Application des filtres
-                if (filtreStatut === 'depassees' && restantes >= 0) return;
-                if (filtreStatut === 'proches' && (restantes < 0 || restantes > 3)) return;
+                if (filtreStatut === 'depassees' && (!aUneLimite || restantes >= 0)) return;
+                if (filtreStatut === 'proches' && (!aUneLimite || restantes < 0 || restantes > 3)) return;
                 if (term && !patientNom.toLowerCase().includes(term) && !ordo.motif.toLowerCase().includes(term)) return;
                 
                 // Style visuel de l'alerte
                 let bgCol = "white"; let borderCol = "#cbd5e1"; let badge = "";
-                if (restantes < 0) { 
+                if (aUneLimite && restantes < 0) { 
                     bgCol = "#fef2f2"; borderCol = "var(--danger)"; 
                     badge = `<span style="background:var(--danger); color:white; padding:2px 6px; border-radius:4px; font-size:0.7rem; font-weight:bold;">${Math.abs(restantes)} EN EXCÈS</span>`;
-                } else if (restantes <= 3) { 
+                } else if (aUneLimite && restantes <= 3) { 
                     bgCol = "#fffbeb"; borderCol = "var(--orange)"; 
                 }
 
@@ -3039,7 +3043,7 @@ doc.setTextColor(0, 0, 0); currentY += 6;
                             <div style="font-size:0.85rem; color:#475569;">📄 ${ordo.motif}</div>
                         </div>
                         <div style="text-align:right;">
-                            <div style="font-size:1.1rem; font-weight:bold; color:${restantes < 0 ? 'var(--danger)' : '#333'};">${faites} / ${limit}</div>
+                            <div style="font-size:1.1rem; font-weight:bold; color:${(aUneLimite && restantes < 0) ? 'var(--danger)' : '#333'};">${faites} / ${limit}</div>
                             <div style="font-size:0.75rem; color:var(--neutral);">Séances pointées</div>
                         </div>
                     </div>
