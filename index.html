@@ -206,6 +206,7 @@
 
             <div style="margin-bottom: 10px; display: flex; gap: 10px;">
                 <button class="btn-purple" style="flex: 1;" id="btn-toggle-view" onclick="basculerVue()">Fichier Patients 🗂️</button>
+                <button class="btn-primary" style="background-color: var(--orange); padding: 6px 12px; font-size: 0.85rem;" onclick="ouvrirSuiviOrdonnances()">📊 Suivi Ordonnances</button>
                 <button class="btn-orange" style="flex: 1;" onclick="ouvrirNotesCabinet()">Notes Info ⚠️</button>
             </div>
             
@@ -442,6 +443,41 @@
             <div style="display: flex; gap: 10px;">
                 <button class="btn-success" onclick="validerChoixOrdonnance()" style="flex: 1;">Valider le pointage ✅</button>
                 <button class="btn-secondary" onclick="fermerModal('modal-choix-ordo')">Annuler</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 1 : LISTE GLOBALE DES ORDONNANCES -->
+    <div id="modal-suivi-ordos" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:2000; align-items:center; justify-content:center;">
+        <div style="background:white; padding:20px; border-radius:10px; width:90%; max-width:800px; max-height:85vh; display:flex; flex-direction:column;">
+            <h3 style="margin-top:0; color:var(--primary); display:flex; justify-content:space-between; align-items:center;">
+                📊 Suivi Global des Ordonnances
+                <button class="btn-icon" onclick="fermerModal('modal-suivi-ordos')">❌</button>
+            </h3>
+            <div style="display:flex; gap:10px; margin-bottom:15px;">
+                <input type="text" id="recherche-suivi-ordo" placeholder="🔍 Chercher un patient ou motif..." style="flex:1; padding:8px; border:1px solid #cbd5e1; border-radius:6px;" onkeyup="filtrerSuiviOrdonnances()">
+                <select id="filtre-statut-ordo" style="padding:8px; border-radius:6px; border:1px solid #cbd5e1;" onchange="filtrerSuiviOrdonnances()">
+                    <option value="toutes">Toutes les actives</option>
+                    <option value="depassees">🚨 Dépassées / En excès</option>
+                    <option value="proches">⚠️ Bientôt terminées (<= 3 séa.)</option>
+                </select>
+            </div>
+            <div id="liste-globale-ordos" style="overflow-y:auto; flex:1; display:flex; flex-direction:column; gap:8px;">
+                <!-- Rempli par le Javascript -->
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 2 : DÉTAIL & RÉAFFECTATION -->
+    <div id="modal-details-ordo" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); z-index:2010; align-items:center; justify-content:center;">
+        <div style="background:white; padding:20px; border-radius:10px; width:90%; max-width:600px; max-height:80vh; display:flex; flex-direction:column;">
+            <h3 style="margin-top:0; color:var(--purple); display:flex; justify-content:space-between; align-items:center;">
+                📋 Détail des séances
+                <button class="btn-icon" onclick="fermerModal('modal-details-ordo')">❌</button>
+            </h3>
+            <div id="entete-details-ordo" style="margin-bottom:15px; padding:10px; background:#f8fafc; border-radius:6px; font-size:0.9rem;"></div>
+            <div id="liste-seances-ordo" style="overflow-y:auto; flex:1; display:flex; flex-direction:column; gap:6px;">
+                <!-- Rempli par le Javascript -->
             </div>
         </div>
     </div>
@@ -2934,6 +2970,213 @@ doc.setTextColor(0, 0, 0); currentY += 6;
                     return `<span style="font-size: 0.65rem; padding: 2px 4px; border-radius: 4px; font-weight: bold; margin-right: 4px; white-space: nowrap; display: inline-flex; align-items: center; margin-top: 2px; ${alertClass}">${texte}${btnVoir}</span>`;
                 }).join('');
             } catch(e) { return ''; }
+        }
+
+        // --- MODULE SUIVI & AUDIT DES ORDONNANCES ---
+
+        let catalogueOrdonnancesActives = [];
+
+        function ouvrirSuiviOrdonnances() {
+            catalogueOrdonnancesActives = [];
+            
+            // On scanne tous les patients pour extraire leurs ordonnances actives
+            cataloguePatients.forEach(p => {
+                if (p.ordonnances) {
+                    try {
+                        let ordos = JSON.parse(p.ordonnances).filter(o => o.actif !== false && o.nb_seances);
+                        ordos.forEach(o => {
+                            catalogueOrdonnancesActives.push({
+                                patientId: p.id,
+                                patientNom: p.nom,
+                                ordo: o
+                            });
+                        });
+                    } catch (e) {}
+                }
+            });
+            
+            // Tri alphabétique par défaut
+            catalogueOrdonnancesActives.sort((a,b) => a.patientNom.localeCompare(b.patientNom));
+            
+            document.getElementById('recherche-suivi-ordo').value = '';
+            document.getElementById('filtre-statut-ordo').value = 'toutes';
+            filtrerSuiviOrdonnances();
+            
+            ouvrirModal('modal-suivi-ordos');
+        }
+
+        function filtrerSuiviOrdonnances() {
+            const term = document.getElementById('recherche-suivi-ordo').value.toLowerCase();
+            const filtreStatut = document.getElementById('filtre-statut-ordo').value;
+            const conteneur = document.getElementById('liste-globale-ordos');
+            
+            let html = '';
+            
+            catalogueOrdonnancesActives.forEach(item => {
+                const { patientId, patientNom, ordo } = item;
+                const faites = ordo.faites || 0;
+                const limit = ordo.nb_seances;
+                const restantes = limit - faites;
+                
+                // Application des filtres
+                if (filtreStatut === 'depassees' && restantes >= 0) return;
+                if (filtreStatut === 'proches' && (restantes < 0 || restantes > 3)) return;
+                if (term && !patientNom.toLowerCase().includes(term) && !ordo.motif.toLowerCase().includes(term)) return;
+                
+                // Style visuel de l'alerte
+                let bgCol = "white"; let borderCol = "#cbd5e1"; let badge = "";
+                if (restantes < 0) { 
+                    bgCol = "#fef2f2"; borderCol = "var(--danger)"; 
+                    badge = `<span style="background:var(--danger); color:white; padding:2px 6px; border-radius:4px; font-size:0.7rem; font-weight:bold;">${Math.abs(restantes)} EN EXCÈS</span>`;
+                } else if (restantes <= 3) { 
+                    bgCol = "#fffbeb"; borderCol = "var(--orange)"; 
+                }
+
+                html += `
+                    <div style="background:${bgCol}; border:1px solid ${borderCol}; border-left:4px solid ${borderCol}; padding:10px; border-radius:6px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; box-shadow:0 1px 2px rgba(0,0,0,0.05);" onclick="ouvrirDetailsOrdo('${patientId}', '${ordo.id}')">
+                        <div>
+                            <div style="font-weight:bold; color:var(--primary);">${patientNom} ${badge}</div>
+                            <div style="font-size:0.85rem; color:#475569;">📄 ${ordo.motif}</div>
+                        </div>
+                        <div style="text-align:right;">
+                            <div style="font-size:1.1rem; font-weight:bold; color:${restantes < 0 ? 'var(--danger)' : '#333'};">${faites} / ${limit}</div>
+                            <div style="font-size:0.75rem; color:var(--neutral);">Séances pointées</div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            if (html === '') html = '<p style="text-align:center; color:var(--neutral); margin-top:20px;">Aucune ordonnance ne correspond à ces critères.</p>';
+            conteneur.innerHTML = html;
+        }
+
+        function ouvrirDetailsOrdo(patientId, ordoId) {
+            const patient = cataloguePatients.find(p => String(p.id) === String(patientId));
+            if (!patient) return;
+            
+            let ordos = JSON.parse(patient.ordonnances);
+            const ordo = ordos.find(o => o.id === ordoId);
+            const limit = ordo.nb_seances || 999;
+            
+            // On construit la liste des autres ordonnances pour le menu déroulant de transfert
+            const autresOrdos = ordos.filter(o => o.id !== ordoId && o.actif !== false);
+            let optionsTransfert = `<option value="">-- Détacher la séance (Sans motif) --</option>`;
+            autresOrdos.forEach(o => {
+                optionsTransfert += `<option value="${o.id}">${o.motif} (${o.faites || 0}/${o.nb_seances || '∞'})</option>`;
+            });
+
+            document.getElementById('entete-details-ordo').innerHTML = `
+                <strong style="color:var(--primary); font-size:1.1rem;">${patient.nom}</strong><br>
+                Motif : <b>${ordo.motif}</b><br>
+                Limite : <b>${limit} séances autorisées</b>
+            `;
+
+            // Recherche de toutes les séances pointées pour cette ordonnance
+            let seancesTrouvees = [];
+            for (let dateCle in planningsParDate) {
+                planningsParDate[dateCle].forEach(r => {
+                    if (String(r.patientId) === String(patientId) && r.statut === 'vu' && r.ordos_choisies && r.ordos_choisies.includes(ordoId)) {
+                        seancesTrouvees.push({ ...r, dateStr: dateCle });
+                    }
+                });
+            }
+            
+            // Tri chronologique des séances (de la plus ancienne à la plus récente)
+            seancesTrouvees.sort((a, b) => a.dateStr.localeCompare(b.dateStr));
+
+            const conteneur = document.getElementById('liste-seances-ordo');
+            let html = '';
+
+            seancesTrouvees.forEach((seance, index) => {
+                const numero = index + 1;
+                const estEnExces = numero > limit;
+                
+                let blocReaffectation = '';
+                // Si la séance dépasse la limite légale, on affiche l'outil de transfert
+                if (estEnExces) {
+                    const selectId = `transfert-${seance.idPlanif}`;
+                    blocReaffectation = `
+                        <div style="margin-top:8px; padding-top:8px; border-top:1px dashed #cbd5e1; display:flex; gap:6px; align-items:center;">
+                            <span style="font-size:0.75rem; font-weight:bold; color:var(--danger);">⚠️ Transférer vers :</span>
+                            <select id="${selectId}" style="flex:1; padding:4px; font-size:0.75rem; border-radius:4px;">${optionsTransfert}</select>
+                            <button class="btn-primary" style="padding:4px 8px; font-size:0.75rem;" onclick="reaffecterSeance('${seance.idPlanif}', '${ordo.id}', '${patientId}', '${selectId}')">Valider</button>
+                        </div>
+                    `;
+                }
+
+                html += `
+                    <div style="background:${estEnExces ? '#fef2f2' : '#f8fafc'}; border:1px solid ${estEnExces ? 'var(--danger)' : '#cbd5e1'}; padding:10px; border-radius:6px;">
+                        <div style="display:flex; justify-content:space-between; align-items:center;">
+                            <span style="font-weight:bold; color:${estEnExces ? 'var(--danger)' : 'var(--primary)'};">Séance n°${numero}</span>
+                            <span style="font-size:0.8rem; color:var(--neutral);">📅 ${seance.dateStr.split('-').reverse().join('/')} (Kiné: ${seance.kineNom})</span>
+                        </div>
+                        ${blocReaffectation}
+                    </div>
+                `;
+            });
+
+            if (html === '') html = '<p style="text-align:center; font-size:0.85rem;">Aucun pointage trouvé pour cette ordonnance.</p>';
+            conteneur.innerHTML = html;
+            
+            ouvrirModal('modal-details-ordo');
+        }
+
+        async function reaffecterSeance(idPlanif, oldOrdoId, patientId, selectId) {
+            const newOrdoId = document.getElementById(selectId).value;
+            if (!initialiserSupabase()) return;
+
+            try {
+                // 1. Mise à jour de la mémoire du Patient (Recalcul des pointages)
+                const patient = cataloguePatients.find(p => String(p.id) === String(patientId));
+                let ordosJson = JSON.parse(patient.ordonnances);
+                
+                const oldOrdo = ordosJson.find(o => o.id === oldOrdoId);
+                if (oldOrdo) oldOrdo.faites = Math.max(0, (oldOrdo.faites || 0) - 1);
+                
+                if (newOrdoId !== '') {
+                    const newOrdo = ordosJson.find(o => o.id === newOrdoId);
+                    if (newOrdo) newOrdo.faites = (newOrdo.faites || 0) + 1;
+                }
+                
+                patient.ordonnances = JSON.stringify(ordosJson);
+                await supabaseClient.from('catalogue_patients').update({ ordonnances: patient.ordonnances }).eq('id', patientId);
+
+                // 2. Mise à jour du Planning (Changement de l'étiquette ordo)
+                // On fouille dans la mémoire locale pour trouver la date de la séance
+                let dateDuRdv = null;
+                let rdvModifie = null;
+                for (let dateCle in planningsParDate) {
+                    const r = planningsParDate[dateCle].find(x => String(x.idPlanif) === String(idPlanif));
+                    if (r) { dateDuRdv = dateCle; rdvModifie = r; break; }
+                }
+
+                if (rdvModifie) {
+                    let listeOrdosRdv = String(rdvModifie.ordos_choisies).split(',');
+                    // On retire l'ancienne ordonnance de la liste
+                    listeOrdosRdv = listeOrdosRdv.filter(id => id !== oldOrdoId);
+                    // On ajoute la nouvelle (si on n'a pas juste choisi "Détacher")
+                    if (newOrdoId !== '') listeOrdosRdv.push(newOrdoId);
+                    
+                    const nouvelleChaine = listeOrdosRdv.join(',');
+                    rdvModifie.ordos_choisies = nouvelleChaine;
+                    
+                    await supabaseClient.from('plannings_dates').update({ ordos_choisies: nouvelleChaine }).eq('id_planif', idPlanif);
+                }
+
+                // 3. Rafraîchissement des fenêtres
+                chargerDonneesDepuisServeur(); 
+                alert("✅ Séance réaffectée avec succès !");
+                
+                // On met à jour l'interface de la modale en direct
+                setTimeout(() => {
+                    ouvrirDetailsOrdo(patientId, oldOrdoId);
+                    filtrerSuiviOrdonnances(); 
+                }, 400);
+
+            } catch(e) {
+                console.error(e);
+                alert("Erreur lors de la réaffectation.");
+            }
         }
 
     </script>
