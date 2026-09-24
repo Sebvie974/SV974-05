@@ -3067,7 +3067,7 @@ doc.setTextColor(0, 0, 0); currentY += 6;
             
             let ordos = JSON.parse(patient.ordonnances);
             const ordo = ordos.find(o => o.id === ordoId);
-            const limit = ordo.nb_seances || 999;
+            const limit = ordo.nb_seances || '∞';
             
             // On construit la liste des autres ordonnances pour le menu déroulant de transfert
             const autresOrdos = ordos.filter(o => o.id !== ordoId && o.actif !== false);
@@ -3082,12 +3082,21 @@ doc.setTextColor(0, 0, 0); currentY += 6;
                 Limite : <b>${limit} séances autorisées</b>
             `;
 
-            // Recherche de toutes les séances pointées pour cette ordonnance
+            // NOUVEAU : Recherche des séances pointées ET des séances planifiées
             let seancesTrouvees = [];
             for (let dateCle in planningsParDate) {
                 planningsParDate[dateCle].forEach(r => {
-                    if (String(r.patientId) === String(patientId) && r.statut === 'vu' && r.ordos_choisies && r.ordos_choisies.includes(ordoId)) {
-                        seancesTrouvees.push({ ...r, dateStr: dateCle });
+                    if (String(r.patientId) === String(patientId)) {
+                        const estValidee = r.statut === 'vu' && r.ordos_choisies && r.ordos_choisies.includes(ordoId);
+                        const estPlanifiee = r.statut !== 'vu' && r.statut !== 'non-vu';
+                        // On exclut les séances planifiées si elles sont déjà explicitement attachées à une AUTRE ordonnance
+                        const lieeAAutre = estPlanifiee && r.ordos_choisies && !r.ordos_choisies.includes(ordoId);
+                        
+                        if (estValidee) {
+                            seancesTrouvees.push({ ...r, dateStr: dateCle, isPlanifiee: false });
+                        } else if (estPlanifiee && !lieeAAutre) {
+                            seancesTrouvees.push({ ...r, dateStr: dateCle, isPlanifiee: true });
+                        }
                     }
                 });
             }
@@ -3100,25 +3109,43 @@ doc.setTextColor(0, 0, 0); currentY += 6;
 
             seancesTrouvees.forEach((seance, index) => {
                 const numero = index + 1;
-                const estEnExces = numero > limit;
+                const estEnExces = limit !== '∞' && numero > limit;
                 
                 let blocReaffectation = '';
-                // Si la séance dépasse la limite légale, on affiche l'outil de transfert
-                if (estEnExces) {
-                    const selectId = `transfert-${seance.idPlanif}`;
-                    blocReaffectation = `
-                        <div style="margin-top:8px; padding-top:8px; border-top:1px dashed #cbd5e1; display:flex; gap:6px; align-items:center;">
-                            <span style="font-size:0.75rem; font-weight:bold; color:var(--danger);">⚠️ Transférer vers :</span>
-                            <select id="${selectId}" style="flex:1; padding:4px; font-size:0.75rem; border-radius:4px;">${optionsTransfert}</select>
-                            <button class="btn-primary" style="padding:4px 8px; font-size:0.75rem;" onclick="reaffecterSeance('${seance.idPlanif}', '${ordo.id}', '${patientId}', '${selectId}')">Valider</button>
-                        </div>
-                    `;
+                let styleBg = '#f8fafc';
+                let styleBorder = '#cbd5e1';
+                let styleTitre = 'var(--primary)';
+                let badge = '';
+
+                // NOUVEAU : Différenciation visuelle entre validée et planifiée
+                if (seance.isPlanifiee) {
+                    badge = `<span style="background:#0ea5e9; color:white; padding:2px 6px; border-radius:4px; font-size:0.65rem; margin-left:8px;">⏳ Planifiée</span>`;
+                    styleBg = '#f0f9ff'; styleBorder = '#7dd3fc';
+                    
+                    if (estEnExces) {
+                        badge = `<span style="background:var(--orange); color:white; padding:2px 6px; border-radius:4px; font-size:0.65rem; margin-left:8px;">⚠️ Prévue hors-quota</span>`;
+                        styleBg = '#fffbeb'; styleBorder = 'var(--orange)'; styleTitre = 'var(--orange)';
+                    }
+                } else {
+                    badge = `<span style="background:#10b981; color:white; padding:2px 6px; border-radius:4px; font-size:0.65rem; margin-left:8px;">✅ Validée</span>`;
+                    
+                    if (estEnExces) {
+                        styleBg = '#fef2f2'; styleBorder = 'var(--danger)'; styleTitre = 'var(--danger)';
+                        const selectId = `transfert-${seance.idPlanif}`;
+                        blocReaffectation = `
+                            <div style="margin-top:8px; padding-top:8px; border-top:1px dashed #cbd5e1; display:flex; gap:6px; align-items:center;">
+                                <span style="font-size:0.75rem; font-weight:bold; color:var(--danger);">⚠️ Transférer vers :</span>
+                                <select id="${selectId}" style="flex:1; padding:4px; font-size:0.75rem; border-radius:4px;">${optionsTransfert}</select>
+                                <button class="btn-primary" style="padding:4px 8px; font-size:0.75rem;" onclick="reaffecterSeance('${seance.idPlanif}', '${ordo.id}', '${patientId}', '${selectId}')">Valider</button>
+                            </div>
+                        `;
+                    }
                 }
 
                 html += `
-                    <div style="background:${estEnExces ? '#fef2f2' : '#f8fafc'}; border:1px solid ${estEnExces ? 'var(--danger)' : '#cbd5e1'}; padding:10px; border-radius:6px;">
+                    <div style="background:${styleBg}; border:1px solid ${styleBorder}; padding:10px; border-radius:6px;">
                         <div style="display:flex; justify-content:space-between; align-items:center;">
-                            <span style="font-weight:bold; color:${estEnExces ? 'var(--danger)' : 'var(--primary)'};">Séance n°${numero}</span>
+                            <span style="font-weight:bold; color:${styleTitre};">Séance n°${numero} ${badge}</span>
                             <span style="font-size:0.8rem; color:var(--neutral);">📅 ${seance.dateStr.split('-').reverse().join('/')} (Kiné: ${seance.kineNom})</span>
                         </div>
                         ${blocReaffectation}
@@ -3126,7 +3153,7 @@ doc.setTextColor(0, 0, 0); currentY += 6;
                 `;
             });
 
-            if (html === '') html = '<p style="text-align:center; font-size:0.85rem;">Aucun pointage trouvé pour cette ordonnance.</p>';
+            if (html === '') html = '<p style="text-align:center; font-size:0.85rem;">Aucun pointage ni séance planifiée trouvés.</p>';
             conteneur.innerHTML = html;
             
             ouvrirModal('modal-details-ordo');
