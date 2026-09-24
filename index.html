@@ -458,6 +458,7 @@
                 <input type="text" id="recherche-suivi-ordo" placeholder="🔍 Chercher un patient ou motif..." style="flex:1; padding:8px; border:1px solid #cbd5e1; border-radius:6px;" onkeyup="filtrerSuiviOrdonnances()">
                 <select id="filtre-statut-ordo" style="padding:8px; border-radius:6px; border:1px solid #cbd5e1;" onchange="filtrerSuiviOrdonnances()">
                     <option value="toutes">Toutes les actives</option>
+                    <option value="quantifiees">📊 Quantifiées uniquement</option>
                     <option value="depassees">🚨 Dépassées / En excès</option>
                     <option value="proches">⚠️ Bientôt terminées (<= 3 séa.)</option>
                 </select>
@@ -3017,12 +3018,12 @@ doc.setTextColor(0, 0, 0); currentY += 6;
                 const { patientId, patientNom, ordo } = item;
                 const faites = ordo.faites || 0;
                 
-                // CORRECTION : Gestion des ordonnances non quantifiées
                 const limit = ordo.nb_seances || '∞';
                 const aUneLimite = (ordo.nb_seances !== null && ordo.nb_seances !== undefined && ordo.nb_seances !== "");
                 const restantes = aUneLimite ? (limit - faites) : null;
                 
                 // Application des filtres
+                if (filtreStatut === 'quantifiees' && !aUneLimite) return; // NOUVEAU
                 if (filtreStatut === 'depassees' && (!aUneLimite || restantes >= 0)) return;
                 if (filtreStatut === 'proches' && (!aUneLimite || restantes < 0 || restantes > 3)) return;
                 if (term && !patientNom.toLowerCase().includes(term) && !ordo.motif.toLowerCase().includes(term)) return;
@@ -3036,11 +3037,17 @@ doc.setTextColor(0, 0, 0); currentY += 6;
                     bgCol = "#fffbeb"; borderCol = "var(--orange)"; 
                 }
 
+                // NOUVEAU : Affichage de la date de fin si l'ordonnance n'est pas quantifiée
+                let txtDateFin = "";
+                if (!aUneLimite && ordo.date_fin) {
+                    txtDateFin = ` <span style="font-size:0.75rem; color:var(--neutral); margin-left: 6px;">| Fin : ${ordo.date_fin.split('-').reverse().join('/')}</span>`;
+                }
+
                 html += `
                     <div style="background:${bgCol}; border:1px solid ${borderCol}; border-left:4px solid ${borderCol}; padding:10px; border-radius:6px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; box-shadow:0 1px 2px rgba(0,0,0,0.05);" onclick="ouvrirDetailsOrdo('${patientId}', '${ordo.id}')">
                         <div>
                             <div style="font-weight:bold; color:var(--primary);">${patientNom} ${badge}</div>
-                            <div style="font-size:0.85rem; color:#475569;">📄 ${ordo.motif}</div>
+                            <div style="font-size:0.85rem; color:#475569;">📄 ${ordo.motif}${txtDateFin}</div>
                         </div>
                         <div style="text-align:right;">
                             <div style="font-size:1.1rem; font-weight:bold; color:${(aUneLimite && restantes < 0) ? 'var(--danger)' : '#333'};">${faites} / ${limit}</div>
